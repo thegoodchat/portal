@@ -84,7 +84,7 @@ Run the latest `supabase/schema.sql` once to create the bucket and its rules (sa
 ## Known limits (first version)
 - Programme partners cannot read events, so their Events tab is empty.
 - Fellows can log in and use their pages. KOL friend pages and CSO pages are not live yet (CSO accounts are still blocked; friends see masterclasses, events and the community).
-- Partners cannot see plans, KOL friend details or screenshots. Their Impact numbers count fellows' own posts, events and KPIs only.
+- Everyone signed in has an Impact tab with programme totals (posts, reach, engagement, events, civic actions). Totals come from a database function, so fellows and partners see numbers only, never other fellows' posts, reflections, screenshots, spending lines or KOL friend contacts.
 - The feed lets any signed-in team member edit any post (needed for reactions and replies). Moderation is by coordinators.
 - The Leaderboard and some benchmark charts still use built-in sample scores until real posts exist.
 - Passwords are handled by Supabase. Consider enabling multi-factor sign-in for coordinators.

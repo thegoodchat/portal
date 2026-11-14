@@ -312,3 +312,26 @@ drop policy if exists insight_files_update on storage.objects;
 create policy insight_files_update on storage.objects for update using (bucket_id = 'insights' and public.can_insight(name, true));
 drop policy if exists insight_files_delete on storage.objects;
 create policy insight_files_delete on storage.objects for delete using (bucket_id = 'insights' and public.can_insight(name, true));
+
+
+-- Programme totals for the Impact tab. Everyone who is signed in can call this, and it returns only numbers and
+-- the public parts of plans (message, civic action). It never returns captions, links, reflections, screenshots,
+-- spending lines or KOL friend contact details.
+create or replace function public.impact_stats() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select case when exists (select 1 from public.profiles where id = auth.uid() and active) then jsonb_build_object(
+    'posts',   coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'camp', data->>'camp',
+                 'm', case when jsonb_typeof(data->'refl') = 'object' then jsonb_build_object('reach', data->'refl'->'reach', 'reactions', data->'refl'->'reactions', 'comments', data->'refl'->'comments', 'saves', data->'refl'->'saves', 'shares', data->'refl'->'shares', 'repost', data->'refl'->'repost') else null end))
+                 from public.records where kind = 'fd:posts'), '[]'::jsonb),
+    'events',  coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'camp', data->>'camp', 'att', data->>'attendance')) from public.records where kind = 'fd:events'), '[]'::jsonb),
+    'friends', coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'camp', data->>'camp', 'status', data->>'status',
+                 'm', coalesce((select jsonb_agg(q->'m') from jsonb_array_elements(case when jsonb_typeof(data->'posts') = 'array' then data->'posts' else '[]'::jsonb end) q), '[]'::jsonb))) from public.records where kind = 'fd:friends'), '[]'::jsonb),
+    'plans',   coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'c', split_part(key,'/',2), 'message', data->>'message', 'action', data->'action')) from public.records where kind = 'fd:plan'), '[]'::jsonb),
+    'setup',   coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'c', split_part(key,'/',2), 'name', data->>'name', 'type', data->>'type', 'partners', coalesce(data->'partners','[]'::jsonb))) from public.records where kind = 'fd:setup'), '[]'::jsonb),
+    'kpis',    coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'c', split_part(key,'/',2), 'n', jsonb_array_length(case when jsonb_typeof(data->'_v') = 'array' then data->'_v' else '[]'::jsonb end))) from public.records where kind = 'fd:kpis'), '[]'::jsonb),
+    'csos',    coalesce((select jsonb_agg(case when jsonb_typeof(data->'partners') = 'array' then data->'partners' else '[]'::jsonb end) from public.records where kind = 'list:csos'), '[]'::jsonb),
+    'hours',   coalesce((select sum(coalesce((data->>'hours')::numeric, 0)) from public.records where kind = 'list:support'), 0)
+  ) else null end;
+$$;
+grant execute on function public.impact_stats() to authenticated;
+

@@ -1210,7 +1210,22 @@ function vLDeck(){
 
 const CIVIC = {mind:['Share with others','Mothers swap one energy-saving habit and share it with another household','Households who try the habit'], pim:['Switch or install','Neighbours compare quotes for rooftop solar together','Households who ask for a quote'], ton:['Attend an event','Community dance night that ends with a solar pledge','People who sign the pledge'], sari:['Contact a decision-maker','Mothers ask the local government for a clearer rooftop solar process','Letters sent'], dimas:['Share with others','Boardgame nights where families plan a low-carbon home','Households who play and share'], ayu:['Sign a petition','Petition for affordable solar loans for households','Signatures'], raka:['Switch or install','Group ride that ends with a swap to energy-saving bulbs','Bulbs swapped']};
 const MSG = {mind:'Everyday mothers can lead on cutting household energy.', pim:'Solar is a normal, neighbourly choice.', ton:'Clean power can be fun and shared.', sari:'Rooftop solar is something ordinary families can understand and ask about.', dimas:'Learning about energy can be a family game.', ayu:'Fair access to solar should be on every family\'s mind.', raka:'Small shifts add up when a group does them together.'};
+let IMP = null, IMP_T = 0;
+function refreshImpact(force){
+  if (!LIVE || !SB || (!force && Date.now() - IMP_T < 15000)) return;
+  IMP_T = Date.now();
+  Promise.resolve().then(() => SB.rpc('impact_stats')).then(r => { if (r && r.data) { IMP = r.data; renderSoon(); } }).catch(() => {});
+}
+const impD = () => Object.assign({posts:[], events:[], friends:[], plans:[], setup:[], kpis:[], csos:[], hours:0}, IMP || {});
+function impFacts(){
+  const d = impD(), fp = d.friends.reduce((a, x) => a + (x.m || []).length, 0);
+  const parts = d.csos.flat().filter(Boolean), pairs = new Set();
+  d.setup.forEach(x => (x.partners || []).forEach(pn => pairs.add([x.f, pn].sort().join('+') + x.c)));
+  return {posts:d.posts.length + fp, refl:d.posts.filter(x => x.m).length, kset:new Set(d.kpis.filter(x => Number(x.n) > 0).map(x => x.f)).size, camps:d.setup.length,
+    parts, acc:parts.filter(q => q.status === 'Accepted'), hrs:Number(d.hours) || 0, pairs:pairs.size, events:d.events.length, friends:d.friends.length};
+}
 function pFacts(){
+  if (LIVE) return impFacts();
   const nok = F.find(x => x.id === 'nok');
   const posts = F.reduce((a,x) => a + nPosts(x), 0) + allFD().reduce((a,d) => a + d.friends.reduce((b,x) => b + x.posts.length, 0), 0);
   const refl = F.reduce((a,x) => a + nRefl(x), 0);
@@ -1224,7 +1239,10 @@ function pFacts(){
 function pTile(n, l, sub){ return `<div class="card"><div class="meta">${l}</div><div style="font:700 28px/1.1 var(--head,inherit)">${n}</div>${sub ? `<div class="meta">${sub}</div>` : ''}</div>`; }
 function pMetrics(){
   const KS = ['reach','reactions','comments','saves','shares','repost'];
-  const rows = [
+  const im = impD(), rows = LIVE ? [
+    ...im.posts.map(x => ({camp:Number(x.camp), m:x.m || {}})),
+    ...im.friends.flatMap(x => (x.m || []).map(m => ({camp:Number(x.camp), m:m || {}})))
+  ] : [
     ...allFD().flatMap(d => d.posts.map(x => ({camp:x.camp, m:x.refl || {}}))),
     ...allFD().flatMap(d => d.friends.flatMap(x => x.posts.map(q => ({camp:x.camp, m:q.m || {}}))))
   ];
@@ -1234,15 +1252,16 @@ function pMetrics(){
   t.eng = t.reactions + t.comments + t.saves + t.shares + t.repost;
   const rate = (e, r) => r ? (Math.round(e / r * 1000) / 10) + '%' : '0%';
   t.rate = rate(t.eng, t.reach);
-  t.att = allFD().reduce((a, d) => a + d.events.reduce((b, e) => b + (Number(e.attendance) || 0), 0), 0) + extra.att;
+  t.att = (LIVE ? im.events.reduce((a, e) => a + (Number(e.att) || 0), 0) : allFD().reduce((a, d) => a + d.events.reduce((b, e) => b + (Number(e.attendance) || 0), 0), 0)) + extra.att;
   t.byCamp = [1, 2].map(c => { const x = tot(rows.filter(r => r.camp === c)); const e = x.reactions + x.comments + x.saves + x.shares + x.repost; return {n:CAMPS[c-1].n, posts:x.posts, reach:x.reach, eng:e, rate:rate(e, x.reach)}; });
   return t;
 }
 function vPImpact(){
+  refreshImpact();
   const f = pFacts(), m = pMetrics();
-  const civ = (LIVE ? F.filter(x => fd(x.id).plan[1].action.text).map(x => { const a = fd(x.id).plan[1].action; return [x.id, a.type, a.text, a.measure]; }) : [['nok', S.plan[1].action.type, S.plan[1].action.text, S.plan[1].action.measure]]).concat(LIVE ? [] : Object.keys(CIVIC).map(id => [id, CIVIC[id][0], CIVIC[id][1], CIVIC[id][2]]));
+  const civ = (LIVE ? impD().plans.filter(x => x.action && x.action.text).map(x => [x.f, x.action.type, x.action.text, x.action.measure]) : [['nok', S.plan[1].action.type, S.plan[1].action.text, S.plan[1].action.measure]]).concat(LIVE ? [] : Object.keys(CIVIC).map(id => [id, CIVIC[id][0], CIVIC[id][1], CIVIC[id][2]]));
   const byType = {}; civ.forEach(x => { if (x[1]) byType[x[1]] = (byType[x[1]] || 0) + 1; });
-  return `<div class="card"><h2>What the programme is changing</h2><p class="sub2">Eight fellows in Thailand and Indonesia, each running their own campaign to bring energy conversations into the mainstream. You see programme results and campaign stories, never payments, IDs or paperwork. ${LIVE ? '' : 'Figures marked sample are examples until the real data connects.'}</p></div>
+  return `<div class="card"><h2>What the programme is changing</h2><p class="sub2">Eight fellows in Thailand and Indonesia, each running their own campaign to bring energy conversations into the mainstream. These are programme results, never payments, IDs or paperwork. ${LIVE ? '' : 'Figures marked sample are examples until the real data connects.'}</p></div>
     <div class="card"><h2 class="h sec">1. Capacity building</h2><p class="sub2">Fellows learn to plan, measure and reflect on their own campaigns.</p>
       <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">${pTile(f.camps, 'Campaigns designed by fellows', 'of 16 possible')}${pTile(f.kset + ' of ' + F.length, 'Fellows with their own KPIs')}${pTile(f.refl + ' of ' + f.posts, 'Posts with a written reflection')}${pTile(f.hrs + ' hours', 'Advice from civil society orgs', 'logged so far')}</div></div>
     <div class="card"><h2 class="h sec">2. Public conversation and narrative shift</h2><p class="sub2">How far the campaigns reached and how people responded. Totals for posts by fellows and their KOL friends${LIVE ? '' : ' (sample numbers)'}.</p>
@@ -1511,7 +1530,7 @@ function render(){
     : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Program coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
-  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['people','People'],['feed','Community']] : fr && LIVE ? [['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['people','People'],['feed','Community']] : kol && LIVE ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
+  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : fr && LIVE ? [['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : kol && LIVE ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
   if (LIVE && (ls || (!mine && !pt))) tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'slides' || t[0] === 'ldeck')), 0, ['tposts','Posts']);
   const cur = mine ? S.tab : S.teamTab;
   const need = openItems(CUR).length;
@@ -1522,9 +1541,9 @@ function render(){
   $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? (LIVE ? 'Masterclass slides, events and the community space.' : 'Log the posts you made for this campaign and their numbers.') : kol ? (LIVE ? 'Slides, events and the community space. Your own campaign pages are coming.' : 'Log what you post, what you expected, and what you learned.') : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
   let html = '';
   if (cur === 'board') html = vBoard();
-  else if (cs) html = {chome:vCsoHome, clog:vCsoLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else if (fr) html = {slides:vSlides, fhome:vFriendHome, flog:vFriendLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else if (kol) html = {slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (cs) html = {chome:vCsoHome, clog:vCsoLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (fr) html = {slides:vSlides, fhome:vFriendHome, flog:vFriendLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (kol) html = {slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else html = {events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, tposts:vTPosts, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
   $('#view').innerHTML = html;
   if (LIVE) scheduleFlush();
@@ -1922,6 +1941,7 @@ function collect(){
 function blankLive(){
   Object.keys(FD).forEach(k => delete FD[k]);
   S.shots = [];
+  IMP = null; IMP_T = 0;
   LISTS.forEach(n => { S[n] = []; });
   S.notes = {}; S.reminded = {}; S.followed = {}; S.paper = {}; S.camps = {};
   S.org = {TH:{name:'', address:'', taxid:'', email:'', note:''}, ID:{name:'', address:'', taxid:'', email:'', note:''}};
