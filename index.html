@@ -163,12 +163,15 @@ tfoot td{border-bottom:0;padding-top:12px}
   .hdr .b2{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.pp-head{display:flex;gap:14px;align-items:center}
+.pp-head .grow{flex:1;min-width:0}
 </style>
 </head>
 <body data-prog="gc">
 
 <div class="proto">
-  <span><b>Prototype</b> · sample names and numbers · demo date 1 Mar 2027, during Campaign 1 · changes reset on reload</span>
+  <span id="protoText"><b>Prototype</b> · sample names and numbers · demo date 1 Mar 2027, during Campaign 1 · changes reset on reload</span>
   <div id="who" class="row" style="gap:10px"></div>
 </div>
 
@@ -235,7 +238,8 @@ const ACCOUNTS = [
   {email:'id.coord@demo.test', pw:'ops-edition4', role:'team', scope:'ID', label:'Indonesia coordinator'}
 ];
 const CFG = window.GC_CONFIG || {};
-const LIVE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY); // live mode: real logins and shared data. Without config the app runs as a local demo.
+const DEMO = /[?&]demo(=|&|$)/.test(location.search); // ?demo shows the sample-data version with no login, even on the live site
+const LIVE = !DEMO && !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY); // live mode: real logins and shared data. Without config the app runs as a local demo.
 const LOGIN_ON = LIVE;
 const ED = '<span data-act="tap-ed">Edition 4</span>';
 const CAMPS = [
@@ -292,7 +296,7 @@ const S = {
   ],
   shots:[], notes:{nok:[{by:'Ops team', date:'27 Feb', text:'Thanks for sending your bank details. Your agreement is approved. Once the ID copy is fixed we can set up your first payment.'}]}, user:null, loginErr:'', loginEmail:'', ops:false, taps:[],
   role:'kol', tab:'home', teamTab:'paper', prog:'gc', logTab:'post', open:null,
-  scope:'ALL', coord:'nok', tm:'program', reminded:{}, followed:{}, lf:'nok', feedF:'All', evEdit:null,
+  scope:'ALL', coord:'nok', tm:'program', reminded:{}, followed:{}, lf:'nok', feedF:'All', evEdit:null, pedit:null, pinv:null, accounts:[],
   pevents:[
     {id:1, name:'Kickoff', kind:'Kickoff', country:'All', start:'2027-01-20', end:'2027-01-21', city:'Bangkok', venue:'Sample Hotel Bangkok', vlink:'https://maps.example.com/sample-hotel-bangkok', checkin:'Check-in from 14:00 on 19 Jan. Show your name at the front desk. Rooms are booked by the team. Bring your own ID for check-in.', alink:'https://example.com/kickoff-agenda', rlink:'', csos:'sessions', friends:false,
       agenda:[{t:'Day 1, 09:30', s:'Welcome and how the programme works', cso:false},{t:'Day 1, 13:30', s:'Meet the civil society organisations', cso:true},{t:'Day 2, 10:00', s:'Designing your campaign and KPIs', cso:false},{t:'Day 2, 15:00', s:'Open space: who can help whom', cso:true}]},
@@ -1226,6 +1230,109 @@ function vEvents(){
     <h2 class="h sec" style="margin:18px 0 6px">Ways to help</h2><p class="sub2">Quick asks from fellows. Tick it when you have done it.</p>${bad}${bo || '<div class="card"><p class="meta">No requests right now.</p></div>'}`;
 }
 
+/* ---------- people: profiles, photos, logins ---------- */
+const PH = {};
+function photoUrl(path){
+  if (!path || !LIVE || !SB) return '';
+  const c = PH[path];
+  if (c && (c.loading || c.exp > Date.now())) return c.url;
+  PH[path] = {url:c ? c.url : '', loading:true, exp:0};
+  SB.storage.from('people').createSignedUrl(path, 3600).then(r => { PH[path] = {url:(r.data && r.data.signedUrl) || '', loading:false, exp:Date.now() + 3300000}; renderSoon(); });
+  return PH[path].url;
+}
+function avatar(path, name){
+  const u = photoUrl(path), ini = String(name || '?').split(/\s+/).map(x => x[0] || '').join('').slice(0, 2).toUpperCase();
+  return u ? `<img src="${esc(u)}" alt="" width="64" height="64" style="border-radius:50%;object-fit:cover;flex:none">` : `<span aria-hidden="true" style="width:64px;height:64px;border-radius:50%;background:#DCE9E8;color:#14184B;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex:none">${esc(ini)}</span>`;
+}
+const HANDLE = {instagram:['Instagram','https://instagram.com/'], tiktok:['TikTok','https://tiktok.com/@'], facebook:['Facebook','https://facebook.com/'], youtube:['YouTube','https://youtube.com/@'], website:['Website','']};
+function handleLinks(h){
+  return Object.keys(HANDLE).filter(k => h && h[k]).map(k => { const v = String(h[k]).trim(); const url = /^https?:\/\//i.test(v) ? v : (HANDLE[k][1] ? HANDLE[k][1] + v.replace(/^@/, '') : 'https://' + v); return lnk(url, HANDLE[k][0]); }).join(' · ');
+}
+function resizeImage(file){
+  return new Promise((res, rej) => { const img = new Image(), u = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => b ? res(b) : rej(new Error('image')), 'image/jpeg', 0.85); };
+    img.onerror = () => rej(new Error('image')); img.src = u; });
+}
+function applyFellow(r){
+  let f = F.find(x => x.id === r.id);
+  if (!f) { f = {id:r.id, n:r.name, c:r.country, c5:[0,0,0,0,0], posts:0, pend:0}; F.push(f); if (S.paper && !S.paper[f.id]) S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); }
+  f.n = r.name || f.n; f.c = r.country || f.c; f.photo = r.photo || ''; f.bio = r.bio || ''; f.handles = r.handles || {};
+}
+async function loadAccounts(){ const r = await SB.from('profiles').select('id,email,label,role,country,fellow_id,cso_id,friend_id,active'); S.accounts = r.data || []; }
+async function fnError(error, data){
+  if (data && data.error) return data.error;
+  try { const j = await error.context.json(); if (j && j.error) return j.error; } catch (e) {}
+  return 'That did not work. Try again.';
+}
+async function ppSendInvite(body){
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email || '').trim())) { toast('Type a valid email address.'); return; }
+  if (!LIVE) { toast('Logins are created in the live portal.'); return; }
+  const {data, error} = await SB.functions.invoke('invite-user', {body:Object.assign({action:'invite', redirectTo:location.origin + location.pathname}, body)});
+  if (error || (data && data.error)) { toast(await fnError(error, data)); return; }
+  await loadAccounts(); S.pinv = null; render(); toast('Invite sent to ' + body.email.trim() + '. They choose a password from the email.');
+}
+async function ppToggle(id, action){
+  if (!LIVE) return;
+  const {data, error} = await SB.functions.invoke('invite-user', {body:{action, profile_id:id}});
+  if (error || (data && data.error)) { toast(await fnError(error, data)); return; }
+  await loadAccounts(); render(); toast(action === 'deactivate' ? 'Login switched off.' : 'Login switched on.');
+}
+const ppHandles = g => ({instagram:g('pp-ig'), tiktok:g('pp-tt'), facebook:g('pp-fb'), youtube:g('pp-yt'), website:g('pp-web')});
+function ppFile(){ const i = document.getElementById('pp-photo'); return i && i.files && i.files[0]; }
+async function ppUpload(path){ const blob = await resizeImage(ppFile()); const {error} = await SB.storage.from('people').upload(path, blob, {contentType:'image/jpeg', upsert:true}); if (error) throw error; return path; }
+async function ppSaveFellow(id){
+  const g = i => (document.getElementById(i) || {}).value || '', f = F.find(x => x.id === id);
+  const upd = {name:g('pp-name').trim(), bio:g('pp-bio'), handles:ppHandles(g)};
+  if (!upd.name) { toast('Add a name.'); return; }
+  let photo = f.photo || '';
+  try {
+    if (LIVE) {
+      if (ppFile()) { upd.photo = photo = await ppUpload('fellow/' + id + '/' + Date.now() + '.jpg'); }
+      const {error} = await SB.from('fellows').update(upd).eq('id', id); if (error) throw error;
+    }
+  } catch (e) { toast('Could not save. You may not have permission, or the photo did not upload.'); return; }
+  applyFellow(Object.assign({id, country:f.c, photo}, upd)); S.pedit = null; render(); toast('Saved.');
+}
+async function ppSaveCso(id){
+  const g = i => (document.getElementById(i) || {}).value || '', isNew = id === 'new';
+  const name = g('pp-name').trim(); if (!name) { toast('Add a name.'); return; }
+  const o = isNew ? {id:'c' + Date.now().toString(36), partners:[], country:S.tm === 'country' ? S.scope : (g('pp-country') || 'TH')} : S.csos.find(x => x.id === id);
+  o.name = name; o.focus = g('pp-focus'); o.about = g('pp-about'); o.handles = ppHandles(g);
+  if (isNew) S.csos.push(o);
+  if (LIVE && ppFile()) { try { await flush(); o.photo = await ppUpload('cso/' + o.id + '/' + Date.now() + '.jpg'); } catch (e) { toast('The photo did not upload. The rest is saved.'); } }
+  S.pedit = null; render(); if (!document.querySelector('.toast.show')) toast('Saved.');
+}
+function ppAccount(kind, ref){ return S.accounts.find(a => kind === 'fellow' ? a.fellow_id === ref : a.cso_id === ref); }
+function ppAccountLine(kind, ref, name, country, can){
+  if (!can) return '';
+  const a = ppAccount(kind, ref), key = kind + ':' + ref;
+  const line = a ? (a.active ? `Has a login · ${esc(a.email)}` : 'Login switched off') : 'No login yet';
+  const btn = a ? `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off login' : 'Switch on login'}</button>` : `<button type="button" class="btn ghost sm" data-act="pp-invite" data-v="${key}">Invite to the portal</button>`;
+  const form = S.pinv === key ? `<form data-form="pp-invite" data-role="${kind}" data-ref="${esc(ref)}" data-name="${esc(name)}" data-country="${country}" class="row" style="gap:8px;margin-top:8px"><input type="email" id="pp-email" placeholder="Their email" required style="flex:1"><button class="btn sm" type="submit">Send invite</button><button type="button" class="btn ghost sm" data-act="pp-cancel">Cancel</button></form><p class="note">They get an email with a link to choose their own password.</p>` : '';
+  return `<div class="row spread" style="margin-top:10px"><span class="meta">${line}</span>${btn}</div>${form}`;
+}
+function ppFields(o, handles){
+  const h = handles || {}, fld = (id, l, v, t) => `<label class="f">${l}<input type="text" id="${id}" value="${esc(v || '')}" ${t || ''}></label>`;
+  return `<div class="formgrid">${fld('pp-ig', 'Instagram', h.instagram, 'placeholder="@handle or link"')}${fld('pp-tt', 'TikTok', h.tiktok, 'placeholder="@handle or link"')}${fld('pp-fb', 'Facebook', h.facebook, 'placeholder="page name or link"')}${fld('pp-yt', 'YouTube', h.youtube, 'placeholder="@handle or link"')}${fld('pp-web', 'Website', h.website, 'placeholder="https://"')}</div>
+    ${LIVE ? '<label class="f">Photo<span class="hint">A square photo works best. It is shrunk before upload.</span><input type="file" id="pp-photo" accept="image/*"></label>' : '<p class="note">Photos can be added in the live portal.</p>'}`;
+}
+function vPeople(){
+  const team = S.role === 'team', prog = team && S.tm === 'program';
+  const canF = f => prog || (team && f.c === S.scope), canC = o => prog || (team && o.country === S.scope);
+  const fellows = F.map(f => {
+    if (S.pedit === 'f:' + f.id && canF(f)) return `<div class="card"><h2>Edit ${esc(f.n)}</h2><form data-form="pp-fellow" data-id="${f.id}" class="stack"><label class="f">Name<input type="text" id="pp-name" value="${esc(f.n)}" required></label><label class="f">About<span class="hint">A line or two for the other fellows, CSOs and partners.</span><textarea id="pp-bio">${esc(f.bio || '')}</textarea></label>${ppFields(f, f.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
+    return `<div class="card"><div class="pp-head">${avatar(f.photo, f.n)}<div class="grow"><b>${esc(f.n)}</b> <span class="tag">${f.c === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(f.handles) || ''}</div></div>${canF(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="f:${f.id}">Edit</button>` : ''}</div>
+      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}</div>`; }).join('');
+  const csoForm = o => { const n = o.id === 'new'; return `<div class="card"><h2>${n ? 'Add an organisation' : 'Edit ' + esc(o.name)}</h2><form data-form="pp-cso" data-id="${o.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="pp-name" value="${esc(o.name || '')}" required></label>${n && prog ? '<label class="f">Country<select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label>' : ''}</div><label class="f">What they work on<input type="text" id="pp-focus" value="${esc(o.focus || '')}"></label><label class="f">About<textarea id="pp-about">${esc(o.about || '')}</textarea></label>${ppFields(o, o.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`; };
+  const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
+      ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
+  const addC = team ? (S.pedit === 'c:new' ? csoForm({id:'new'}) : `<div class="card"><button type="button" class="btn" data-act="pp-edit" data-v="c:new">Add an organisation</button></div>`) : '';
+  const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, the social listening expert and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.role}${a.country ? ' · ' + a.country : ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ' · switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
+      <form data-form="pp-team" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name shown<input type="text" id="pp-label" required></label><label class="f">Email<input type="email" id="pp-email" required></label><label class="f">Role<select id="pp-role"><option value="country">Country coordinator</option><option value="listener">Social listening expert</option><option value="partner">Programme partner</option><option value="program">Program coordinator</option></select></label><label class="f">Country<span class="hint">Country coordinators only</span><select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
+  return `<div class="card"><h2>People</h2><p class="sub2">The fellows and organisations in the programme. ${team ? 'You can update profiles and photos' + (prog ? '.' : ' for your country.') : ''}</p></div>
+    <h2 class="h sec" style="margin:18px 0 6px">Fellows</h2>${fellows}<h2 class="h sec" style="margin:18px 0 6px">Civil society organisations</h2>${csos}${addC}${teamAcc}`;
+}
+
 function vOverviewBase(){
   const rows = F.filter(f => S.scope === 'ALL' || f.c === S.scope).map(f => {
     const posts = f.id === 'nok' ? S.posts.length : f.posts;
@@ -1273,7 +1380,7 @@ function render(){
     : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Program coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
-  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['events','Events'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['events','Events'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['events','Events'],['feed','Community'],['board','Leaderboard']];
+  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
   const cur = mine ? S.tab : S.teamTab;
   const need = openItems('nok').length;
   $('#tabs').innerHTML = tabs.map(t => { const n = t[0] === 'events' ? boostOpen() : t[0] === 'feed' ? feedOpen() : (fr || cs) ? 0 : kol ? (t[0] === 'paper' ? need : t[0] === 'insights' ? insightCount() : 0) : (t[0] === 'props' ? propsNeeded() : t[0] === 'mine' ? chaseCount() : t[0] === 'camps' ? flagCount() : 0);
@@ -1284,10 +1391,10 @@ function render(){
   $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? 'Log the posts you made for this campaign and their numbers.' : kol ? 'Log what you post, what you expected, and what you learned.' : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
   let html = '';
   if (cur === 'board') html = vBoard(S.prog);
-  else if (cs) html = {chome:vCsoHome, clog:vCsoLog, events:vEvents, feed:vFeed}[cur]();
-  else if (fr) html = {fhome:vFriendHome, flog:vFriendLog, events:vEvents, feed:vFeed}[cur]();
-  else if (kol) html = {home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, events:vEvents, feed:vFeed}[cur]();
-  else html = {events:vEvents, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
+  else if (cs) html = {chome:vCsoHome, clog:vCsoLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (fr) html = {fhome:vFriendHome, flog:vFriendLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (kol) html = {home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else html = {events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
   if (cur !== 'board' && S.prog === 'leap') { S.prog = 'gc'; document.body.dataset.prog = 'gc'; $('#ttl').textContent = 'The Good Chat'; $('#eyebrow').innerHTML = 'makesense Asia · ' + ED; }
   $('#view').innerHTML = html;
   if (LIVE) scheduleFlush();
@@ -1356,6 +1463,10 @@ document.addEventListener('click', e => {
   if (a === 'deck-set') { return; }
   if (a === 'lshare') { const L = S.listen[el.dataset.w]; (L[el.dataset.f] = L[el.dataset.f] || {})[S.camp] = Object.assign((L[el.dataset.f] || {})[S.camp] || {}, {status:'Shared', date:dstr(TODAY)}); render(); toast('Shared. ' + (el.dataset.f === 'nok' ? 'Thai Fellow 1 sees it on their campaign plan.' : 'The fellow will see it on their campaign plan.')); return; }
   if (a === 'lshare-cmp') { const o = S.listen.cmp[S.lf] = S.listen.cmp[S.lf] || {}; o.status = 'Shared'; o.date = dstr(TODAY); render(); toast('Shared.' + (S.lf === 'nok' ? ' Thai Fellow 1 sees it under Listening insights.' : '')); return; }
+  if (a === 'pp-edit') { S.pedit = v; S.pinv = null; render(); return; }
+  if (a === 'pp-cancel') { S.pedit = null; S.pinv = null; render(); return; }
+  if (a === 'pp-invite') { S.pinv = v; S.pedit = null; render(); return; }
+  if (a === 'pp-toggle') { ppToggle(el.dataset.id, v); return; }
   if (a === 'ev-edit') { S.evEdit = v === 'new' ? 'new' : Number(v); render(); return; }
   if (a === 'ev-cancel') { S.evEdit = null; render(); return; }
   if (a === 'ev-del') { S.pevents = S.pevents.filter(x => x.id !== Number(v)); S.evEdit = null; render(); toast('Event removed.'); return; }
@@ -1484,6 +1595,10 @@ document.addEventListener('submit', e => {
     if (!g2('bo-text').trim()) { toast('Say what you need.'); return; }
     S.boosts.unshift({id:Date.now(), by:S.user.label, ask:g2('bo-ask'), text:g2('bo-text').trim(), link:g2('bo-link'), due:g2('bo-due'), done:[]}); render(); toast('Sent to everyone on the board.');
   }
+  if (f === 'pp-fellow') { ppSaveFellow(e.target.dataset.id); return; }
+  if (f === 'pp-cso') { ppSaveCso(e.target.dataset.id); return; }
+  if (f === 'pp-invite') { const d = e.target.dataset; ppSendInvite({email:g('pp-email'), label:d.name, role:d.role, country:d.country, fellow_id:d.role === 'fellow' ? d.ref : null, cso_id:d.role === 'cso' ? d.ref : null}); return; }
+  if (f === 'pp-team') { ppSendInvite({email:g('pp-email'), label:g('pp-label'), role:g('pp-role'), country:g('pp-country')}); return; }
   if (f === 'feed-post') {
     const t = ((document.getElementById('fp-text') || {}).value || '').trim(); if (!t) { toast('Write something first.'); return; }
     S.feed.unshift({id:Date.now(), by:S.user.label, role:feedRole(), type:document.getElementById('fp-type').value, date:dstr(TODAY), text:t, r:{cheer:[], useful:[], join:[]}, comments:[]}); render(); toast('Posted.');
@@ -1610,6 +1725,7 @@ function blankLive(){
   S.org = {TH:{name:'', address:'', taxid:'', email:'', note:''}, ID:{name:'', address:'', taxid:'', email:'', note:''}};
   F.forEach(f => { S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); });
   S.listen = {pre:{}, post:{}, cmp:{}, bench:{}, data:{}, decks:{}, sec:{}};
+  S.accounts = []; S.pedit = null; S.pinv = null;
 }
 function applyRec(r, remove){
   const [t, n] = r.kind.split(':'), key = r.key, d = remove ? null : unwrap(r.data);
@@ -1625,6 +1741,7 @@ async function loadAll(){
   const {data, error} = await SB.from('records').select('*');
   if (error) throw error;
   (data || []).forEach(r => applyRec(r, false));
+  const fr = await SB.from('fellows').select('*'); (fr.data || []).forEach(applyFellow);
   LAST = {}; const c = collect(); Object.keys(c).forEach(id => { LAST[id] = stable(c[id].data); });
 }
 function scheduleFlush(){ if (S.live.phase !== 'ready') return; clearTimeout(FLUSH_T); FLUSH_T = setTimeout(flush, 500); }
@@ -1656,7 +1773,7 @@ function subscribe(){
     if (p.eventType === 'DELETE') { if (!(id in LAST)) return; delete LAST[id]; applyRec(r, true); renderSoon(); return; }
     const j = stable(r.data); if (LAST[id] === j) return;
     LAST[id] = j; applyRec(r, false); renderSoon();
-  }).subscribe();
+  }).on('postgres_changes', {event:'*', schema:'public', table:'fellows'}, p => { if (p.new && p.new.id) { applyFellow(p.new); renderSoon(); } }).subscribe();
 }
 function applyRole(p){
   S.live = {phase:'ready', msg:''}; S.scope = 'ALL'; S.tm = 'program'; S.prog = 'gc';
@@ -1671,7 +1788,7 @@ async function liveBoot(){
   render();
   if (!window.supabase) { S.live = {phase:'error', msg:'The sign-in library did not load. Check your connection and refresh.'}; render(); return; }
   SB = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
-  if (/type=recovery/.test(location.hash)) { S.live = {phase:'recover', msg:''}; render(); return; }
+  if (/type=(recovery|invite)/.test(location.hash)) { S.live = {phase:'recover', msg:''}; render(); return; }
   const {data} = await SB.auth.getSession();
   if (data && data.session) await liveEnter(); else { S.live = {phase:'login', msg:''}; render(); }
 }
@@ -1684,7 +1801,7 @@ async function liveEnter(){
     if (!prof || !prof.active) { S.user = null; S.live = {phase:'blocked', msg:'Your account is not set up yet. Ask the programme team to finish it.'}; render(); return; }
     PROFILE = prof;
     if (['fellow','friend','cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
-    blankLive(); await loadAll(); applyRole(prof); subscribe(); render();
+    blankLive(); await loadAll(); applyRole(prof); if (['program','country'].includes(prof.role)) await loadAccounts(); subscribe(); render();
   } catch (e) { S.user = null; S.live = {phase:'error', msg:'Something went wrong while opening the portal. Refresh and try again.'}; render(); }
 }
 async function liveLogin(email, pw){
@@ -1717,10 +1834,12 @@ function vLiveLogin(){
       <label class="row" style="gap:8px;font-size:13.5px"><input type="checkbox" data-act="showpw"> Show password</label>
       ${L.msg ? `<div class="alert need" role="alert" style="padding:12px 16px">${esc(L.msg)}</div>` : ''}
       <div class="row spread"><button class="btn" type="submit">Sign in</button><button class="btn ghost sm" type="button" data-act="forgot">Forgot password?</button></div></form>
-    <p class="note">Accounts are created by the programme team. If you cannot sign in, ask them.</p>`);
+    <p class="note">Accounts are created by the programme team. If you cannot sign in, ask them.</p><p class="note">Just looking? <a href="?demo">See the demo</a> (made-up data, no login).</p>`);
 }
 document.addEventListener('input', () => { if (LIVE) scheduleFlush(); });
 document.addEventListener('change', () => { if (LIVE) scheduleFlush(); });
+if (DEMO) { const t = document.getElementById('protoText'); t.innerHTML = '<b>DEMO PAGE</b> · This is a demo with made-up names and numbers, not the real portal. Nothing here is saved, and changes reset when you reload. Use the role menu to see each view.'; document.title = 'DEMO · ' + document.title; }
+else if (LIVE) { const t = document.getElementById('protoText'); t.textContent = 'The Good Chat portal · makesense Asia'; }
 if (LIVE) liveBoot(); else { if (!LOGIN_ON) S.user = FELLOW; render(); }
 </script>
 </body>

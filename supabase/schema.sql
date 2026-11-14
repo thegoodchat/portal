@@ -162,3 +162,62 @@ alter table public.records replica identity full;
 -- Make it the program coordinator (replace the email):
 --   insert into public.profiles (id, email, label, role)
 --   select id, email, 'Program coordinator', 'program' from auth.users where email = 'you@example.org';
+
+
+-- =====================================================================
+-- People: fellow and CSO profiles, photos, and who can create logins
+-- (added after the first version; safe to run on top of it)
+-- =====================================================================
+alter table public.fellows add column if not exists photo text;      -- storage path
+alter table public.fellows add column if not exists bio text;
+alter table public.fellows add column if not exists handles jsonb not null default '{}';
+
+-- Program coordinator manages every fellow; a country coordinator edits fellows in their own country.
+drop policy if exists fellows_program on public.fellows;
+create policy fellows_program on public.fellows for all
+  using ((select role from public.my_profile()) = 'program')
+  with check ((select role from public.my_profile()) = 'program');
+drop policy if exists fellows_country on public.fellows;
+create policy fellows_country on public.fellows for update
+  using ((select role from public.my_profile()) = 'country' and country = (select country from public.my_profile()))
+  with check ((select role from public.my_profile()) = 'country' and country = (select country from public.my_profile()));
+drop policy if exists fellows_read on public.fellows;
+create policy fellows_read on public.fellows for select using (exists (select 1 from public.my_profile()));
+
+-- Country coordinators can see the login accounts of fellows, CSOs and KOL friends in their country.
+drop policy if exists profiles_read_country on public.profiles;
+create policy profiles_read_country on public.profiles for select using (
+  (select role from public.my_profile()) = 'country'
+  and country = (select country from public.my_profile())
+  and role in ('fellow','cso','friend'));
+
+do $$ begin
+  alter publication supabase_realtime add table public.fellows;
+exception when duplicate_object then null; end $$;
+alter table public.fellows replica identity full;
+
+-- Photos live in a private storage bucket. Any signed-in person can view; coordinators upload.
+insert into storage.buckets (id, name, public) values ('people', 'people', false) on conflict (id) do nothing;
+
+create or replace function public.can_edit_photo(path text) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles; k text := split_part(path, '/', 1); r text := split_part(path, '/', 2); c text;
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null then return false; end if;
+  if p.role = 'program' then return true; end if;
+  if p.role <> 'country' then return false; end if;
+  if k = 'fellow' then select f.country into c from public.fellows f where f.id = r;
+  elsif k = 'cso' then select x.country into c from public.records x where x.kind = 'list:csos' and x.key = r;
+  else return false; end if;
+  return c is not null and c = p.country;
+end $$;
+
+drop policy if exists people_photos_read on storage.objects;
+create policy people_photos_read on storage.objects for select using (bucket_id = 'people' and exists (select 1 from public.my_profile()));
+drop policy if exists people_photos_insert on storage.objects;
+create policy people_photos_insert on storage.objects for insert with check (bucket_id = 'people' and public.can_edit_photo(name));
+drop policy if exists people_photos_update on storage.objects;
+create policy people_photos_update on storage.objects for update using (bucket_id = 'people' and public.can_edit_photo(name));
+drop policy if exists people_photos_delete on storage.objects;
+create policy people_photos_delete on storage.objects for delete using (bucket_id = 'people' and public.can_edit_photo(name));

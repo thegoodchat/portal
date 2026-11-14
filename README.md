@@ -39,7 +39,18 @@ Never put the `service_role` key in this repo or the site.
 3. GitHub: Settings > Pages > Build and deployment > Source: **GitHub Actions**. The workflow in `.github/workflows/pages.yml` publishes the site.
 4. Your site is at `https://<owner>.github.io/<repo>/`. Use that as the Site URL in Supabase step 4.
 
-### 3. Adding people
+### 3. Adding people (from the portal)
+Run the whole of `supabase/schema.sql` again (it is safe to re-run; it adds photos and the People rules), then deploy the invite function once:
+1. Supabase > Edge Functions > Deploy a new function > name it `invite-user` > paste `supabase/functions/invite-user/index.ts` > Deploy.
+2. Edge Functions > Secrets: add `SITE_URL` = your site address (for example `https://thegoodchat.github.io/portal/`).
+
+After that nobody needs the Supabase dashboard. In the portal, open **People**:
+- Program coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, the social listening expert and partners).
+- Country coordinator: the same for fellows, organisations and logins in their own country.
+- Invited people get an email, click the link and choose their own password.
+Fellow, KOL friend and organisation logins can be created now, but their own pages are still being built, so for now they see a short "still being built" message.
+
+### 3b. Adding people by hand (backup)
 For each person: Authentication > Users > Add user (email + temporary password, tick "Auto confirm"), then add a profile row.
 Roles: `program`, `country` (set country), `listener`, `partner`, `fellow` (set country and fellow_id), `friend`, `cso`.
 ```sql
@@ -48,6 +59,9 @@ select id, email, 'Thailand coordinator', 'country', 'TH' from auth.users where 
 ```
 Ask people to use "Forgot password" to set their own password the first time.
 To remove someone: `update public.profiles set active = false where email = '...';`
+
+## Demo page
+Anyone can open `https://thegoodchat.github.io/portal/demo.html` (or add `?demo` to the address) to click through every view with made-up names and numbers. No login, nothing is saved, and a banner says it is a demo. It never touches the real data. The sign-in page also links to it.
 
 ## How access works
 Every row of data lives in one table (`records`) with a kind and key. `kind_access` in `schema.sql` says which role can read or write each kind,
