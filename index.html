@@ -296,7 +296,7 @@ const S = {
   ],
   shots:[], notes:{nok:[{by:'Ops team', date:'27 Feb', text:'Thanks for sending your bank details. Your agreement is approved. Once the ID copy is fixed we can set up your first payment.'}]}, user:null, loginErr:'', loginEmail:'', ops:false, taps:[],
   role:'kol', tab:'home', teamTab:'paper', prog:'gc', logTab:'post', open:null,
-  scope:'ALL', coord:'nok', tm:'program', reminded:{}, followed:{}, lf:'nok', feedF:'All', evEdit:null, pedit:null, pinv:null, accounts:[],
+  scope:'ALL', coord:'nok', tm:'program', reminded:{}, followed:{}, lf:'nok', feedF:'All', slides:[], evEdit:null, pedit:null, pinv:null, accounts:[],
   pevents:[
     {id:1, name:'Kickoff', kind:'Kickoff', country:'All', start:'2027-01-20', end:'2027-01-21', city:'Bangkok', venue:'Sample Hotel Bangkok', vlink:'https://maps.example.com/sample-hotel-bangkok', checkin:'Check-in from 14:00 on 19 Jan. Show your name at the front desk. Rooms are booked by the team. Bring your own ID for check-in.', alink:'https://example.com/kickoff-agenda', rlink:'', csos:'sessions', friends:false,
       agenda:[{t:'Day 1, 09:30', s:'Welcome and how the programme works', cso:false},{t:'Day 1, 13:30', s:'Meet the civil society organisations', cso:true},{t:'Day 2, 10:00', s:'Designing your campaign and KPIs', cso:false},{t:'Day 2, 15:00', s:'Open space: who can help whom', cso:true}]},
@@ -1087,6 +1087,33 @@ function deckCard(){
   const d = S.listen.decks, vis = DECKS.filter(x => d[x.k] && (d[x.k].st === 'Shared' || d[x.k].st === 'Final'));
   return `<div class="card"><h2>Slides</h2>${vis.map(x => `<div class="item"><b>${x.t}</b>${d[x.k].link ? `<div class="meta">${esc(d[x.k].link)}</div>` : ''}</div>`).join('') || '<p class="meta">Slides from the social listening expert will appear here. Deck 1 comes before Campaign 1, deck 2 before Campaign 2, and deck 3 at the end.</p>'}<p class="note">The decks cover every fellow. Your pages are marked for you.</p></div>`;
 }
+/* ---------- slides: labelled links from the social listening expert ---------- */
+const SL_TYPES = ['Benchmark','Before a campaign','After a campaign','Comparison of both campaigns','Programme summary','Other'];
+function slTo(t){ return t === 'all' ? 'Everyone' : t === 'TH' ? 'Thailand' : t === 'ID' ? 'Indonesia' : ((F.find(f => f.id === t) || {}).n || t); }
+function slVisible(x){
+  if (S.role === 'kol' && LIVE) { const u = S.user || {}; const me = (PROFILE && PROFILE.fellow_id) || ''; return ['all', u.country, me].includes(x.to); }
+  if (S.role === 'partner') return ['all','TH','ID'].includes(x.to);
+  return true;
+}
+function slItem(x, del){
+  return `<div class="item"><div class="row spread"><div><b>${lnk(x.url, x.title)}</b><div class="meta">${esc(x.type || 'Slides')}${x.camp ? ' · Campaign ' + x.camp : ''} · For ${esc(slTo(x.to))}${x.date ? ' · Added ' + dd(x.date) : ''}</div></div>${del ? `<button type="button" class="btn ghost sm" data-act="sl-del" data-v="${x.id}" aria-label="Remove ${esc(x.title)}">Remove</button>` : ''}</div></div>`;
+}
+function vSlides(){
+  const list = S.slides.filter(slVisible);
+  return `<div class="card"><h2>Slides and presentations</h2><p class="sub2">Links shared by the social listening expert. Each one says what it is and who it is for.</p>${list.map(x => slItem(x, false)).join('') || '<p class="meta">Nothing shared yet. Slides will appear here when the social listening expert adds them.</p>'}</div>`;
+}
+function slEditor(){
+  const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
+  return `<div class="card"><h2>Links to your presentations</h2><p class="sub2">Add a link with a clear label. Fellows, coordinators and programme partners see it on their Slides tab. Choose who each one is for.</p>
+    ${S.slides.map(x => slItem(x, true)).join('') || '<p class="meta">No links yet.</p>'}
+    <form data-form="sl-add" class="stack" style="margin-top:14px"><div class="formgrid">
+      <label class="f">Label<span class="hint">For example: Benchmark deck, Thailand</span><input type="text" id="sl-title" required></label>
+      <label class="f">Link<span class="hint">Google Slides, Drive or any web link</span><input type="url" id="sl-url" placeholder="https://" required></label>
+      <label class="f">Type<select id="sl-type">${SL_TYPES.map(t => opt(t, t)).join('')}</select></label>
+      <label class="f">For<select id="sl-to">${opt('all', 'Everyone')}${opt('TH', 'Thailand')}${opt('ID', 'Indonesia')}${F.map(f => opt(f.id, f.n)).join('')}</select></label>
+      <label class="f">Campaign<select id="sl-camp">${opt('0', 'Not specific')}${opt('1', 'Campaign 1')}${opt('2', 'Campaign 2')}</select></label></div>
+      <div><button class="btn" type="submit">Add link</button></div></form></div>`;
+}
 function vLDeck(){
   const cards = DECKS.map(x => {
     const dd = S.listen.decks[x.k] || {st:'Not started', link:''}, due = S.listen.decks[x.k] && S.listen.decks[x.k].due || x.due;
@@ -1095,7 +1122,7 @@ function vLDeck(){
     return `<div class="card"><div class="row spread"><div><h2>${x.t}</h2><p class="sub2" style="margin:0">${x.d}</p></div><span class="meta">Due ${dstr(new Date(due + 'T00:00:00'))}</span></div>
       <div class="formgrid" style="margin-top:10px"><label class="f">Status<select data-act="deck-st" data-v="${x.k}">${DECK_ST.map(y => `<option ${dd.st === y ? 'selected' : ''}>${y}</option>`).join('')}</select></label><label class="f">Link<input type="text" data-act="deck-link" data-v="${x.k}" value="${esc(dd.link)}" placeholder="Paste the slides link"></label></div>
       <h3 style="margin:14px 0 4px">What goes in</h3><div class="tw"><table><thead><tr><th>Section</th><th>From the portal</th><th>In the deck</th></tr></thead><tbody>${rows}</tbody></table></div></div>`; }).join('');
-  return `<div class="card"><h2>Slides</h2><p class="sub2">Three decks across the programme, each with a section for the programme, each country and each fellow. Fellows see the deck link once it is Shared or Final. Partners see the same.</p></div>${cards}`;
+  return slEditor() + `<div class="card"><h2>Deck tracker</h2><p class="sub2">Three decks across the programme, each with a section for the programme, each country and each fellow. Fellows see the deck link once it is Shared or Final. Partners see the same.</p></div>${cards}`;
 }
 
 const CIVIC = {mind:['Share with others','Mothers swap one energy-saving habit and share it with another household','Households who try the habit'], pim:['Switch or install','Neighbours compare quotes for rooftop solar together','Households who ask for a quote'], ton:['Attend an event','Community dance night that ends with a solar pledge','People who sign the pledge'], sari:['Contact a decision-maker','Mothers ask the local government for a clearer rooftop solar process','Letters sent'], dimas:['Share with others','Boardgame nights where families plan a low-carbon home','Households who play and share'], ayu:['Sign a petition','Petition for affordable solar loans for households','Signatures'], raka:['Switch or install','Group ride that ends with a swap to energy-saving bulbs','Bulbs swapped']};
@@ -1380,7 +1407,7 @@ function render(){
     : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Program coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
-  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
+  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['slides','Slides'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['people','People'],['feed','Community']] : kol && LIVE ? [['slides','Slides'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['slides','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['slides','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
   const cur = mine ? S.tab : S.teamTab;
   const need = openItems('nok').length;
   $('#tabs').innerHTML = tabs.map(t => { const n = t[0] === 'events' ? boostOpen() : t[0] === 'feed' ? feedOpen() : (fr || cs) ? 0 : kol ? (t[0] === 'paper' ? need : t[0] === 'insights' ? insightCount() : 0) : (t[0] === 'props' ? propsNeeded() : t[0] === 'mine' ? chaseCount() : t[0] === 'camps' ? flagCount() : 0);
@@ -1388,13 +1415,13 @@ function render(){
   const leap = S.prog === 'leap' && cur === 'board';
   $('#ttl').textContent = leap ? 'Leap!' : 'The Good Chat';
   $('#eyebrow').innerHTML = leap ? 'makesense Asia · KLIK' : 'makesense Asia · ' + ED;
-  $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? 'Log the posts you made for this campaign and their numbers.' : kol ? 'Log what you post, what you expected, and what you learned.' : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
+  $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? 'Log the posts you made for this campaign and their numbers.' : kol ? (LIVE ? 'Slides, events and the community space. Your own campaign pages are coming.' : 'Log what you post, what you expected, and what you learned.') : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
   let html = '';
   if (cur === 'board') html = vBoard(S.prog);
   else if (cs) html = {chome:vCsoHome, clog:vCsoLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else if (fr) html = {fhome:vFriendHome, flog:vFriendLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else if (kol) html = {home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else html = {events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
+  else if (kol) html = {slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else html = {events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
   if (cur !== 'board' && S.prog === 'leap') { S.prog = 'gc'; document.body.dataset.prog = 'gc'; $('#ttl').textContent = 'The Good Chat'; $('#eyebrow').innerHTML = 'makesense Asia · ' + ED; }
   $('#view').innerHTML = html;
   if (LIVE) scheduleFlush();
@@ -1463,6 +1490,7 @@ document.addEventListener('click', e => {
   if (a === 'deck-set') { return; }
   if (a === 'lshare') { const L = S.listen[el.dataset.w]; (L[el.dataset.f] = L[el.dataset.f] || {})[S.camp] = Object.assign((L[el.dataset.f] || {})[S.camp] || {}, {status:'Shared', date:dstr(TODAY)}); render(); toast('Shared. ' + (el.dataset.f === 'nok' ? 'Thai Fellow 1 sees it on their campaign plan.' : 'The fellow will see it on their campaign plan.')); return; }
   if (a === 'lshare-cmp') { const o = S.listen.cmp[S.lf] = S.listen.cmp[S.lf] || {}; o.status = 'Shared'; o.date = dstr(TODAY); render(); toast('Shared.' + (S.lf === 'nok' ? ' Thai Fellow 1 sees it under Listening insights.' : '')); return; }
+  if (a === 'sl-del') { S.slides = S.slides.filter(x => String(x.id) !== String(v)); render(); return; }
   if (a === 'pp-edit') { S.pedit = v; S.pinv = null; render(); return; }
   if (a === 'pp-cancel') { S.pedit = null; S.pinv = null; render(); return; }
   if (a === 'pp-invite') { S.pinv = v; S.pedit = null; render(); return; }
@@ -1588,12 +1616,18 @@ document.addEventListener('submit', e => {
   if (f === 'ce-add') {
     const g2 = id => (document.getElementById(id) || {}).value || '';
     if (!g2('ce-name').trim()) { toast('Give it a name.'); return; }
-    S.cevents.push({id:Date.now(), by:S.user.label, country:S.role === 'kol' ? 'TH' : (S.scope === 'ALL' ? 'TH' : S.scope), name:g2('ce-name').trim(), type:g2('ce-type'), date:g2('ce-date'), place:g2('ce-place'), link:g2('ce-link'), note:g2('ce-note'), going:[]}); render(); toast('Added to the board.');
+    S.cevents.push({id:Date.now(), by:S.user.label, country:S.role === 'kol' ? ((S.user && S.user.country) || 'TH') : (S.scope === 'ALL' ? 'TH' : S.scope), name:g2('ce-name').trim(), type:g2('ce-type'), date:g2('ce-date'), place:g2('ce-place'), link:g2('ce-link'), note:g2('ce-note'), going:[]}); render(); toast('Added to the board.');
   }
   if (f === 'bo-add') {
     const g2 = id => (document.getElementById(id) || {}).value || '';
     if (!g2('bo-text').trim()) { toast('Say what you need.'); return; }
     S.boosts.unshift({id:Date.now(), by:S.user.label, ask:g2('bo-ask'), text:g2('bo-text').trim(), link:g2('bo-link'), due:g2('bo-due'), done:[]}); render(); toast('Sent to everyone on the board.');
+  }
+  if (f === 'sl-add') {
+    const url = g('sl-url'), title = g('sl-title');
+    if (!title) { toast('Add a label so people know what the link is.'); return; }
+    if (!/^https?:\/\//i.test(url)) { toast('Paste the full link, starting with https://'); return; }
+    S.slides.unshift({id:Date.now(), title, url, type:g('sl-type'), to:g('sl-to'), camp:Number(g('sl-camp')) || 0, date:iso(TODAY), by:S.user.label}); render(); toast('Added. The people it is for can open it now.'); return;
   }
   if (f === 'pp-fellow') { ppSaveFellow(e.target.dataset.id); return; }
   if (f === 'pp-cso') { ppSaveCso(e.target.dataset.id); return; }
@@ -1701,7 +1735,7 @@ document.addEventListener('submit', e => {
 /* ---------- live mode: real logins and shared, real-time data ---------- */
 let SB = null, PROFILE = null, LAST = {}, FLUSH_T = null, RENDER_T = null, CH = null;
 S.live = {phase:'loading', msg:''};
-const LISTS = ['pevents','cevents','boosts','feed','csos','support','asks'];
+const LISTS = ['pevents','cevents','boosts','feed','csos','support','asks','slides'];
 const MAPS = ['paper','notes','org','reminded','followed'];
 const LISTEN2 = ['pre','post'], LISTEN1 = ['bench','cmp','data','decks','sec'];
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -1781,7 +1815,8 @@ function applyRole(p){
   else if (p.role === 'country') { S.role = 'team'; S.tm = 'country'; S.scope = p.country; S.teamTab = 'mine'; S.coord = (F.find(f => f.c === p.country) || F[0]).id; }
   else if (p.role === 'listener') { S.role = 'listener'; S.teamTab = 'lbench'; }
   else if (p.role === 'partner') { S.role = 'partner'; S.teamTab = 'pimpact'; }
-  S.user = {role:S.role, label:p.label, scope:S.scope};
+  else if (p.role === 'fellow') { S.role = 'kol'; S.tab = 'slides'; S.scope = p.country; }
+  S.user = {role:S.role, label:p.label, scope:S.scope, country:p.country};
   S.lf = 'nok';
 }
 async function liveBoot(){
@@ -1800,7 +1835,7 @@ async function liveEnter(){
     if (error) throw error;
     if (!prof || !prof.active) { S.user = null; S.live = {phase:'blocked', msg:'Your account is not set up yet. Ask the programme team to finish it.'}; render(); return; }
     PROFILE = prof;
-    if (['fellow','friend','cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
+    if (['friend','cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
     blankLive(); await loadAll(); applyRole(prof); if (['program','country'].includes(prof.role)) await loadAccounts(); subscribe(); render();
   } catch (e) { S.user = null; S.live = {phase:'error', msg:'Something went wrong while opening the portal. Refresh and try again.'}; render(); }
 }

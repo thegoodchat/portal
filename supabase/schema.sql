@@ -77,7 +77,13 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   -- civil society organisations and their support
   ('list:csos','program','all','all'),('list:csos','country','country','country'),('list:csos','partner','all','none'),
   ('list:support','program','all','all'),('list:support','country','country','none'),('list:support','partner','all','none'),
-  ('list:asks','program','all','all'),('list:asks','country','country','none');
+  ('list:asks','program','all','all'),('list:asks','country','country','none'),
+  -- labelled links to the expert's slides (fellows and partners only see ones meant for them)
+  ('list:slides','program','all','all'),('list:slides','listener','all','all'),('list:slides','country','all','none'),
+  ('list:slides','partner','all','none'),('list:slides','fellow','all','none'),
+  -- fellows: see events, the community board and organisations; post to the board and the events board
+  ('list:pevents','fellow','all','none'),('list:cevents','fellow','all','all'),('list:boosts','fellow','all','all'),
+  ('list:feed','fellow','all','all'),('list:csos','fellow','all','none');
 
 -- ---------- helpers ----------
 create or replace function public.my_profile() returns public.profiles
@@ -96,6 +102,9 @@ begin
   sc := case when want_write then a.write_scope else a.read_scope end;
   -- partners see only decks that are Shared or Final
   if p.role = 'partner' and k = 'listen:decks' and coalesce(rec->>'st','') not in ('Shared','Final') then return false; end if;
+  -- slide links: fellows see their own, their country's and everyone's; partners see programme-wide ones
+  if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'), coalesce(p.fellow_id,'-')) then return false; end if;
+  if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
   return case sc
     when 'all' then true
     when 'country' then rc is not null and rc = p.country
@@ -221,3 +230,11 @@ drop policy if exists people_photos_update on storage.objects;
 create policy people_photos_update on storage.objects for update using (bucket_id = 'people' and public.can_edit_photo(name));
 drop policy if exists people_photos_delete on storage.objects;
 create policy people_photos_delete on storage.objects for delete using (bucket_id = 'people' and public.can_edit_photo(name));
+
+
+-- Make the tables reachable by signed-in users even if "Automatically expose new tables" was switched off.
+-- Row Level Security (enabled above) still decides which rows each person can see or change.
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant all on all tables in schema public to service_role;
+grant execute on all functions in schema public to authenticated, service_role;

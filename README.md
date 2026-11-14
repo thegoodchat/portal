@@ -48,7 +48,9 @@ After that nobody needs the Supabase dashboard. In the portal, open **People**:
 - Program coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, the social listening expert and partners).
 - Country coordinator: the same for fellows, organisations and logins in their own country.
 - Invited people get an email, click the link and choose their own password.
-Fellow, KOL friend and organisation logins can be created now, but their own pages are still being built, so for now they see a short "still being built" message.
+Fellow logins now open a first page with Slides, Events, People and Community. Their own campaign pages are still being built. KOL friend and organisation logins can be created, but see a short "still being built" message.
+
+**Slides:** the social listening expert adds labelled links on the Slides tab (label, link, type, who it is for). Fellows see links meant for everyone, their country or themselves; partners see programme-wide ones; coordinators see all. Run `schema.sql` again after updating.
 
 ### 3b. Adding people by hand (backup)
 For each person: Authentication > Users > Add user (email + temporary password, tick "Auto confirm"), then add a profile row.
