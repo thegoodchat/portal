@@ -72,14 +72,24 @@ Every row of data lives in one table (`records`) with a kind and key. `kind_acce
 and whether that is all rows, only their country, or only their own. Postgres enforces it, so hiding a button in the page is not what protects the data.
 Changing who can see what means editing the `kind_access` rows, not the app.
 
+## Fellow pages and insight screenshots
+Each fellow's campaign setup, KPIs, plan, posts with reflections, events, collaborators and KOL friends are saved in Supabase under that fellow
+(kinds `fd:*`). Fellows see only their own. Their country coordinator and the programme coordinator can read them, the social listening expert can
+read posts, plans, setup and KPIs, and partners see only totals. A **Posts** tab shows coordinators and the expert every post with its numbers, reflection and screenshots.
+
+Insight screenshots go to a private storage bucket called `insights`, resized to about 1600 px, at `<fellow id>/<post id>/`. The post record keeps only the file name.
+Who can open them: the fellow, the coordinator of that fellow's country, the programme coordinator and the social listening expert. Not partners or other fellows.
+Run the latest `supabase/schema.sql` once to create the bucket and its rules (safe to run again).
+
 ## Known limits (first version)
 - Programme partners cannot read events, so their Events tab is empty.
-- Fellow, friend and CSO accounts are blocked until their pages are built.
+- Fellows can log in and use their pages. KOL friend pages and CSO pages are not live yet (CSO accounts are still blocked; friends see masterclasses, events and the community).
+- Partners cannot see plans, KOL friend details or screenshots. Their Impact numbers count fellows' own posts, events and KPIs only.
 - The feed lets any signed-in team member edit any post (needed for reactions and replies). Moderation is by coordinators.
-- Seeing "sample data" in tabs such as Campaign plans, Leaderboard and the Impact numbers is expected: those use built-in samples until fellow data is live.
+- The Leaderboard and some benchmark charts still use built-in sample scores until real posts exist.
 - Passwords are handled by Supabase. Consider enabling multi-factor sign-in for coordinators.
 
 ## Next phases
-1. Per-fellow storage and fellow pages (plans, posts, KPIs, KOL friends, suppliers, screenshots in Supabase Storage).
+1. KOL friend logging pages (a friend's own posts), CSO pages.
 2. KOL friend and CSO pages with row-level limits, including session-level agenda filtering for CSOs.
 3. In-app invites (Edge Function), email notifications for event changes, change history.

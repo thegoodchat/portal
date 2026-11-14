@@ -90,7 +90,19 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   ('list:classes','fellow','all','none'),('list:classes','friend','all','none'),('list:classes','partner','all','none'),
   -- country coordinators can add and rearrange slides; KOL friends see slides marked for them
   ('list:slides','friend','all','none'),
-  ('list:pevents','friend','all','none'),('list:cevents','friend','all','none'),('list:boosts','friend','all','none'),('list:feed','friend','all','all');
+  ('list:pevents','friend','all','none'),('list:cevents','friend','all','none'),('list:boosts','friend','all','none'),('list:feed','friend','all','all'),
+  -- each fellow's own campaign work: setup, KPIs, plan, posts with reflections, events, collaborators, KOL friends
+  ('fd:posts','fellow','own','own'),('fd:posts','country','country','none'),('fd:posts','program','all','all'),('fd:posts','listener','all','none'),('fd:posts','partner','all','none'),
+  ('fd:events','fellow','own','own'),('fd:events','country','country','none'),('fd:events','program','all','all'),('fd:events','listener','all','none'),('fd:events','partner','all','none'),
+  ('fd:collabs','fellow','own','own'),('fd:collabs','country','country','none'),('fd:collabs','program','all','all'),
+  ('fd:friends','fellow','own','own'),('fd:friends','country','country','none'),('fd:friends','program','all','all'),
+  ('fd:plan','fellow','own','own'),('fd:plan','country','country','country'),('fd:plan','program','all','all'),('fd:plan','listener','all','none'),
+  ('fd:setup','fellow','own','own'),('fd:setup','country','country','none'),('fd:setup','program','all','all'),('fd:setup','listener','all','none'),('fd:setup','partner','all','none'),
+  ('fd:kpis','fellow','own','own'),('fd:kpis','country','country','none'),('fd:kpis','program','all','all'),('fd:kpis','listener','all','none'),('fd:kpis','partner','all','none'),
+  -- fellows see what the expert has shared with them, and their own paperwork status and notes
+  ('listen:pre','fellow','own','none'),('listen:post','fellow','own','none'),('listen:cmp','fellow','own','none'),('listen:bench','fellow','own','none'),('listen:data','fellow','own','none'),
+  ('map:paper','fellow','own','none'),('map:notes','fellow','own','none'),
+  ('list:asks','fellow','own','own'),('list:support','fellow','own','none');
 
 -- ---------- helpers ----------
 create or replace function public.my_profile() returns public.profiles
@@ -113,6 +125,9 @@ begin
   if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'), coalesce(p.fellow_id,'-')) then return false; end if;
   if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'fellows','true') = 'false' then return false; end if;
   if k = 'list:slides' and p.role = 'friend' and (coalesce(rec->>'friends','false') <> 'true' or coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'))) then return false; end if;
+  -- fellows see expert write-ups only once they are shared, and a benchmark only once confirmed
+  if p.role = 'fellow' and k in ('listen:pre','listen:post','listen:cmp') and coalesce(rec->>'status','') <> 'Shared' then return false; end if;
+  if p.role = 'fellow' and k = 'listen:bench' and coalesce(rec->>'st','') <> 'Confirmed' then return false; end if;
   if k = 'list:pevents' and p.role = 'friend' and coalesce(rec->>'friends','false') not in ('true') then return false; end if;
   if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
   return case sc
@@ -266,3 +281,34 @@ drop policy if exists slide_files_update on storage.objects;
 create policy slide_files_update on storage.objects for update using (bucket_id = 'slides' and public.can_manage_slides());
 drop policy if exists slide_files_delete on storage.objects;
 create policy slide_files_delete on storage.objects for delete using (bucket_id = 'slides' and public.can_manage_slides());
+
+
+-- Insight screenshots from posts. Private bucket; files sit under <fellow id>/<post id>/.
+-- Read: the fellow, the coordinator of that fellow's country, the programme coordinator and the social listening expert.
+-- Not partners, not other fellows. Write and delete: the fellow and the programme coordinator.
+insert into storage.buckets (id, name, public) values ('insights', 'insights', false) on conflict (id) do nothing;
+create or replace function public.can_insight(path text, want_write boolean) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles; fid text; fc text;
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null then return false; end if;
+  fid := split_part(path, '/', 1);
+  if p.role = 'program' then return true; end if;
+  if p.role = 'fellow' then return p.fellow_id is not null and p.fellow_id = fid; end if;
+  if want_write then return false; end if;
+  if p.role = 'listener' then return true; end if;
+  if p.role = 'country' then
+    select country into fc from public.fellows where id = fid;
+    return fc is not null and fc = p.country;
+  end if;
+  return false;
+end $$;
+drop policy if exists insight_files_read on storage.objects;
+create policy insight_files_read on storage.objects for select using (bucket_id = 'insights' and public.can_insight(name, false));
+drop policy if exists insight_files_insert on storage.objects;
+create policy insight_files_insert on storage.objects for insert with check (bucket_id = 'insights' and public.can_insight(name, true));
+drop policy if exists insight_files_update on storage.objects;
+create policy insight_files_update on storage.objects for update using (bucket_id = 'insights' and public.can_insight(name, true));
+drop policy if exists insight_files_delete on storage.objects;
+create policy insight_files_delete on storage.objects for delete using (bucket_id = 'insights' and public.can_insight(name, true));
