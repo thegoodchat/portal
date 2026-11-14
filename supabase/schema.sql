@@ -193,9 +193,9 @@ exception when duplicate_object then null; end $$;
 alter table public.records replica identity full;
 
 -- ---------- after you create the first account in Authentication > Users ----------
--- Make it the program coordinator (replace the email):
+-- Make it the programme coordinator (replace the email):
 --   insert into public.profiles (id, email, label, role)
---   select id, email, 'Program coordinator', 'program' from auth.users where email = 'you@example.org';
+--   select id, email, 'Programme coordinator', 'program' from auth.users where email = 'you@example.org';
 
 
 -- =====================================================================
@@ -206,7 +206,7 @@ alter table public.fellows add column if not exists photo text;      -- storage 
 alter table public.fellows add column if not exists bio text;
 alter table public.fellows add column if not exists handles jsonb not null default '{}';
 
--- Program coordinator manages every fellow; a country coordinator edits fellows in their own country.
+-- Programme coordinator manages every fellow; a country coordinator edits fellows in their own country.
 drop policy if exists fellows_program on public.fellows;
 create policy fellows_program on public.fellows for all
   using ((select role from public.my_profile()) = 'program')

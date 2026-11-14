@@ -1,5 +1,5 @@
 // Edge Function: lets coordinators create and switch off logins without touching the database.
-// Program coordinator: any role. Country coordinator: fellows, CSOs and KOL friends in their own country.
+// Programme coordinator: any role. Country coordinator: fellows, CSOs and KOL friends in their own country.
 // Deploy: Supabase dashboard > Edge Functions > Deploy a new function > paste this file, name it "invite-user".
 // Set one secret: SITE_URL = your site address, e.g. https://thegoodchat.github.io/portal/
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

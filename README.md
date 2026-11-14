@@ -9,7 +9,7 @@ Money, ID copies and invoices stay in Google Sheets and a restricted Drive folde
 
 ## What works in this first version
 
-Live and shared in real time: program coordinator, country coordinators, social listening expert, programme partners.
+Live and shared in real time: programme coordinator, country coordinators, social listening expert, programme partners.
 They can enter paperwork status and notes, organisation invoice details, benchmarks, listening briefs and analysis, deck status,
 programme events (agenda, hotel, check-in), the events board, ways to help, and the community feed.
 
@@ -24,10 +24,10 @@ Fellow campaign data (plans, posts, KPIs, KOL friends, suppliers) is the next ph
 3. Authentication > Providers > Email: keep enabled. Turn **off** "Allow new users to sign up" (Authentication > Sign In / Providers, or Settings) so only people you add can log in.
 4. Authentication > URL Configuration: set Site URL to your published site address (below) and add it to Redirect URLs.
 5. Authentication > Users > Add user: create your own account with a strong password.
-6. SQL Editor: make it the program coordinator (replace the email):
+6. SQL Editor: make it the programme coordinator (replace the email):
    ```sql
    insert into public.profiles (id, email, label, role)
-   select id, email, 'Program coordinator', 'program' from auth.users where email = 'you@example.org';
+   select id, email, 'Programme coordinator', 'program' from auth.users where email = 'you@example.org';
    ```
 7. Project settings > API: copy the **Project URL** and the **anon public** key.
 
@@ -45,14 +45,14 @@ Run the whole of `supabase/schema.sql` again (it is safe to re-run; it adds phot
 2. Edge Functions > Secrets: add `SITE_URL` = your site address (for example `https://thegoodchat.github.io/portal/`).
 
 After that nobody needs the Supabase dashboard. In the portal, open **People**:
-- Program coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, the social listening expert and partners).
+- Programme coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, the social listening expert and partners).
 - Country coordinator: the same for fellows, organisations and logins in their own country.
 - Invited people get an email, click the link and choose their own password.
 Fellow logins now open a first page with Slides, Events, People and Community. Their own campaign pages are still being built. KOL friend and organisation logins can be created, but see a short "still being built" message.
 
-**Campaign dates:** the program coordinator sets them on the Campaigns tab. Until then the portal shows "Dates to be confirmed".
+**Campaign dates:** the programme coordinator sets them on the Campaigns tab. Until then the portal shows "Dates to be confirmed".
 
-**Masterclasses and slides:** there is one masterclass a month, January to July. Program and country coordinators set them up on the **Masterclasses** tab (one click creates the seven slots; add a date, topic and join link to each). The social listening expert, country coordinators and the program coordinator can add slides, as a link or an uploaded PDF or PowerPoint (up to 45 MB). Coordinators can reorder the slides in each masterclass and tick whether fellows and/or KOL friends see each one. Fellows and KOL friends open the tab and see only what is meant for them, in that order. KOL friends get a login from **People > KOL friends**. Run `schema.sql` again after updating, and redeploy the `invite-user` function.
+**Masterclasses and slides:** there is one masterclass a month, January to July. Programme and country coordinators set them up on the **Masterclasses** tab (one click creates the seven slots; add a date, topic and join link to each). The social listening expert, country coordinators and the programme coordinator can add slides, as a link or an uploaded PDF or PowerPoint (up to 45 MB). Coordinators can reorder the slides in each masterclass and tick whether fellows and/or KOL friends see each one. Fellows and KOL friends open the tab and see only what is meant for them, in that order. KOL friends get a login from **People > KOL friends**. Run `schema.sql` again after updating, and redeploy the `invite-user` function.
 
 ### 3b. Adding people by hand (backup)
 For each person: Authentication > Users > Add user (email + temporary password, tick "Auto confirm"), then add a profile row.
