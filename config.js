@@ -2,6 +2,6 @@
 // The anon key is meant to be public: your data is protected by the access rules in supabase/schema.sql.
 // Leave both empty to run the local demo with sample data.
 window.GC_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
+  SUPABASE_URL: 'https://navvnnjpelccehdaooxg.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_g84xf0Hcgzz-BmcR6pA23Q_NWJwzA3c'
 };
