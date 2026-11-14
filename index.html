@@ -296,7 +296,15 @@ const S = {
   ],
   shots:[], notes:{nok:[{by:'Ops team', date:'27 Feb', text:'Thanks for sending your bank details. Your agreement is approved. Once the ID copy is fixed we can set up your first payment.'}]}, user:null, loginErr:'', loginEmail:'', ops:false, taps:[],
   role:'kol', tab:'home', teamTab:'paper', prog:'gc', logTab:'post', open:null,
-  scope:'ALL', coord:'nok', tm:'program', reminded:{}, followed:{}, lf:'nok', feedF:'All', slides:[], evEdit:null, pedit:null, pinv:null, accounts:[],
+  scope:'ALL', coord:'nok', tm:'program', reminded:{}, followed:{}, lf:'nok', feedF:'All', slides:[
+    {id:1, title:'Masterclass 1 · Why energy is everyone\'s business (slides)', url:'https://example.com/mc1', type:'Masterclass', to:'all', camp:0, class:1, order:1, fellows:true, friends:true, date:'2027-01-15', by:'Sample'},
+    {id:2, title:'Masterclass 1 · Worksheet for fellows', url:'https://example.com/mc1-work', type:'Masterclass', to:'all', camp:0, class:1, order:2, fellows:true, friends:false, date:'2027-01-15', by:'Sample'},
+    {id:3, title:'Masterclass 2 · Telling a story in 60 seconds', url:'https://example.com/mc2', type:'Masterclass', to:'all', camp:0, class:2, order:1, fellows:true, friends:true, date:'2027-02-19', by:'Sample'}],
+  classes:[
+    {id:1, name:'Masterclass 1', month:'2027-01', date:'2027-01-15', topic:'Why energy is everyone\'s business', link:'https://example.com/join-1'},
+    {id:2, name:'Masterclass 2', month:'2027-02', date:'2027-02-19', topic:'Storytelling for civic action', link:''},
+    {id:3, name:'Masterclass 3', month:'2027-03', date:'', topic:'', link:''}],
+  cledit:null, camps:{}, evEdit:null, pedit:null, pinv:null, accounts:[],
   pevents:[
     {id:1, name:'Kickoff', kind:'Kickoff', country:'All', start:'2027-01-20', end:'2027-01-21', city:'Bangkok', venue:'Sample Hotel Bangkok', vlink:'https://maps.example.com/sample-hotel-bangkok', checkin:'Check-in from 14:00 on 19 Jan. Show your name at the front desk. Rooms are booked by the team. Bring your own ID for check-in.', alink:'https://example.com/kickoff-agenda', rlink:'', csos:'sessions', friends:false,
       agenda:[{t:'Day 1, 09:30', s:'Welcome and how the programme works', cso:false},{t:'Day 1, 13:30', s:'Meet the civil society organisations', cso:true},{t:'Day 2, 10:00', s:'Designing your campaign and KPIs', cso:false},{t:'Day 2, 15:00', s:'Open space: who can help whom', cso:true}]},
@@ -422,7 +430,7 @@ const names = ids => ids.map(id => F.find(f => f.id === id).n).join(' and ');
 function vSetup(){
   const c = S.camp, cm = CAMPS[c-1], su = S.setup[c];
   const live = TODAY >= cm.start && TODAY <= cm.end;
-  const st = TODAY < cm.start ? 'Starts in ' + Math.ceil((cm.start - TODAY) / 864e5) + ' days' : (live ? 'Live now' : 'Finished');
+  const st = cm.set === false ? 'Dates to be confirmed' : TODAY < cm.start ? 'Starts in ' + Math.ceil((cm.start - TODAY) / 864e5) + ' days' : (live ? 'Live now' : 'Finished');
   const head = `<div class="row spread"><h2>My ${cm.n}</h2><span class="pill ${live ? 'p-ok' : 'p-req'}">${st}</span></div><p class="sub2">${cm.w}</p>`;
   if (su && !S.editSetup) return `<div class="card">${head}
     <h3>${esc(su.name)}<span class="tag">${su.type}${su.partners.length ? ' with ' + esc(names(su.partners)) : ''}</span></h3>
@@ -965,7 +973,8 @@ function vTeamCamps(){
         <div><div class="meta">KOL and KOL friends</div><div>${st.friends ? st.friends + ' invited · ' + st.friendsAcc + ' accepted · ' + st.friendPosts + ' of ' + st.friendExp + ' expected posts logged' : '<span class="meta">None invited</span>'}</div></div>
         <div><div class="meta">KOL and suppliers</div><div>${st.sup ? st.sup + ' supplier' + (st.sup > 1 ? 's' : '') : '<span class="meta">None yet</span>'}</div></div></div>
       ${fl.length ? `<h3 style="margin:14px 0 4px">To coordinate</h3>${flags}` : '<p class="meta" style="margin-top:12px">Nothing to coordinate right now.</p>'}</div>`; }).join('');
-  return `${sw}<div class="card"><h2>Campaign oversight</h2><p class="sub2">Campaign 1 (8 Feb to 26 Mar 2027). Proposals, planned and logged posts, and who is working with whom. Notes go to the fellow's paperwork page. Following up with CSOs happens off the portal.</p></div>${cards}`;
+  const dts = S.tm === 'program' && LIVE ? `<div class="card"><h2>Campaign dates</h2><p class="sub2">Set these when the dates are confirmed. Until then the portal shows "Dates to be confirmed".</p><form data-form="camp-dates" class="stack"><div class="formgrid">${CAMPS.map(c => { const d = S.camps[c.id] || {}; return `<label class="f">${c.n} starts<input type="date" id="cd-s${c.id}" value="${esc(d.start || '')}"></label><label class="f">${c.n} ends<input type="date" id="cd-e${c.id}" value="${esc(d.end || '')}"></label>`; }).join('')}</div><div><button class="btn" type="submit">Save dates</button></div></form></div>` : '';
+  return `${sw}${dts}<div class="card"><h2>Campaign oversight</h2><p class="sub2">Campaign 1 (${CAMPS[0].w}). Proposals, planned and logged posts, and who is working with whom. Notes go to the fellow's paperwork page. Following up with CSOs happens off the portal.</p></div>${cards}`;
 }
 
 function lSel(withAll){
@@ -1047,7 +1056,7 @@ function vInsights(){
 function vLPost(){
   const c = S.camp, all = ['all','TH','ID'].includes(S.lf), f = all ? null : F.find(x => x.id === S.lf), key = S.lf, grp = {all:'All fellows (programme)', TH:'Thailand', ID:'Indonesia'}[S.lf], fl = S.lf === 'TH' || S.lf === 'ID' ? F.filter(x => x.c === S.lf) : F;
   const o = ((S.listen.post[key] || {})[c]) || {};
-  const run = CAMPS[c-1].end > TODAY ? `<div class="alert time" style="margin:12px 0 0"><div>${CAMPS[c-1].n} is still running. Treat this as a draft until it ends on ${dstr(CAMPS[c-1].end)}.</div></div>` : '';
+  const run = CAMPS[c-1].end > TODAY ? `<div class="alert time" style="margin:12px 0 0"><div>${CAMPS[c-1].n} is still running. Treat this as a draft until it ends${CAMPS[c-1].set === false ? '' : ' on ' + dstr(CAMPS[c-1].end)}.</div></div>` : '';
   let facts;
   if (all) { const posts = fl.reduce((a,x) => a + (x.id === 'nok' ? S.posts.length : x.posts), 0), refl = fl.reduce((a,x) => a + (x.id === 'nok' ? S.posts.filter(p => p.refl).length : x.posts - x.pend), 0), set = fl.filter(x => { const i = campInfo(x.id, c); return i && i.kpis; }).length;
     facts = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div><div class="meta">Fellows</div><b>${fl.length}</b></div><div><div class="meta">Posts logged</div><b>${posts}</b></div><div><div class="meta">With reflections</div><b>${refl}</b></div><div><div class="meta">Fellows with KPIs set</div><b>${set}</b></div></div><p class="note">Sample totals. The real portal adds reach and engagement from the logged numbers and from your listening tool.</p>`; }
@@ -1087,32 +1096,98 @@ function deckCard(){
   const d = S.listen.decks, vis = DECKS.filter(x => d[x.k] && (d[x.k].st === 'Shared' || d[x.k].st === 'Final'));
   return `<div class="card"><h2>Slides</h2>${vis.map(x => `<div class="item"><b>${x.t}</b>${d[x.k].link ? `<div class="meta">${esc(d[x.k].link)}</div>` : ''}</div>`).join('') || '<p class="meta">Slides from the social listening expert will appear here. Deck 1 comes before Campaign 1, deck 2 before Campaign 2, and deck 3 at the end.</p>'}<p class="note">The decks cover every fellow. Your pages are marked for you.</p></div>`;
 }
-/* ---------- slides: labelled links from the social listening expert ---------- */
-const SL_TYPES = ['Benchmark','Before a campaign','After a campaign','Comparison of both campaigns','Programme summary','Other'];
+/* ---------- masterclasses and slides ---------- */
+const SL_TYPES = ['Masterclass','Benchmark','Before a campaign','After a campaign','Comparison of both campaigns','Programme summary','Other'];
+const FU = {};
+function fileUrl(path){
+  if (!path || !LIVE || !SB) return '';
+  const c = FU[path];
+  if (c && (c.loading || c.exp > Date.now())) return c.url;
+  FU[path] = {url:c ? c.url : '', loading:true, exp:0};
+  SB.storage.from('slides').createSignedUrl(path, 3600).then(r => { FU[path] = {url:(r.data && r.data.signedUrl) || '', loading:false, exp:Date.now() + 3300000}; renderSoon(); });
+  return FU[path].url;
+}
 function slTo(t){ return t === 'all' ? 'Everyone' : t === 'TH' ? 'Thailand' : t === 'ID' ? 'Indonesia' : ((F.find(f => f.id === t) || {}).n || t); }
 function slVisible(x){
-  if (S.role === 'kol' && LIVE) { const u = S.user || {}; const me = (PROFILE && PROFILE.fellow_id) || ''; return ['all', u.country, me].includes(x.to); }
+  if (S.role === 'kol' && LIVE) { const u = S.user || {}; const me = (PROFILE && PROFILE.fellow_id) || ''; return ['all', u.country, me].includes(x.to) && x.fellows !== false; }
+  if (S.role === 'friend' && LIVE) return x.friends === true && ['all', (S.user || {}).country].includes(x.to);
   if (S.role === 'partner') return ['all','TH','ID'].includes(x.to);
   return true;
 }
-function slItem(x, del){
-  return `<div class="item"><div class="row spread"><div><b>${lnk(x.url, x.title)}</b><div class="meta">${esc(x.type || 'Slides')}${x.camp ? ' · Campaign ' + x.camp : ''} · For ${esc(slTo(x.to))}${x.date ? ' · Added ' + dd(x.date) : ''}</div></div>${del ? `<button type="button" class="btn ghost sm" data-act="sl-del" data-v="${x.id}" aria-label="Remove ${esc(x.title)}">Remove</button>` : ''}</div></div>`;
+const slOrder = a => [...a].sort((p, q) => (p.order || 1e9) - (q.order || 1e9) || String(p.id).localeCompare(String(q.id), undefined, {numeric:true}));
+const slClasses = () => [...S.classes].sort((p, q) => (p.month || '9').localeCompare(q.month || '9') || (p.date || '9').localeCompare(q.date || '9') || p.name.localeCompare(q.name));
+const monthName = m => m ? MON[Number(m.slice(5, 7)) - 1] + ' ' + m.slice(0, 4) : '';
+function slLink(x){
+  if (x.file) { const u = fileUrl(x.file); return u ? lnk(u, x.title) : `<span>${esc(x.title)} <span class="meta">(preparing link…)</span></span>`; }
+  return lnk(x.url, x.title);
+}
+function slItem(x, mode){
+  const mng = mode === 'manage', cls = S.classes.find(c => String(c.id) === String(x.class));
+  const aud = mng ? `<div class="row" style="gap:14px;margin-top:6px;font-size:13.5px"><label class="row" style="gap:6px"><input type="checkbox" data-act="sl-vis" data-k="fellows" data-v="${x.id}" ${x.fellows !== false ? 'checked' : ''}> Fellows</label><label class="row" style="gap:6px"><input type="checkbox" data-act="sl-vis" data-k="friends" data-v="${x.id}" ${x.friends ? 'checked' : ''}> KOL friends</label></div>` : '';
+  const btns = mng ? `<span class="row" style="gap:6px"><button type="button" class="btn ghost sm" data-act="sl-up" data-v="${x.id}" aria-label="Move ${esc(x.title)} up">Up</button><button type="button" class="btn ghost sm" data-act="sl-down" data-v="${x.id}" aria-label="Move ${esc(x.title)} down">Down</button><button type="button" class="btn ghost sm" data-act="sl-del" data-v="${x.id}" aria-label="Remove ${esc(x.title)}">Remove</button></span>` : mode === 'edit' ? `<button type="button" class="btn ghost sm" data-act="sl-del" data-v="${x.id}" aria-label="Remove ${esc(x.title)}">Remove</button>` : '';
+  return `<div class="item"><div class="row spread"><div><b>${slLink(x)}</b>${x.file ? ' <span class="tag">File</span>' : ''}<div class="meta">${esc(x.type || 'Slides')}${cls && mode !== 'view-in-class' && !mng ? ' · ' + esc(cls.name) : ''}${x.camp ? ' · Campaign ' + x.camp : ''} · For ${esc(slTo(x.to))}${x.date ? ' · Added ' + dd(x.date) : ''}</div>${aud}</div>${btns}</div></div>`;
+}
+function clForm(c){
+  const n = c.id === 'new';
+  return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
+    <label class="f">Topic<input type="text" id="cl-topic" value="${esc(c.topic || '')}"></label><label class="f">Join link<span class="hint">Zoom, Meet or the room details</span><input type="text" id="cl-link" value="${esc(c.link || '')}"></label>
+    <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="cl-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="cl-del" data-v="${c.id}">Delete masterclass</button>`}</div></form>`;
 }
 function vSlides(){
-  const list = S.slides.filter(slVisible);
-  return `<div class="card"><h2>Slides and presentations</h2><p class="sub2">Links shared by the social listening expert. Each one says what it is and who it is for.</p>${list.map(x => slItem(x, false)).join('') || '<p class="meta">Nothing shared yet. Slides will appear here when the social listening expert adds them.</p>'}</div>`;
+  const team = S.role === 'team', cls = slClasses(), vis = S.slides.filter(slVisible);
+  const inClass = c => slOrder(vis.filter(x => String(x.class) === String(c.id)));
+  const known = new Set(cls.map(c => String(c.id)));
+  const other = slOrder(vis.filter(x => !known.has(String(x.class))));
+  const mode = team ? 'manage' : 'view-in-class';
+  const cards = cls.map(c => {
+    if (team && S.cledit === c.id) return `<div class="card"><h2>Edit ${esc(c.name)}</h2>${clForm(c)}</div>`;
+    const items = inClass(c);
+    if (!team && !items.length && !c.date && !c.topic) return '';
+    return `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}${c.topic ? ': ' + esc(c.topic) : ''}</h2><p class="sub2" style="margin:0">${c.date ? dd(c.date) + ' · ' : ''}${esc(monthName(c.month))}${c.link ? ' · ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button>` : ''}</div>
+      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || '<p class="meta">Slides will appear here.</p>'}</div></div>`;
+  }).join('');
+  const seed = team && !cls.length ? `<div class="card"><p class="sub2">There is one masterclass a month from January to July. Set up the seven slots, then add dates and topics.</p><button type="button" class="btn" data-act="cl-seed">Set up January to July</button></div>` : '';
+  const addC = team ? (S.cledit === 'new' ? `<div class="card"><h2>Add a masterclass</h2>${clForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn ghost" data-act="cl-edit" data-v="new">Add a masterclass</button></div>`) : '';
+  const oth = other.length ? `<div class="card"><h2>Other slides</h2>${other.map(x => slItem(x, team ? 'manage' : 'view')).join('')}</div>` : '';
+  const head = `<div class="card"><h2>Masterclasses and slides</h2><p class="sub2">${team ? 'Arrange the slides for each masterclass: change the order, and choose who sees each one. Fellows and KOL friends see them in this order.' : 'One masterclass a month, with the slides shared after each one.'}</p></div>`;
+  return head + seed + (cards || (!team ? '<div class="card"><p class="meta">Nothing shared yet.</p></div>' : '')) + oth + addC + (team ? slEditor() : '');
 }
 function slEditor(){
-  const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
-  return `<div class="card"><h2>Links to your presentations</h2><p class="sub2">Add a link with a clear label. Fellows, coordinators and programme partners see it on their Slides tab. Choose who each one is for.</p>
-    ${S.slides.map(x => slItem(x, true)).join('') || '<p class="meta">No links yet.</p>'}
+  const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`, ed = S.role !== 'team';
+  return `<div class="card"><h2>${ed ? 'Links to your presentations' : 'Add slides'}</h2><p class="sub2">Add a link or upload a file, with a clear label. Choose the masterclass and who it is for.</p>
+    ${ed ? S.slides.map(x => slItem(x, 'edit')).join('') || '<p class="meta">No slides yet.</p>' : ''}
     <form data-form="sl-add" class="stack" style="margin-top:14px"><div class="formgrid">
-      <label class="f">Label<span class="hint">For example: Benchmark deck, Thailand</span><input type="text" id="sl-title" required></label>
-      <label class="f">Link<span class="hint">Google Slides, Drive or any web link</span><input type="url" id="sl-url" placeholder="https://" required></label>
+      <label class="f">Label<span class="hint">For example: Masterclass 3, storytelling slides</span><input type="text" id="sl-title" required></label>
+      <label class="f">Link<span class="hint">Google Slides, Drive or any web link. Leave empty if you upload a file.</span><input type="url" id="sl-url" placeholder="https://"></label>
+      ${LIVE ? '<label class="f">Or upload a file<span class="hint">PDF or PowerPoint, up to 45 MB</span><input type="file" id="sl-file" accept=".pdf,.ppt,.pptx,.key,.odp"></label>' : ''}
+      <label class="f">Masterclass<select id="sl-class">${opt('', 'Not part of a masterclass')}${slClasses().map(c => opt(c.id, c.name + (c.topic ? ': ' + c.topic : ''))).join('')}</select></label>
       <label class="f">Type<select id="sl-type">${SL_TYPES.map(t => opt(t, t)).join('')}</select></label>
       <label class="f">For<select id="sl-to">${opt('all', 'Everyone')}${opt('TH', 'Thailand')}${opt('ID', 'Indonesia')}${F.map(f => opt(f.id, f.n)).join('')}</select></label>
       <label class="f">Campaign<select id="sl-camp">${opt('0', 'Not specific')}${opt('1', 'Campaign 1')}${opt('2', 'Campaign 2')}</select></label></div>
-      <div><button class="btn" type="submit">Add link</button></div></form></div>`;
+      <div class="row" style="gap:18px"><label class="row" style="gap:6px"><input type="checkbox" id="sl-fel" checked> Fellows</label><label class="row" style="gap:6px"><input type="checkbox" id="sl-fri"> KOL friends</label></div>
+      <div><button class="btn" type="submit">Add</button></div></form></div>`;
+}
+function slMove(id, dir){
+  const x = S.slides.find(y => String(y.id) === String(id)); if (!x) return;
+  const g = slOrder(S.slides.filter(y => String(y.class || '') === String(x.class || '')));
+  g.forEach((y, i) => { if (y.order !== i + 1) y.order = i + 1; });
+  const i = g.indexOf(x), k = i + dir; if (k < 0 || k >= g.length) return;
+  const t = g[i].order; g[i].order = g[k].order; g[k].order = t; render();
+}
+async function slAdd(v){
+  let file = '', fileName = '';
+  if (v.file) {
+    if (!LIVE) { toast('File upload works in the live portal.'); return; }
+    if (v.file.size > 45 * 1024 * 1024) { toast('That file is over 45 MB. Upload it to Drive and paste the link instead.'); return; }
+    const safe = v.file.name.replace(/[^A-Za-z0-9._-]/g, '_');
+    file = Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '/' + safe; fileName = v.file.name;
+    let error = null; try { ({error} = await SB.storage.from('slides').upload(file, v.file, {contentType:v.file.type || 'application/octet-stream'})); } catch (e) { error = e; }
+    if (error) { toast('The file did not upload. Try again, or paste a link instead.'); return; }
+  } else if (!/^https?:\/\//i.test(v.url)) { toast('Paste the full link starting with https://, or upload a file.'); return; }
+  const cl = v.cls ? Number(v.cls) || v.cls : '';
+  const order = Math.max(0, ...S.slides.filter(x => String(x.class || '') === String(cl)).map(x => x.order || 0)) + 1;
+  S.slides.unshift({id:Date.now(), title:v.title, url:v.url, file, fileName, type:v.type, to:v.to, camp:Number(v.camp) || 0, class:cl, order, fellows:v.fel, friends:v.fri, date:iso(TODAY), by:S.user.label});
+  render(); toast('Added.');
 }
 function vLDeck(){
   const cards = DECKS.map(x => {
@@ -1354,10 +1429,12 @@ function vPeople(){
   const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
       ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
   const addC = team ? (S.pedit === 'c:new' ? csoForm({id:'new'}) : `<div class="card"><button type="button" class="btn" data-act="pp-edit" data-v="c:new">Add an organisation</button></div>`) : '';
+  const friendsCard = team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give KOL friends a login to see masterclass slides, events and the community board.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ' · switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
+      <form data-form="pp-friend" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name<input type="text" id="pf-name" required></label><label class="f">Email<input type="email" id="pf-email" required></label>${prog ? '<label class="f">Country<select id="pf-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label>' : ''}</div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, the social listening expert and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.role}${a.country ? ' · ' + a.country : ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ' · switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
       <form data-form="pp-team" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name shown<input type="text" id="pp-label" required></label><label class="f">Email<input type="email" id="pp-email" required></label><label class="f">Role<select id="pp-role"><option value="country">Country coordinator</option><option value="listener">Social listening expert</option><option value="partner">Programme partner</option><option value="program">Program coordinator</option></select></label><label class="f">Country<span class="hint">Country coordinators only</span><select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   return `<div class="card"><h2>People</h2><p class="sub2">The fellows and organisations in the programme. ${team ? 'You can update profiles and photos' + (prog ? '.' : ' for your country.') : ''}</p></div>
-    <h2 class="h sec" style="margin:18px 0 6px">Fellows</h2>${fellows}<h2 class="h sec" style="margin:18px 0 6px">Civil society organisations</h2>${csos}${addC}${teamAcc}`;
+    <h2 class="h sec" style="margin:18px 0 6px">Fellows</h2>${fellows}<h2 class="h sec" style="margin:18px 0 6px">Civil society organisations</h2>${csos}${addC}${friendsCard}${teamAcc}`;
 }
 
 function vOverviewBase(){
@@ -1390,7 +1467,13 @@ function vOverviewBase(){
 }
 
 /* ---------- shell ---------- */
+function syncCamps(){
+  CAMPS.forEach(cm => { const d = S.camps[cm.id], ok = d && d.start && d.end && d.start <= d.end;
+    if (ok) { cm.start = new Date(d.start + 'T00:00:00'); cm.end = new Date(d.end + 'T00:00:00'); cm.w = dstr(cm.start) + ' to ' + dstr(cm.end) + ' ' + cm.end.getFullYear(); cm.set = true; }
+    else { cm.start = new Date(2999, 0, 1); cm.end = new Date(2999, 0, 1); cm.w = 'Dates to be confirmed'; cm.set = false; } });
+}
 function render(){
+  if (LIVE) syncCamps();
   document.body.dataset.prog = S.prog;
   if (!S.user) {
     document.body.dataset.prog = 'gc';
@@ -1407,7 +1490,7 @@ function render(){
     : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Program coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
-  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['slides','Slides'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['people','People'],['feed','Community']] : kol && LIVE ? [['slides','Slides'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['slides','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['slides','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
+  const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['events','Events'],['people','People'],['feed','Community']] : fr && LIVE ? [['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['events','Events'],['people','People'],['feed','Community']] : kol && LIVE ? [['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
   const cur = mine ? S.tab : S.teamTab;
   const need = openItems('nok').length;
   $('#tabs').innerHTML = tabs.map(t => { const n = t[0] === 'events' ? boostOpen() : t[0] === 'feed' ? feedOpen() : (fr || cs) ? 0 : kol ? (t[0] === 'paper' ? need : t[0] === 'insights' ? insightCount() : 0) : (t[0] === 'props' ? propsNeeded() : t[0] === 'mine' ? chaseCount() : t[0] === 'camps' ? flagCount() : 0);
@@ -1415,11 +1498,11 @@ function render(){
   const leap = S.prog === 'leap' && cur === 'board';
   $('#ttl').textContent = leap ? 'Leap!' : 'The Good Chat';
   $('#eyebrow').innerHTML = leap ? 'makesense Asia · KLIK' : 'makesense Asia · ' + ED;
-  $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? 'Log the posts you made for this campaign and their numbers.' : kol ? (LIVE ? 'Slides, events and the community space. Your own campaign pages are coming.' : 'Log what you post, what you expected, and what you learned.') : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
+  $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? (LIVE ? 'Masterclass slides, events and the community space.' : 'Log the posts you made for this campaign and their numbers.') : kol ? (LIVE ? 'Slides, events and the community space. Your own campaign pages are coming.' : 'Log what you post, what you expected, and what you learned.') : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
   let html = '';
   if (cur === 'board') html = vBoard(S.prog);
   else if (cs) html = {chome:vCsoHome, clog:vCsoLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else if (fr) html = {fhome:vFriendHome, flog:vFriendLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (fr) html = {slides:vSlides, fhome:vFriendHome, flog:vFriendLog, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else if (kol) html = {slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else html = {events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
   if (cur !== 'board' && S.prog === 'leap') { S.prog = 'gc'; document.body.dataset.prog = 'gc'; $('#ttl').textContent = 'The Good Chat'; $('#eyebrow').innerHTML = 'makesense Asia · ' + ED; }
@@ -1490,7 +1573,14 @@ document.addEventListener('click', e => {
   if (a === 'deck-set') { return; }
   if (a === 'lshare') { const L = S.listen[el.dataset.w]; (L[el.dataset.f] = L[el.dataset.f] || {})[S.camp] = Object.assign((L[el.dataset.f] || {})[S.camp] || {}, {status:'Shared', date:dstr(TODAY)}); render(); toast('Shared. ' + (el.dataset.f === 'nok' ? 'Thai Fellow 1 sees it on their campaign plan.' : 'The fellow will see it on their campaign plan.')); return; }
   if (a === 'lshare-cmp') { const o = S.listen.cmp[S.lf] = S.listen.cmp[S.lf] || {}; o.status = 'Shared'; o.date = dstr(TODAY); render(); toast('Shared.' + (S.lf === 'nok' ? ' Thai Fellow 1 sees it under Listening insights.' : '')); return; }
-  if (a === 'sl-del') { S.slides = S.slides.filter(x => String(x.id) !== String(v)); render(); return; }
+  if (a === 'sl-del') { const x = S.slides.find(y => String(y.id) === String(v)); S.slides = S.slides.filter(y => String(y.id) !== String(v)); if (x && x.file && LIVE) SB.storage.from('slides').remove([x.file]); render(); return; }
+  if (a === 'sl-up') { slMove(v, -1); return; }
+  if (a === 'sl-down') { slMove(v, 1); return; }
+  if (a === 'cl-edit') { S.cledit = isNaN(Number(v)) ? v : Number(v); render(); return; }
+  if (a === 'cl-cancel') { S.cledit = null; render(); return; }
+  if (a === 'cl-del') { S.classes = S.classes.filter(c => String(c.id) !== String(v)); S.slides.forEach(x => { if (String(x.class) === String(v)) x.class = ''; }); S.cledit = null; render(); return; }
+  if (a === 'cl-seed') { ['01','02','03','04','05','06','07'].forEach((m, i) => S.classes.push({id:Date.now() + i, name:'Masterclass ' + (i + 1), month:'2027-' + m, date:'', topic:'', link:''})); render(); toast('Seven masterclass slots added. Add a date and topic to each.'); return; }
+  if (a === 'sl-vis-noop') return;
   if (a === 'pp-edit') { S.pedit = v; S.pinv = null; render(); return; }
   if (a === 'pp-cancel') { S.pedit = null; S.pinv = null; render(); return; }
   if (a === 'pp-invite') { S.pinv = v; S.pedit = null; render(); return; }
@@ -1560,6 +1650,7 @@ document.addEventListener('change', e => {
     [...el.files].slice(0, Math.max(0, 5 - S.shots.length)).forEach(file => { const r = new FileReader(); r.onload = () => { S.shots.push({name:file.name, url:r.result}); shotPrev(); }; r.readAsDataURL(file); });
     el.value = '';
   }
+  if (a === 'sl-vis') { const x = S.slides.find(y => String(y.id) === String(el.dataset.v)); if (x) { x[el.dataset.k] = el.checked; render(); } return; }
   if (a === 'plan-cur') { S.plan[S.camp].cur = el.value; render(); }
   if (a === 'showpw') { document.getElementById('l-pw').type = el.checked ? 'text' : 'password'; }
   if (a === 'scope') { S.scope = el.value; render(); }
@@ -1624,11 +1715,22 @@ document.addEventListener('submit', e => {
     S.boosts.unshift({id:Date.now(), by:S.user.label, ask:g2('bo-ask'), text:g2('bo-text').trim(), link:g2('bo-link'), due:g2('bo-due'), done:[]}); render(); toast('Sent to everyone on the board.');
   }
   if (f === 'sl-add') {
-    const url = g('sl-url'), title = g('sl-title');
-    if (!title) { toast('Add a label so people know what the link is.'); return; }
-    if (!/^https?:\/\//i.test(url)) { toast('Paste the full link, starting with https://'); return; }
-    S.slides.unshift({id:Date.now(), title, url, type:g('sl-type'), to:g('sl-to'), camp:Number(g('sl-camp')) || 0, date:iso(TODAY), by:S.user.label}); render(); toast('Added. The people it is for can open it now.'); return;
+    const title = g('sl-title'); if (!title) { toast('Add a label so people know what it is.'); return; }
+    const fi = document.getElementById('sl-file');
+    slAdd({title, url:g('sl-url'), file:fi && fi.files && fi.files[0], cls:g('sl-class'), type:g('sl-type'), to:g('sl-to'), camp:g('sl-camp'), fel:document.getElementById('sl-fel').checked, fri:document.getElementById('sl-fri').checked}); return;
   }
+  if (f === 'camp-dates') {
+    for (const c of CAMPS) { const a = g('cd-s' + c.id), b = g('cd-e' + c.id); if ((a && !b) || (!a && b) || (a && b && a > b)) { toast('Check ' + c.n + ': add a start and an end date, with the start first.'); return; } }
+    CAMPS.forEach(c => { const a = g('cd-s' + c.id), b = g('cd-e' + c.id); if (a && b) S.camps[c.id] = {start:a, end:b}; else delete S.camps[c.id]; });
+    render(); toast('Dates saved.'); return;
+  }
+  if (f === 'cl-save') {
+    const id = e.target.dataset.id, name = g('cl-name'); if (!name) { toast('Add a name.'); return; }
+    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), link:g('cl-link')};
+    if (id === 'new') S.classes.push(Object.assign({id:Date.now()}, v)); else Object.assign(S.classes.find(c => String(c.id) === String(id)), v);
+    S.cledit = null; render(); toast('Saved.'); return;
+  }
+  if (f === 'pp-friend') { ppSendInvite({email:g('pf-email'), label:g('pf-name') || g('pf-email'), role:'friend', country:S.tm === 'country' ? S.scope : g('pf-country'), friend_id:'k' + Date.now().toString(36)}); return; }
   if (f === 'pp-fellow') { ppSaveFellow(e.target.dataset.id); return; }
   if (f === 'pp-cso') { ppSaveCso(e.target.dataset.id); return; }
   if (f === 'pp-invite') { const d = e.target.dataset; ppSendInvite({email:g('pp-email'), label:d.name, role:d.role, country:d.country, fellow_id:d.role === 'fellow' ? d.ref : null, cso_id:d.role === 'cso' ? d.ref : null}); return; }
@@ -1735,8 +1837,8 @@ document.addEventListener('submit', e => {
 /* ---------- live mode: real logins and shared, real-time data ---------- */
 let SB = null, PROFILE = null, LAST = {}, FLUSH_T = null, RENDER_T = null, CH = null;
 S.live = {phase:'loading', msg:''};
-const LISTS = ['pevents','cevents','boosts','feed','csos','support','asks','slides'];
-const MAPS = ['paper','notes','org','reminded','followed'];
+const LISTS = ['pevents','cevents','boosts','feed','csos','support','asks','slides','classes'];
+const MAPS = ['paper','notes','org','reminded','followed','camps'];
 const LISTEN2 = ['pre','post'], LISTEN1 = ['bench','cmp','data','decks','sec'];
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
 const wrap = v => isObj(v) ? v : {_v:v};
@@ -1755,7 +1857,7 @@ function blankLive(){
   S.plan = {1:ep(), 2:ep()}; S.setup = {1:null, 2:null}; S.kpis = {1:[], 2:[]};
   S.posts = []; S.events = []; S.collabs = []; S.friends = []; S.shots = [];
   LISTS.forEach(n => { S[n] = []; });
-  S.notes = {}; S.reminded = {}; S.followed = {}; S.paper = {};
+  S.notes = {}; S.reminded = {}; S.followed = {}; S.paper = {}; S.camps = {};
   S.org = {TH:{name:'', address:'', taxid:'', email:'', note:''}, ID:{name:'', address:'', taxid:'', email:'', note:''}};
   F.forEach(f => { S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); });
   S.listen = {pre:{}, post:{}, cmp:{}, bench:{}, data:{}, decks:{}, sec:{}};
@@ -1815,6 +1917,7 @@ function applyRole(p){
   else if (p.role === 'country') { S.role = 'team'; S.tm = 'country'; S.scope = p.country; S.teamTab = 'mine'; S.coord = (F.find(f => f.c === p.country) || F[0]).id; }
   else if (p.role === 'listener') { S.role = 'listener'; S.teamTab = 'lbench'; }
   else if (p.role === 'partner') { S.role = 'partner'; S.teamTab = 'pimpact'; }
+  else if (p.role === 'friend') { S.role = 'friend'; S.tab = 'slides'; S.scope = p.country; }
   else if (p.role === 'fellow') { S.role = 'kol'; S.tab = 'slides'; S.scope = p.country; }
   S.user = {role:S.role, label:p.label, scope:S.scope, country:p.country};
   S.lf = 'nok';
@@ -1835,7 +1938,7 @@ async function liveEnter(){
     if (error) throw error;
     if (!prof || !prof.active) { S.user = null; S.live = {phase:'blocked', msg:'Your account is not set up yet. Ask the programme team to finish it.'}; render(); return; }
     PROFILE = prof;
-    if (['friend','cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
+    if (['cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
     blankLive(); await loadAll(); applyRole(prof); if (['program','country'].includes(prof.role)) await loadAccounts(); subscribe(); render();
   } catch (e) { S.user = null; S.live = {phase:'error', msg:'Something went wrong while opening the portal. Refresh and try again.'}; render(); }
 }

@@ -50,7 +50,9 @@ After that nobody needs the Supabase dashboard. In the portal, open **People**:
 - Invited people get an email, click the link and choose their own password.
 Fellow logins now open a first page with Slides, Events, People and Community. Their own campaign pages are still being built. KOL friend and organisation logins can be created, but see a short "still being built" message.
 
-**Slides:** the social listening expert adds labelled links on the Slides tab (label, link, type, who it is for). Fellows see links meant for everyone, their country or themselves; partners see programme-wide ones; coordinators see all. Run `schema.sql` again after updating.
+**Campaign dates:** the program coordinator sets them on the Campaigns tab. Until then the portal shows "Dates to be confirmed".
+
+**Masterclasses and slides:** there is one masterclass a month, January to July. Program and country coordinators set them up on the **Masterclasses** tab (one click creates the seven slots; add a date, topic and join link to each). The social listening expert, country coordinators and the program coordinator can add slides, as a link or an uploaded PDF or PowerPoint (up to 45 MB). Coordinators can reorder the slides in each masterclass and tick whether fellows and/or KOL friends see each one. Fellows and KOL friends open the tab and see only what is meant for them, in that order. KOL friends get a login from **People > KOL friends**. Run `schema.sql` again after updating, and redeploy the `invite-user` function.
 
 ### 3b. Adding people by hand (backup)
 For each person: Authentication > Users > Add user (email + temporary password, tick "Auto confirm"), then add a profile row.

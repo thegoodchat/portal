@@ -56,6 +56,7 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   ('map:paper','program','all','all'),('map:paper','country','country','country'),
   ('map:notes','program','all','all'),('map:notes','country','country','country'),
   -- organisation details for invoices
+  ('map:camps','program','all','all'),('map:camps','country','all','none'),('map:camps','listener','all','none'),('map:camps','partner','all','none'),('map:camps','fellow','all','none'),('map:camps','friend','all','none'),
   ('map:org','program','all','all'),('map:org','country','country','country'),
   -- social listening: benchmarks, briefs, analysis, comparisons, notes
   ('listen:bench','program','all','all'),('listen:bench','listener','all','all'),('listen:bench','country','country','none'),
@@ -79,11 +80,17 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   ('list:support','program','all','all'),('list:support','country','country','none'),('list:support','partner','all','none'),
   ('list:asks','program','all','all'),('list:asks','country','country','none'),
   -- labelled links to the expert's slides (fellows and partners only see ones meant for them)
-  ('list:slides','program','all','all'),('list:slides','listener','all','all'),('list:slides','country','all','none'),
+  ('list:slides','program','all','all'),('list:slides','listener','all','all'),('list:slides','country','all','all'),
   ('list:slides','partner','all','none'),('list:slides','fellow','all','none'),
   -- fellows: see events, the community board and organisations; post to the board and the events board
   ('list:pevents','fellow','all','none'),('list:cevents','fellow','all','all'),('list:boosts','fellow','all','all'),
-  ('list:feed','fellow','all','all'),('list:csos','fellow','all','none');
+  ('list:feed','fellow','all','all'),('list:csos','fellow','all','none'),
+  -- monthly masterclasses (Jan to July) and who may arrange their slides
+  ('list:classes','program','all','all'),('list:classes','country','all','all'),('list:classes','listener','all','all'),
+  ('list:classes','fellow','all','none'),('list:classes','friend','all','none'),('list:classes','partner','all','none'),
+  -- country coordinators can add and rearrange slides; KOL friends see slides marked for them
+  ('list:slides','friend','all','none'),
+  ('list:pevents','friend','all','none'),('list:cevents','friend','all','none'),('list:boosts','friend','all','none'),('list:feed','friend','all','all');
 
 -- ---------- helpers ----------
 create or replace function public.my_profile() returns public.profiles
@@ -104,6 +111,9 @@ begin
   if p.role = 'partner' and k = 'listen:decks' and coalesce(rec->>'st','') not in ('Shared','Final') then return false; end if;
   -- slide links: fellows see their own, their country's and everyone's; partners see programme-wide ones
   if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'), coalesce(p.fellow_id,'-')) then return false; end if;
+  if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'fellows','true') = 'false' then return false; end if;
+  if k = 'list:slides' and p.role = 'friend' and (coalesce(rec->>'friends','false') <> 'true' or coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'))) then return false; end if;
+  if k = 'list:pevents' and p.role = 'friend' and coalesce(rec->>'friends','false') not in ('true') then return false; end if;
   if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
   return case sc
     when 'all' then true
@@ -238,3 +248,21 @@ grant usage on schema public to authenticated, service_role;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant all on all tables in schema public to service_role;
 grant execute on all functions in schema public to authenticated, service_role;
+
+
+-- Slide files (PDF or PowerPoint) live in a private bucket. Uploaders: program, country coordinators, the expert.
+-- Anyone else can open a file only if they are allowed to see a slide record that points to it.
+insert into storage.buckets (id, name, public) values ('slides', 'slides', false) on conflict (id) do nothing;
+create or replace function public.can_manage_slides() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and active and role in ('program','country','listener'));
+$$;
+drop policy if exists slide_files_read on storage.objects;
+create policy slide_files_read on storage.objects for select using (bucket_id = 'slides' and (
+  public.can_manage_slides() or exists (select 1 from public.records r where r.kind = 'list:slides' and r.data->>'file' = name)));
+drop policy if exists slide_files_insert on storage.objects;
+create policy slide_files_insert on storage.objects for insert with check (bucket_id = 'slides' and public.can_manage_slides());
+drop policy if exists slide_files_update on storage.objects;
+create policy slide_files_update on storage.objects for update using (bucket_id = 'slides' and public.can_manage_slides());
+drop policy if exists slide_files_delete on storage.objects;
+create policy slide_files_delete on storage.objects for delete using (bucket_id = 'slides' and public.can_manage_slides());

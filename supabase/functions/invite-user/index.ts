@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       const t = { role: b.role, country: b.country || null, fellow_id: b.fellow_id || null, cso_id: b.cso_id || null, friend_id: b.friend_id || null };
       if (!EMAIL.test(email)) return json(400, { error: 'That email does not look right.' });
       if (!ROLES.includes(t.role)) return json(400, { error: 'Pick a role.' });
-      if (['country', 'fellow'].includes(t.role) && !['TH', 'ID'].includes(t.country)) return json(400, { error: 'Pick a country.' });
+      if (['country', 'fellow', 'friend'].includes(t.role) && !['TH', 'ID'].includes(t.country)) return json(400, { error: 'Pick a country.' });
       if (t.role === 'fellow') {
         if (!t.fellow_id) return json(400, { error: 'Pick the fellow.' });
         const { data: f } = await admin.from('fellows').select('country').eq('id', t.fellow_id).maybeSingle();
