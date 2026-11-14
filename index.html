@@ -196,7 +196,7 @@ tfoot td{border-bottom:0;padding-top:12px}
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => Number(n).toLocaleString('en-US');
-const TODAY = new Date(2027, 2, 1); // demo date, during Campaign 1
+const TODAY = (() => { const c = window.GC_CONFIG || {}, demo = /[?&]demo(=|&|$)/.test(location.search) || !(c.SUPABASE_URL && c.SUPABASE_ANON_KEY); return demo ? new Date(2027, 2, 1) : new Date(new Date().setHours(0,0,0,0)); })(); // sample date in the demo, the real date when signed in
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const dstr = d => d.getDate() + ' ' + MON[d.getMonth()];
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -823,7 +823,7 @@ function vPlan(){
 
 function vProposals(){
   const rows = propRows();
-  const table = `<div class="card"><h2>Campaign plans</h2><p class="sub2">Plans and spending ideas from fellows. Lines marked ready to go are copied to the finance sheet. Only Thai Fellow 1's plan opens in this prototype.</p>
+  const table = `<div class="card"><h2>Campaign plans</h2><p class="sub2">Plans and spending ideas from fellows. Lines marked ready to go are copied to the finance sheet.${LIVE ? '' : " Only Thai Fellow 1's plan opens in this prototype."}</p>
     <div class="tw"><table><thead><tr><th>Fellow</th><th>Campaign</th><th>Name</th><th>Proposed total</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr data-act="${r.f.id === 'nok' ? 'prop-open' : ''}" data-c="${r.c}" class="${r.f.id === 'nok' && r.c === S.camp ? 'pick' : ''}"><td><b>${r.f.n}</b></td><td>${CAMPS[r.c-1].n}</td><td>${esc(r.name)}</td><td class="num">${fmt(r.total)} ${r.cur}</td><td>${planPill(r.status)}</td></tr>`).join('')}</tbody></table></div></div>`;
   if (S.scope !== 'ALL' && S.scope !== 'TH') return table;
   const c = S.camp, pl = S.plan[c], i = campInfo('nok', c);
@@ -848,7 +848,7 @@ function vBoard(prog){
   const list = prog === 'gc' ? F : LEAP.filter(f => f.c === lc);
   const b = board(list, prog === 'gc' && S.role === 'kol' ? 'nok' : null);
   const head = prog === 'gc'
-    ? `<div class="card"><h2>The Good Chat fellows</h2><p class="sub2">4 in Thailand, 4 in Indonesia. Tap a name to see the breakdown. 5 Philippines KOL friends joined moments this month (sample).</p></div>`
+    ? `<div class="card"><h2>The Good Chat fellows</h2><p class="sub2">4 in Thailand, 4 in Indonesia. Tap a name to see the breakdown. ${LIVE ? '' : '5 Philippines KOL friends joined moments this month (sample).'}</p></div>`
     : `<div class="card"><h2>Leap! · ${lname} community leaders</h2><p class="sub2">${list.length} leaders. The Philippines and Indonesia run separately, so each has its own ranking and the two are never compared. Leap! can use its own weights; these are the same five for now.</p>
       <div class="sub-tabs" role="group" aria-label="Country">${[['PH','Philippines'],['ID','Indonesia']].map(c => `<button type="button" data-act="leapc" data-v="${c[0]}" aria-pressed="${lc === c[0]}">${c[1]}</button>`).join('')}</div></div>`;
   const toggle = S.role === 'team' || true ? `<div class="sub-tabs" role="group" aria-label="Program">
@@ -875,7 +875,7 @@ function vTeamPaper(){
       <form data-form="note" class="stack"><label class="f">New note<textarea id="n-text" required placeholder="e.g. Thanks for the agreement. Please send your invoice to the finance email."></textarea></label>
         <div><button class="btn sm" type="submit">Send note</button></div></form>
       ${(S.notes[S.coord] || []).map((n,i) => ({n,i})).reverse().map(x => `<div class="item" style="padding:10px 0"><div class="row spread"><b>${esc(x.n.by)}</b><span class="row" style="gap:10px"><span class="meta">${x.n.date}</span><button type="button" class="btn ghost sm" data-act="del-note" data-v="${x.i}">Delete</button></span></div><div>${esc(x.n.text)}</div></div>`).join('')}</div>
-    <p class="note">${S.coord === 'nok' ? 'Switch to Fellow view to see this update on Thai Fellow 1’s screen.' : 'Only Thai Fellow 1’s screen is wired in this prototype.'}</p></div>`;
+    <p class="note">${S.coord === 'nok' && !LIVE ? 'Switch to Fellow view to see this update on Thai Fellow 1’s screen.' : (LIVE ? 'Their own page is not live yet.' : 'Only Thai Fellow 1’s screen is wired in this prototype.')}</p></div>`;
   return `<div class="card"><div class="row spread"><div><h2>Paperwork status</h2><p class="sub2" style="margin:0">Mirrors the finance sheet tab. Statuses and notes only; documents stay in the restricted Drive folder.</p></div>
     <div class="meta" style="min-width:200px">Access<br><b>${esc(S.user.label)}</b>${S.user.scope === 'ALL' ? ', all countries' : ', ' + S.user.scope + ' fellows only'}</div></div>
     <div style="margin-top:14px">${matrix}</div></div>${edit}${vOrg()}`;
@@ -977,7 +977,7 @@ function vLBrief(){
   if (['all','TH','ID'].includes(S.lf)) S.lf = 'nok';
   const f = F.find(x => x.id === S.lf), c = S.camp, o = ((S.listen.pre[f.id] || {})[c]) || {}, i = campInfo(f.id, c), pl = f.id === 'nok' ? S.plan[c] : null;
   const ctx = `<div class="card"><h2>${f.n} · ${i ? esc(i.name) : CAMPS[c-1].n}</h2><p class="sub2" style="margin:0">${CAMPS[c-1].w}. ${i ? i.type + (i.partners.length ? ' with ' + esc(names(i.partners)) : '') : 'Not set up yet'}.</p>
-    ${pl && pl.message ? `<div class="stack" style="margin-top:12px"><div><div class="meta">Their message</div><div>${esc(pl.message)}</div></div><div><div class="meta">Who it is for</div><div>${esc(pl.audience)}</div></div><div><div class="meta">Planned posts</div>${planList(pl.posts, 'posts', false)}</div></div>` : '<p class="meta" style="margin-top:12px">This fellow has not shared a plan yet. Only Thai Fellow 1\'s plan opens in this prototype.</p>'}</div>`;
+    ${pl && pl.message ? `<div class="stack" style="margin-top:12px"><div><div class="meta">Their message</div><div>${esc(pl.message)}</div></div><div><div class="meta">Who it is for</div><div>${esc(pl.audience)}</div></div><div><div class="meta">Planned posts</div>${planList(pl.posts, 'posts', false)}</div></div>` : '<p class="meta" style="margin-top:12px">This fellow has not shared a plan yet.' + (LIVE ? '' : ' Only Thai Fellow 1\'s plan opens in this prototype.') + '</p>'}</div>`;
   const fld = (k, lbl, hint, ta) => `<label class="f">${lbl}${hint ? `<span class="hint">${hint}</span>` : ''}${ta ? `<textarea id="l-${k}">${esc(o[k] || '')}</textarea>` : `<input type="text" id="l-${k}" value="${esc(o[k] || '')}">`}</label>`;
   const form = `<div class="card"><div class="row spread"><div><h2>Before the campaign</h2><p class="sub2" style="margin:0">Suggestions on how to make it land. The fellow decides what to use.</p></div>${lStat(o.format !== undefined ? o : null)}</div>
     <form data-form="lbrief" class="stack" style="margin-top:12px">${fld('format','Format','Post types and length that suit this audience',1)}${fld('tone','Tone and language','',1)}${fld('keywords','Words and hashtags','What people actually search and say',0)}${fld('timing','Timing','Days and hours, and links to events',1)}${fld('avoid','Best to avoid','',1)}${fld('baseline','What listening shows today','Baseline mentions, who is talking, which words',1)}
@@ -1012,7 +1012,7 @@ function cMetrics(f, c){
 }
 function cmpTable(f){
   const a = cMetrics(f, 1), b = cMetrics(f, 2);
-  if (!a) return '<p class="meta">Numbers for this fellow appear here when they are wired in. Only Thai Fellow 1 is live in this prototype.</p>';
+  if (!a) return '<p class="meta">Numbers for this fellow appear here once their own page is live.</p>';
   const v = x => typeof x === 'number' ? (x ? fmt(x) : '—') : x;
   return `<div class="tw"><table><thead><tr><th></th><th>Campaign 1</th><th>Campaign 2</th></tr></thead><tbody>${Object.keys(a).map(k => `<tr><td>${k}</td><td class="num">${v(a[k])}</td><td class="num">${v(b[k])}</td></tr>`).join('')}</tbody></table></div>`;
 }
@@ -1052,7 +1052,7 @@ function vLPost(){
   if (all) { const posts = fl.reduce((a,x) => a + (x.id === 'nok' ? S.posts.length : x.posts), 0), refl = fl.reduce((a,x) => a + (x.id === 'nok' ? S.posts.filter(p => p.refl).length : x.posts - x.pend), 0), set = fl.filter(x => { const i = campInfo(x.id, c); return i && i.kpis; }).length;
     facts = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div><div class="meta">Fellows</div><b>${fl.length}</b></div><div><div class="meta">Posts logged</div><b>${posts}</b></div><div><div class="meta">With reflections</div><b>${refl}</b></div><div><div class="meta">Fellows with KPIs set</div><b>${set}</b></div></div><p class="note">Sample totals. The real portal adds reach and engagement from the logged numbers and from your listening tool.</p>`; }
   else if (f.id === 'nok') facts = `<div class="tw"><table><thead><tr><th>KPI</th><th>Target</th><th>So far</th><th>Progress</th></tr></thead><tbody>${S.kpis[c].map(k => { const a = kpiActual(k, c); return `<tr><td>${esc(k.n)}</td><td class="num">${fmt(k.t)}</td><td class="num">${fmt(a)}</td><td class="num">${k.t ? Math.round(100 * a / k.t) : 0}%</td></tr>`; }).join('') || '<tr><td colspan="4" class="meta">No KPIs for this campaign.</td></tr>'}</tbody></table></div>`;
-  else facts = '<p class="meta">KPIs and numbers for this fellow appear here as they log posts. Only Thai Fellow 1 is wired in this prototype.</p>';
+  else facts = '<p class="meta">KPIs and numbers for this fellow appear here as they log posts.</p>';
   const fld = (k, lbl, hint) => `<label class="f">${lbl}${hint ? `<span class="hint">${hint}</span>` : ''}<textarea id="l-${k}">${esc(o[k] || '')}</textarea></label>`;
   return `<div class="card">${lSel(true)}</div><div class="card"><h2>${all ? grp + ' · ' + CAMPS[c-1].n : f.n + ' · ' + CAMPS[c-1].n}</h2><p class="sub2" style="margin:0">${all ? 'The picture across the whole campaign.' : 'What the numbers say about this campaign.'}</p>${run}<div style="margin-top:12px">${facts}</div></div>
     <div class="card"><div class="row spread"><div><h2>${all ? 'Analysis across fellows' : 'Feedback and analysis'}</h2><p class="sub2" style="margin:0">${all ? 'Kept for the team. Not shared with fellows.' : 'Shared with the fellow when you are ready.'}</p></div>${all ? '' : lStat(o.worked !== undefined ? o : null)}</div>
@@ -1109,7 +1109,7 @@ function pFacts(){
   const parts = S.csos.flatMap(o => o.partners.map(q => ({o, q}))), acc = parts.filter(x => x.q.status === 'Accepted');
   const hrs = S.support.reduce((a,x) => a + Number(x.hours || 0), 0);
   const pairs = new Set(); F.forEach(x => [1,2].forEach(c => { const i = campInfo(x.id, c); if (i) i.partners.forEach(pn => pairs.add([x.id, pn].sort().join('+') + c)); }));
-  return {posts, refl, kset, camps, parts, acc, hrs, pairs:pairs.size, events:S.events.length + 5, friends:S.friends.length + 7};
+  return {posts, refl, kset, camps, parts, acc, hrs, pairs:pairs.size, events:S.events.length + (LIVE ? 0 : 5), friends:S.friends.length + (LIVE ? 0 : 7)};
 }
 function pTile(n, l, sub){ return `<div class="card"><div class="meta">${l}</div><div style="font:700 28px/1.1 var(--head,inherit)">${n}</div>${sub ? `<div class="meta">${sub}</div>` : ''}</div>`; }
 function pChart(v, label){
@@ -1117,15 +1117,15 @@ function pChart(v, label){
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${label}">${[0,20,40].map(g => `<line x1="${pad}" x2="${W-pad}" y1="${y(g)}" y2="${y(g)}" stroke="rgba(28,30,42,.12)"/><text x="${pad-6}" y="${y(g)+4}" text-anchor="end" font-size="11" fill="#5A5C6B">${g}%</text>`).join('')}<polygon points="${x(0)},${H-24} ${pts} ${x(v.length-1)},${H-24}" fill="#3843D0" opacity=".14"/><polyline points="${pts}" fill="none" stroke="#3843D0" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${x(v.length-1)}" cy="${y(v[v.length-1])}" r="5" fill="#FFF30D" stroke="#14184B" stroke-width="2"/><text x="${x(v.length-1)}" y="${y(v[v.length-1])-10}" text-anchor="end" font-size="12" font-weight="700" fill="#14184B">${v[v.length-1]}%</text><text x="${x(0)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 1</text><text x="${x(v.length-1)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 8</text></svg>`;
 }
 function vPImpact(){
-  const f = pFacts(), reach = lReach() + 412000;
+  const f = pFacts(), reach = lReach() + (LIVE ? 0 : 412000);
   const civ = [['nok', S.plan[1].action.type, S.plan[1].action.text, S.plan[1].action.measure]].concat(Object.keys(CIVIC).map(id => [id, CIVIC[id][0], CIVIC[id][1], CIVIC[id][2]]));
   const byType = {}; civ.forEach(x => { if (x[1]) byType[x[1]] = (byType[x[1]] || 0) + 1; });
-  return `<div class="card"><h2>What the programme is changing</h2><p class="sub2">Eight fellows in Thailand and Indonesia, each running their own campaign to bring energy conversations into the mainstream. You see programme results and campaign stories, never payments, IDs or paperwork. Figures marked sample are examples until the real data connects.</p></div>
+  return `<div class="card"><h2>What the programme is changing</h2><p class="sub2">Eight fellows in Thailand and Indonesia, each running their own campaign to bring energy conversations into the mainstream. You see programme results and campaign stories, never payments, IDs or paperwork. ${LIVE ? '' : 'Figures marked sample are examples until the real data connects.'}</p></div>
     <div class="card"><h2 class="h sec">1. Capacity building</h2><p class="sub2">Fellows learn to plan, measure and reflect on their own campaigns.</p>
       <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">${pTile(f.camps, 'Campaigns designed by fellows', 'of 16 possible')}${pTile(f.kset + ' of ' + F.length, 'Fellows with their own KPIs')}${pTile(f.refl + ' of ' + f.posts, 'Posts with a written reflection')}${pTile(f.hrs + ' hours', 'Advice from civil society orgs', 'logged so far')}</div></div>
     <div class="card"><h2 class="h sec">2. Public conversation and narrative shift</h2><p class="sub2">Are people outside the climate community starting to talk about energy?</p>
-      <div class="grid2"><div>${pChart([18,21,20,26,25,29,31,34], 'Share of mentions from outside the climate community rose from 18 percent to 34 percent over eight weeks')}<p class="note">Share of campaign-keyword mentions from accounts outside the climate community (sample).</p></div>
-      <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">${pTile(f.posts, 'Posts by fellows and friends')}${pTile(fmt(reach), 'People reached', 'sample total')}${pTile(f.events, 'Offline events', 'planned and held')}${pTile('3', 'Languages', 'Thai, Bahasa, Tagalog')}</div></div></div>
+      <div class="grid2"><div>${LIVE ? '<p class="meta">The share of mentions from outside the climate community will appear here once the social listening expert adds the campaign data.</p>' : pChart([18,21,20,26,25,29,31,34], 'Share of mentions from outside the climate community rose from 18 percent to 34 percent over eight weeks') + '<p class="note">Share of campaign-keyword mentions from accounts outside the climate community (sample).</p>'}</div>
+      <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">${pTile(f.posts, 'Posts by fellows and friends')}${pTile(fmt(reach), 'People reached', LIVE ? '' : 'sample total')}${pTile(f.events, 'Offline events', 'planned and held')}${pTile('2', 'Languages', 'Thai, Bahasa')}</div></div></div>
     <div class="card"><h2 class="h sec">3. Civic action</h2><p class="sub2">Every campaign asks people to do one concrete thing. Here is what fellows chose.</p>
       <div class="row" style="gap:8px;flex-wrap:wrap;margin:6px 0 12px">${Object.keys(byType).map(k => `<span class="tag">${esc(k)} · ${byType[k]}</span>`).join('')}</div>
       ${civ.map(x => `<div class="item"><div class="row spread"><b>${fname(x[0])}</b><span class="tag">${esc(x[1] || 'Not chosen yet')}</span></div><div>${esc(x[2] || '')}</div>${x[3] ? `<div class="meta">Measured by: ${esc(x[3])}</div>` : ''}</div>`).join('')}</div>`;
@@ -1138,7 +1138,7 @@ function vPCollab(){
   F.forEach(x => [1,2].forEach(c => { const i = campInfo(x.id, c); if (i) i.partners.forEach(pn => { const k = [x.id, pn].sort().join('+'); if (seen.has(k)) return; seen.add(k); const a = fp[x.id].x, b = fp[pn].x, m = (a + b) / 2, d = Math.abs(a - b) / 3; arcs.push(`<path d="M${a} ${fp[x.id].y+14} Q${m} ${fp[x.id].y+14+d} ${b} ${fp[x.id].y+14}" fill="none" stroke="#3843D0" stroke-width="2"/>`); }); }));
   const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Network of fellows, civil society organisations and fellow-to-fellow collaborations">${lines}${arcs.join('')}${cp.map(c => `<rect x="${c.x-38}" y="${c.y-14}" width="76" height="28" rx="14" fill="#00CFC1"/><text x="${c.x}" y="${c.y+4}" text-anchor="middle" font-size="11" font-weight="700" fill="#013B38">${esc(c.o.name)}</text>`).join('')}${F.map(x => `<circle cx="${fp[x.id].x}" cy="${fp[x.id].y}" r="14" fill="${x.c === 'TH' ? '#3843D0' : '#F2542D'}"/><text x="${fp[x.id].x}" y="${fp[x.id].y+32}" text-anchor="middle" font-size="9" fill="#1C1E2A">${esc(x.n.replace('Indonesian','ID').replace('Thai','TH'))}</text>`).join('')}</svg>`;
   return `<div class="card"><h2>Who is working together</h2><p class="sub2">The programme is built on collaboration. Fellows work with each other, with civil society organisations, with KOL friends and with local suppliers.</p>
-    <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${pTile(f.pairs, 'Fellow collaborations')}${pTile(S.csos.length, 'Civil society orgs', f.acc.length + ' active partnerships')}${pTile(f.friends, 'KOL friends joined', 'incl. 5 in the Philippines')}${pTile(S.collabs.length + 5, 'Local suppliers', 'sample')}</div></div>
+    <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${pTile(f.pairs, 'Fellow collaborations')}${pTile(S.csos.length, 'Civil society orgs', f.acc.length + ' active partnerships')}${pTile(f.friends, 'KOL friends joined', LIVE ? '' : 'incl. 5 in the Philippines')}${pTile(S.collabs.length + (LIVE ? 0 : 5), 'Local suppliers', LIVE ? '' : 'sample')}</div></div>
     <div class="card"><h2>Network</h2><p class="sub2">Blue circles are Thai fellows, orange are Indonesian. Green pills are civil society organisations. Dashed lines are invitations not yet accepted. Curves underneath link fellows running a campaign together.</p>${svg}</div>
     <div class="card"><h2>Civil society organisations</h2>${S.csos.map(o => { const n = new Set(o.partners.filter(q => q.status === 'Accepted').map(q => q.fellow)).size, h = csoSupport(o.id).reduce((a,x) => a + Number(x.hours || 0), 0); return `<div class="item"><div class="row spread"><b>${esc(o.name)}</b><span class="tag">${o.country}</span></div><div>${esc(o.focus)}</div><div class="meta">Supports ${n} fellow${n === 1 ? '' : 's'} · ${h} hours logged</div></div>`; }).join('')}</div>`;
 }
@@ -1354,8 +1354,8 @@ function vOverviewBase(){
     <text x="${x(0)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 1</text><text x="${x(7)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 8</text></svg>`;
   return `<div class="card"><h2>Fellows at a glance</h2><p class="sub2">Who needs a nudge on reflections, paperwork, or setting up a campaign and its KPIs.</p>
     <div class="tw"><table><thead><tr><th>Fellow</th><th>Country</th><th>Posts logged</th><th>Reflections due</th><th>Paperwork open</th><th>Benchmark</th><th>Campaign 1</th><th>Campaign 2</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>
-    <div class="grid2"><div class="card"><h2>Mainstream integration</h2><p class="sub2">Share of campaign-keyword mentions from accounts outside the climate community (sample data).</p>${chart}</div>
-    <div class="card"><h2>What listening would show</h2><p class="sub2">Sample view. Connects to a listening tool or a CSV import.</p>
+    <div class="grid2"><div class="card"><h2>Mainstream integration</h2><p class="sub2">Share of campaign-keyword mentions from accounts outside the climate community${LIVE ? '.' : ' (sample data).'}</p>${LIVE ? '<p class="meta">Appears once campaign data is added.</p>' : chart}</div>
+    <div class="card"><h2>What listening would show</h2><p class="sub2">${LIVE ? 'Planned: a listening tool or a CSV import.' : 'Sample view. Connects to a listening tool or a CSV import.'}</p>
       <div class="stack">
         <div class="item"><b>Who is joining</b><div class="meta">Media, brands, local officials and neighbourhood groups using campaign hashtags</div></div>
         <div class="item"><b>Keywords by language</b><div class="meta">Thai, Bahasa and Tagalog energy-transition terms, including slang</div></div>
@@ -1725,7 +1725,7 @@ function blankLive(){
   S.org = {TH:{name:'', address:'', taxid:'', email:'', note:''}, ID:{name:'', address:'', taxid:'', email:'', note:''}};
   F.forEach(f => { S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); });
   S.listen = {pre:{}, post:{}, cmp:{}, bench:{}, data:{}, decks:{}, sec:{}};
-  S.accounts = []; S.pedit = null; S.pinv = null;
+  S.accounts = []; S.pedit = null; S.pinv = null; S.csoNotes = [];
 }
 function applyRec(r, remove){
   const [t, n] = r.kind.split(':'), key = r.key, d = remove ? null : unwrap(r.data);
@@ -1836,6 +1836,12 @@ function vLiveLogin(){
       <div class="row spread"><button class="btn" type="submit">Sign in</button><button class="btn ghost sm" type="button" data-act="forgot">Forgot password?</button></div></form>
     <p class="note">Accounts are created by the programme team. If you cannot sign in, ask them.</p><p class="note">Just looking? <a href="?demo">See the demo</a> (made-up data, no login).</p>`);
 }
+function stripSample(){
+  F.forEach(f => { f.c5 = [0,0,0,0,0]; f.posts = 0; f.pend = 0; });
+  LEAP.length = 0;
+  [CAMPDATA, CIVIC, MSG, OV].forEach(o => Object.keys(o).forEach(k => delete o[k]));
+}
+if (LIVE) stripSample();
 document.addEventListener('input', () => { if (LIVE) scheduleFlush(); });
 document.addEventListener('change', () => { if (LIVE) scheduleFlush(); });
 if (DEMO) { const t = document.getElementById('protoText'); t.innerHTML = '<b>DEMO PAGE</b> · This is a demo with made-up names and numbers, not the real portal. Nothing here is saved, and changes reset when you reload. Use the role menu to see each view.'; document.title = 'DEMO · ' + document.title; }
