@@ -207,3 +207,9 @@ Masterclasses is now a sub-tab of The Good Chat Club (Conversations, Masterclass
 
 ## Photos in the Good Chat Club
 Ready to collaborate entries have a photo, a profile link, an example link and an example photo. Inspiration entries have an event photo. Photos live in the people bucket under club/. Re-run supabase/schema.sql so coordinators can upload them.
+
+## The Good Chat League (leaderboard)
+Teams are a fellow plus their KOL friends. Podium, your place and the gap to the next team, the best way to climb, and who leads each of the five parts. KOL friends see the leaderboard too, with their fellow team highlighted. Everyone is scored from impact_stats, now with KPI items and confirmed benchmarks: re-run supabase/schema.sql.
+
+## Planned versus done
+Each part of the Campaign page has a Planned section (the proposal) and a Done section (posts published, events held, people who took action, money spent). Spending lines no longer ask for support from makesense. Fellows record Spent so far per line; the team sees Done so far on Campaign proposals. No Supabase change.
