@@ -270,6 +270,7 @@ begin
   if p.id is null then return false; end if;
   if k = 'me' then return r = auth.uid()::text; end if;   -- anyone may change their own profile photo
   if p.role = 'program' then return true; end if;
+  if k = 'club' then return p.role = 'country'; end if;   -- photos for the Good Chat Club lists
   if p.role <> 'country' then return false; end if;
   if k = 'fellow' then select f.country into c from public.fellows f where f.id = r;
   elsif k = 'cso' then select x.country into c from public.records x where x.kind = 'list:csos' and x.key = r;

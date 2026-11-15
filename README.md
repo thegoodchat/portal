@@ -204,3 +204,6 @@ Campaign now holds the whole cycle: listening insights, proposal and spending, c
 
 ## Masterclasses inside The Good Chat Club
 Masterclasses is now a sub-tab of The Good Chat Club (Conversations, Masterclasses, Inspiration, Ready to collaborate). The last tab group is called Community. Tab groups now match across roles, in the demo and live.
+
+## Photos in the Good Chat Club
+Ready to collaborate entries have a photo, a profile link, an example link and an example photo. Inspiration entries have an event photo. Photos live in the people bucket under club/. Re-run supabase/schema.sql so coordinators can upload them.
