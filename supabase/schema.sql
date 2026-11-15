@@ -135,6 +135,8 @@ begin
   if k = 'fp:posts' and p.role = 'friend' and coalesce(rec->>'friend','-') <> coalesce(p.friend_id,'-') then return false; end if;
   if k = 'list:pevents' and p.role = 'friend' and coalesce(rec->>'friends','false') not in ('true') then return false; end if;
   if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
+  -- key links: only the roles named on the link can read it
+  if k = 'list:keylinks' and not public.keylink_visible(p.role, rec) then return false; end if;
   -- content features: fellows, KOL friends and CSOs only see the ones that feature them
   if k = 'list:features' and p.role in ('fellow','friend','cso') and not exists (
     select 1 from jsonb_array_elements(coalesce(rec->'who','[]'::jsonb)) w
@@ -485,10 +487,14 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
 on conflict (kind, role) do nothing;
 
 
--- Budget page (one Notion link for both countries): the programme coordinator or director sets it, country coordinators open it. Nobody else can read it.
+-- Key links (coordination sheet, budget, communication assets ...): the programme team adds them and chooses who sees each one.
+-- A link has an "aud" list of roles. Everyone else only reads the links that name their role.
 insert into public.kind_access (kind, role, read_scope, write_scope) values
-  ('map:links','program','all','all'),('map:links','country','all','none')
+  ('list:keylinks','program','all','all'),('list:keylinks','country','all','none'),('list:keylinks','listener','all','none'),('list:keylinks','comms','all','none'),
+  ('list:keylinks','ops','all','none'),('list:keylinks','fellow','all','none'),('list:keylinks','friend','all','none'),('list:keylinks','cso','all','none'),('list:keylinks','partner','all','none')
 on conflict (kind, role) do nothing;
+create or replace function public.keylink_visible(role_ text, rec jsonb) returns boolean
+language sql immutable as $$ select role_ = 'program' or coalesce(rec->'aud', '[]'::jsonb) ? role_ $$;
 
 -- Operations can see every plan, proposal and spending-related record
 insert into public.kind_access (kind, role, read_scope, write_scope) values

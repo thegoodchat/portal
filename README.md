@@ -128,5 +128,5 @@ Spending proposals are reviewed in **USD**. A fellow can price lines in THB or I
 
 ## Budget pages, exchange rates, operations and spending
 - **Exchange rates:** paperwork pages and the spending proposal link to exchangerates.org.uk.
-- **Budget pages (Notion):** the programme coordinator or director pastes one Notion link, shared by both countries, under Paperwork or Campaign plans (Edit link). Country coordinators, the programme coordinator and the director see an **Open the budget page** button. Nobody else can see it. Notion asks them to sign in.
+- **Links tab:** the programme coordinator or director adds named links (budget page, coordination sheet, communication assets with photos, videos and social media assets, or anything else) and ticks which roles can see each one: country coordinators, communications expert, social listening expert, operations, fellows, KOL friends, CSOs, partners. Everyone else never sees it, and the database enforces that. Country coordinators also see their links as buttons at the top of Paperwork and Campaign plans.
 - **Operations** also gets the Campaign plans tab and read access to every plan, proposal, setup, supplier, event and support record, so it can see all spending. Re-run schema.sql once.
