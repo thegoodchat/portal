@@ -166,3 +166,7 @@ Programme coordinator (any country), country coordinators (friends of fellows in
 ## Invoice details
 
 One organisation for fellows in both countries: Sensecube LTD (for The Good Chat project), UEN 202324473C, 60 Paya Lebar Road #06-28 Paya Lebar Square, Singapore 409051. These are built in as the defaults, so fellows see them from day one. The programme coordinator can edit them on the Paperwork tab (changes apply to both countries). Add the "Send invoices to" email there when you have it.
+
+## Masterclasses are open-ended
+
+Team members (programme and country coordinators, social listening and communications experts) add and edit masterclasses themselves. Month and date are optional, and a free-text "Time or other details" line covers things like "mid-March, date to be confirmed". Any number per month is fine. Each masterclass can also carry resources the expert mentions in class (title, link, one-line note), shown to fellows and KOL friends next to the slides. No database change is needed.

@@ -1377,9 +1377,18 @@ function slItem(x, mode){
 }
 function clForm(c){
   const n = c.id === 'new';
-  return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
+  return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<span class="hint">Optional</span><input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<span class="hint">Leave empty if not fixed yet</span><input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
+    <label class="f">Time or other details<span class="hint">Optional. For example: 19:00 to 20:30 Bangkok time, or "mid-March, date to be confirmed"</span><input type="text" id="cl-when" value="${esc(c.when || '')}"></label>
     <label class="f">Topic<input type="text" id="cl-topic" value="${esc(c.topic || '')}"></label><label class="f">Led by<span class="hint">Name of the expert</span><input type="text" id="cl-lead" value="${esc(c.lead || '')}"></label><label class="f">Expertise<select id="cl-exp">${opt(['', ...CL_EXP], c.exp || '')}</select></label><label class="f">Join link<span class="hint">Zoom, Meet or the room details</span><input type="text" id="cl-link" value="${esc(c.link || '')}"></label>
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="cl-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="cl-del" data-v="${c.id}">Delete masterclass</button>`}</div></form>`;
+}
+/* links the expert mentions in class and wants to share: articles, videos, tools, reading */
+function clResources(c, team){
+  const r = c.res || [];
+  if (!r.length && !team) return '';
+  return `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px"><div class="meta">Resources shared with this masterclass</div>
+    ${r.map(x => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${lnk(x.url, x.title)}</b>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</span>${team ? `<button type="button" class="btn ghost sm" data-act="cl-res-del" data-id="${c.id}" data-v="${x.id}">Remove</button>` : ''}</div></div>`).join('') || '<p class="meta">None added yet.</p>'}
+    ${team ? `<form data-form="cl-res" data-id="${c.id}" class="stack" style="margin-top:8px"><div class="formgrid"><label class="f">Title<input type="text" name="rt" placeholder="e.g. The video Mai mentioned" required></label><label class="f">Link<input type="url" name="ru" placeholder="https://" required></label></div><label class="f">Why it helps<input type="text" name="rn" placeholder="Optional. One line on what to look for"></label><div><button class="btn sm" type="submit">Add resource</button></div></form>` : ''}</div>`;
 }
 function vSlides(){
   const team = S.role === 'team', cls = slClasses(), vis = S.slides.filter(slVisible);
@@ -1390,14 +1399,14 @@ function vSlides(){
   const cards = cls.map(c => {
     if (team && S.cledit === c.id) return `<div class="card"><h2>Edit ${esc(c.name)}</h2>${clForm(c)}</div>`;
     const items = inClass(c);
-    if (!team && !items.length && !c.date && !c.topic) return '';
-    return `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}${c.topic ? ': ' + esc(c.topic) : ''}</h2><p class="sub2" style="margin:0">${c.date ? dd(c.date) + ', ' : ''}${esc(monthName(c.month))}${c.lead ? ', led by ' + esc(c.lead) + (c.exp ? ' (' + esc(c.exp) + ')' : '') : ''}${c.link ? ', ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button>` : ''}</div>
-      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || '<p class="meta">Slides will appear here.</p>'}</div></div>`;
+    if (!team && !items.length && !c.date && !c.topic && !(c.res || []).length) return '';
+    return `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}${c.topic ? ': ' + esc(c.topic) : ''}</h2><p class="sub2" style="margin:0">${[c.date ? dd(c.date) : '', monthName(c.month) ? esc(monthName(c.month)) : '', c.when ? esc(c.when) : ''].filter(Boolean).join(', ') || 'Date to be confirmed'}${c.lead ? ', led by ' + esc(c.lead) + (c.exp ? ' (' + esc(c.exp) + ')' : '') : ''}${c.link ? ', ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button>` : ''}</div>
+      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || '<p class="meta">Slides will appear here.</p>'}</div>${clResources(c, team)}</div>`;
   }).join('');
-  const seed = team && !cls.length ? `<div class="card"><p class="sub2">There is one masterclass a month from January to July. Set up the seven slots, then add dates and topics.</p><button type="button" class="btn" data-act="cl-seed">Set up January to July</button></div>` : '';
+  const seed = team && !cls.length ? `<div class="card"><p class="sub2">Add masterclasses in whatever pattern suits the programme, with a month, an exact date or just a topic. You can also start with one a month from January to July.</p><button type="button" class="btn ghost" data-act="cl-seed">Start with January to July</button></div>` : '';
   const addC = team ? (S.cledit === 'new' ? `<div class="card"><h2>Add a masterclass</h2>${clForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn ghost" data-act="cl-edit" data-v="new">Add a masterclass</button></div>`) : '';
   const oth = other.length ? `<div class="card"><h2>Other slides</h2>${other.map(x => slItem(x, team ? 'manage' : 'view')).join('')}</div>` : '';
-  const head = `<div class="card"><h2>Masterclasses and slides</h2><p class="sub2">${team ? 'Arrange the slides for each masterclass: change the order, and choose who sees each one. Fellows and KOL friends see them in this order.' : 'One masterclass a month, with the slides shared after each one.'}</p></div>`;
+  const head = `<div class="card"><h2>Masterclasses and slides</h2><p class="sub2">${team ? 'Arrange the slides for each masterclass: change the order, and choose who sees each one. Fellows and KOL friends see them in this order.' : 'Masterclasses led by experts, with their slides and the resources they recommend.'}</p></div>`;
   return head + seed + (cards || (!team ? '<div class="card"><p class="meta">Nothing shared yet.</p></div>' : '')) + oth + addC + (team ? slEditor() : '');
 }
 function slEditor(){
@@ -2085,6 +2094,7 @@ document.addEventListener('click', e => {
   if (a === 'kd-seed') { [['Fellowship application deadline','2026-11-22','','Deadline',''],['Announcement of TGC4 Fellows','2026-12-15','','Other',''],['Regional kickoff event in Bangkok','2027-01-12','2027-01-14','Event','','Organised in Bangkok. Fellows from Thailand and Indonesia join.'],['Campaign 1','2027-02-08','2027-03-26','Campaign',''],['Co-creation event in Bangkok','2027-04-21','2027-04-23','Event','TH'],['Co-creation event in Jakarta','2027-04-28','2027-04-30','Event','ID'],['Campaign 2','2027-06-07','2027-07-30','Campaign',''],['Closing events in Bangkok and Jakarta','2027-08-03','','Event','']].forEach((r, i) => S.dates.push({id:Date.now() + i, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:r[5] || ''})); render(); toast('Programme dates added. Edit any that change.'); return; }
   if (a === 'cl-edit') { S.cledit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'cl-cancel') { S.cledit = null; render(); return; }
+  if (a === 'cl-res-del') { const c = S.classes.find(x => String(x.id) === String(el.dataset.id)); if (c) { c.res = (c.res || []).filter(x => String(x.id) !== String(v)); render(); } return; }
   if (a === 'cl-del') { S.classes = S.classes.filter(c => String(c.id) !== String(v)); S.slides.forEach(x => { if (String(x.class) === String(v)) x.class = ''; }); S.cledit = null; render(); return; }
   if (a === 'cl-seed') { ['01','02','03','04','05','06','07'].forEach((m, i) => S.classes.push({id:Date.now() + i, name:'Masterclass ' + (i + 1), month:'2027-' + m, date:'', topic:'', link:''})); render(); toast('Seven masterclass slots added. Add a date and topic to each.'); return; }
   if (a === 'sl-vis-noop') return;
@@ -2269,9 +2279,14 @@ document.addEventListener('submit', e => {
     if (id === 'new') S.dates.push(Object.assign({id:Date.now()}, v)); else { const o = S.dates.find(c => String(c.id) === String(id)); if (o.date !== v.date || (o.end || '') !== (v.end || '') || (o.country || '') !== (v.country || '')) delete o.confirms; Object.assign(o, v); }
     S.kdedit = null; render(); toast('Saved.'); return;
   }
+  if (f === 'cl-res') {
+    const fm = e.target, c = S.classes.find(x => String(x.id) === String(fm.dataset.id)), val = n => (fm.elements[n] || {}).value || '';
+    if (!c || !val('rt').trim() || !/^https?:\/\//i.test(val('ru').trim())) { toast('Add a title and a link that starts with https://'); return; }
+    c.res = [...(c.res || []), {id:Date.now(), title:val('rt').trim(), url:val('ru').trim(), note:val('rn').trim()}]; render(); toast('Resource added.'); return;
+  }
   if (f === 'cl-save') {
     const id = e.target.dataset.id, name = g('cl-name'); if (!name) { toast('Add a name.'); return; }
-    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link')};
+    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link'), when:g('cl-when')};
     if (id === 'new') S.classes.push(Object.assign({id:Date.now()}, v)); else { const o = S.classes.find(c => String(c.id) === String(id)); if (o.date !== v.date) delete o.confirms; Object.assign(o, v); }
     S.cledit = null; render(); toast('Saved.'); return;
   }
