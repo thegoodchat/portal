@@ -347,7 +347,7 @@ const S = {
     {id:2, title:'Paperwork masterclass: example forms and checklist', url:'https://example.com/mc1-work', type:'Masterclass', to:'all', camp:0, class:1, order:2, fellows:true, friends:false, date:'2027-01-15', by:'Sample'},
     {id:3, title:'Storytelling masterclass: telling a story in 60 seconds', url:'https://example.com/mc2', type:'Masterclass', to:'all', camp:0, class:2, order:1, fellows:true, friends:true, date:'2027-02-19', by:'Sample'}],
   classes:[
-    {id:1, name:'Paperwork: quotations, agreements, invoices and receipts', month:'2027-01', date:'2027-01-15', topic:'How to make them yourself, how to ask your suppliers for theirs, and why they matter.', cat:'Getting started', link:'https://example.com/join-1', lesson:'https://www.notion.so/example-paperwork-lesson'},
+    {id:1, name:'Paperwork: quotations, agreements, invoices and receipts', month:'2027-01', date:'2027-01-15', topic:'How to make them yourself, how to ask your suppliers for theirs, and why they matter.', cat:'Resources', link:'https://example.com/join-1', lesson:'https://www.notion.so/example-paperwork-lesson'},
     {id:2, name:'Storytelling for civic action', month:'2027-02', date:'2027-02-19', topic:'How to tell a story people want to act on.', cat:'Creating content', link:''},
   ],
   dates:[
@@ -1698,6 +1698,7 @@ const clEmpty = c => /^masterclass\s*\d+$/i.test((c.name || '').trim()) && !c.to
 function vSlides(){
   const team = S.role === 'team';
   if (team && !DEMO && S.classes.some(clEmpty)) S.classes = S.classes.filter(c => !clEmpty(c));
+  if (team && !DEMO) S.classes.forEach(c => { if (c.cat === 'Getting started') c.cat = 'Resources'; });
   const cls = slClasses().filter(c => !clEmpty(c)), vis = S.slides.filter(slVisible);
   const inClass = c => slOrder(vis.filter(x => String(x.class) === String(c.id)));
   const known = new Set(cls.map(c => String(c.id)));
