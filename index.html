@@ -1668,12 +1668,19 @@ function slItem(x, mode){
   const btns = mng ? `<span class="row" style="gap:6px"><button type="button" class="btn ghost sm" data-act="sl-up" data-v="${x.id}" aria-label="Move ${esc(x.title)} up">Up</button><button type="button" class="btn ghost sm" data-act="sl-down" data-v="${x.id}" aria-label="Move ${esc(x.title)} down">Down</button><button type="button" class="btn ghost sm" data-act="sl-del" data-v="${x.id}" aria-label="Remove ${esc(x.title)}">Remove</button></span>` : mode === 'edit' ? `<button type="button" class="btn ghost sm" data-act="sl-del" data-v="${x.id}" aria-label="Remove ${esc(x.title)}">Remove</button>` : '';
   return `<div class="item"><div class="row spread"><div><b>${slLink(x)}</b>${x.file ? ' <span class="tag">File</span>' : ''}<div class="meta">${esc(x.type || 'Slides')}${cls && mode !== 'view-in-class' && !mng ? ', ' + esc(cls.name) : ''}${x.camp ? ', Campaign ' + x.camp : ''}, For ${esc(slTo(x.to))}${x.date ? ', Added ' + dd(x.date) : ''}</div>${aud}</div>${btns}</div></div>`;
 }
+function clDocFields(pre){
+  return `<div class="formgrid"><label class="f">Label<span class="hint">For example: Slides, or Worksheet</span><input type="text" id="${pre}dt"></label><label class="f">Type<select id="${pre}dy">${opt(['Slides','Document','Worksheet','Other'], 'Slides')}</select></label></div>
+    <div class="formgrid"><label class="f">Link<span class="hint">Google Slides, Drive or any web link</span><input type="url" id="${pre}du" placeholder="https://"></label>${LIVE ? `<label class="f">Or upload a file<span class="hint">PDF or PowerPoint, up to 45 MB</span><input type="file" id="${pre}df" accept=".pdf,.ppt,.pptx,.key,.odp,.doc,.docx,.xls,.xlsx"></label>` : ''}</div>
+    <div class="row" style="gap:18px"><label class="row" style="gap:6px"><input type="checkbox" id="${pre}dfe" checked> Fellows can see it</label><label class="row" style="gap:6px"><input type="checkbox" id="${pre}dfr"> KOL friends can see it</label></div>`;
+}
 function clForm(c){
   const n = c.id === 'new';
   return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Title<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<span class="hint">Optional</span><input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<span class="hint">Leave empty if not fixed yet</span><input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
     <label class="f">Time or other details<span class="hint">Optional. For example: 19:00 to 20:30 Bangkok time, or "mid-March, date to be confirmed"</span><input type="text" id="cl-when" value="${esc(c.when || '')}"></label>
     <label class="f">Short description<span class="hint">One or two lines on what it covers</span><input type="text" id="cl-topic" value="${esc(c.topic || '')}"></label><label class="f">Category<span class="hint">Optional. Masterclasses with the same category are shown together</span><input type="text" id="cl-cat" list="cl-cats" value="${esc(c.cat || '')}"><datalist id="cl-cats">${[...new Set(S.classes.map(x => x.cat).filter(Boolean))].map(x => `<option value="${esc(x)}">`).join('')}</datalist></label><label class="f">Lesson link<span class="hint">Optional. The full lesson in the Playbook on Notion</span><input type="url" id="cl-lesson" value="${esc(c.lesson || '')}" placeholder="https://"></label><label class="f">Led by<span class="hint">Name of the expert</span><input type="text" id="cl-lead" value="${esc(c.lead || '')}"></label><label class="f">Expertise<select id="cl-exp">${opt(['', ...CL_EXP], c.exp || '')}</select></label><label class="f">Join link<span class="hint">Zoom, Meet or the room details</span><input type="text" id="cl-link" value="${esc(c.link || '')}"></label>
+    <label class="f">Video link<span class="hint">Optional. A recording or video lesson (YouTube, Vimeo, Drive or any web link)</span><input type="url" id="cl-video" value="${esc(c.video || '')}" placeholder="https://"></label>
     <label class="f">Main slides link<span class="hint">Optional. The deck the expert uses in class (Google Slides, Drive or any web link)</span><input type="url" id="cl-deck" value="${esc(c.deck || '')}" placeholder="https://"></label>
+    ${n ? `<fieldset class="stack" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px"><legend class="meta">Add a document (optional)</legend><p class="meta" style="margin:0">Slides, a worksheet or any other document. You can add more after saving.</p>${clDocFields('cl-')}</fieldset>` : ''}
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="cl-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="cl-del" data-v="${c.id}">Delete masterclass</button>`}</div></form>`;
 }
 /* links the expert mentions in class and wants to share: articles, videos, tools, reading */
@@ -1682,6 +1689,9 @@ function clResources(c, team){
   if (!r.length && !team) return '';
   const form = team ? `<details style="margin-top:8px"${r.length ? '' : ''}><summary class="meta" style="cursor:pointer">+ Add a relevant link</summary><form data-form="cl-res" data-id="${c.id}" class="stack" style="margin-top:8px"><div class="formgrid"><label class="f">Title<input type="text" name="rt" placeholder="e.g. The video Mai mentioned" required></label><label class="f">Link<input type="url" name="ru" placeholder="https://" required></label></div><label class="f">Why it helps<input type="text" name="rn" placeholder="Optional. One line on what to look for"></label><div><button class="btn sm" type="submit">Add link</button></div></form></details>` : '';
   return `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">${r.length ? `<div class="meta">Relevant links</div>${r.map(x => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${lnk(x.url, x.title)}</b>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</span>${team ? `<button type="button" class="btn ghost sm" data-act="cl-res-del" data-id="${c.id}" data-v="${x.id}">Remove</button>` : ''}</div></div>`).join('')}` : ''}${form}</div>`;
+}
+function clAddDoc(c){
+  return `<details style="margin-top:8px"><summary class="meta" style="cursor:pointer">+ Add a document</summary><form data-form="cl-doc" data-id="${c.id}" class="stack" style="margin-top:8px">${clDocFields('cd' + c.id + '-')}<div><button class="btn sm" type="submit">Add document</button></div></form></details>`;
 }
 function vSlides(){
   const team = S.role === 'team', cls = slClasses(), vis = S.slides.filter(slVisible);
@@ -1694,17 +1704,16 @@ function vSlides(){
   const cards = grouped.map(c => {
     if (team && S.cledit === c.id) return `<div class="card"><h2>Edit ${esc(c.name)}</h2>${clForm(c)}</div>`;
     const items = inClass(c);
-    if (!team && !items.length && !c.date && !c.topic && !c.deck && !(c.res || []).length) return '';
+    if (!team && !items.length && !c.date && !c.topic && !c.deck && !c.video && !c.lesson && !(c.res || []).length) return '';
     const catHead = anyCat && (c.cat || '') !== lastCat ? (lastCat = c.cat || '', `<h2 class="h sec" style="margin:18px 0 0">${esc(c.cat || 'Other')}</h2>`) : '';
     return catHead + `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}</h2>${c.topic ? `<p style="margin:4px 0 6px">${esc(c.topic)}</p>` : ''}<p class="sub2" style="margin:0">${[c.date ? dd(c.date) : '', monthName(c.month) ? esc(monthName(c.month)) : '', c.when ? esc(c.when) : ''].filter(Boolean).join(', ') || 'Date to be confirmed'}${c.lead ? ', led by ' + esc(c.lead) + (c.exp ? ' (' + esc(c.exp) + ')' : '') : ''}${c.link ? ', ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<span class="row" style="gap:6px"><button type="button" class="btn ghost sm" data-act="cl-up" data-v="${c.id}" aria-label="Move ${esc(c.name)} up">Up</button><button type="button" class="btn ghost sm" data-act="cl-down" data-v="${c.id}" aria-label="Move ${esc(c.name)} down">Down</button><button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button></span>` : ''}</div>
-      ${c.lesson ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.lesson)}" target="_blank" rel="noopener noreferrer">Read the lesson &#8599;</a></div>` : ''}${c.deck ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.deck)}" target="_blank" rel="noopener noreferrer">Open the main slides &#8599;</a></div>` : ''}
-      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || (c.deck ? '' : '<p class="meta">Slides will appear here.</p>')}</div>${clResources(c, team)}</div>`;
+      ${c.video ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.video)}" target="_blank" rel="noopener noreferrer">Watch the video &#8599;</a></div>` : ''}${c.lesson ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.lesson)}" target="_blank" rel="noopener noreferrer">Read the lesson &#8599;</a></div>` : ''}${c.deck ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.deck)}" target="_blank" rel="noopener noreferrer">Open the main slides &#8599;</a></div>` : ''}
+      ${items.length ? `<div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('')}</div>` : ''}${team ? clAddDoc(c) : ''}${clResources(c, team)}</div>`;
   }).join('');
-  const seed = team && !cls.some(c => /paperwork/i.test(c.name)) ? `<div class="card"><p class="sub2">A good one to start with: how to make, and ask for, quotations, agreements, invoices and receipts.</p><button type="button" class="btn ghost" data-act="cl-seed">Add the paperwork masterclass</button></div>` : '';
-  const addC = team ? (S.cledit === 'new' ? `<div class="card"><h2>Add a masterclass</h2>${clForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn ghost" data-act="cl-edit" data-v="new">Add a masterclass</button></div>`) : '';
+  const addC = team ? (S.cledit === 'new' ? `<div class="card"><h2>Add a masterclass</h2>${clForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn" data-act="cl-edit" data-v="new">Add a masterclass</button>${cls.length ? '' : '<p class="meta" style="margin:8px 0 0">Nothing here yet. Add the first masterclass and it will show up for fellows.</p>'}</div>`) : '';
   const oth = other.length ? `<div class="card"><h2>Other slides</h2>${other.map(x => slItem(x, team ? 'manage' : 'view')).join('')}</div>` : '';
   const head = `<div class="card"><h2>Masterclasses</h2><p class="sub2">${team ? 'Arrange the slides for each masterclass: change the order, and choose who sees each one. Fellows and KOL friends see them in this order.' : 'Short lessons from people who know their stuff. Find their slides and the links they recommend here.'}</p></div>`;
-  return head + seed + (cards || (!team ? '<div class="card"><p class="meta">Nothing shared yet.</p></div>' : '')) + oth + addC + (team ? slEditor() : '');
+  return head + addC + (cards || (!team ? '<div class="card"><p class="meta">No masterclasses yet.</p></div>' : '')) + oth + (team ? slEditor() : '');
 }
 function slEditor(){
   const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`, ed = S.role !== 'team';
@@ -2493,7 +2502,6 @@ document.addEventListener('click', e => {
   if (a === 'cl-cancel') { S.cledit = null; render(); return; }
   if (a === 'cl-res-del') { const c = S.classes.find(x => String(x.id) === String(el.dataset.id)); if (c) { c.res = (c.res || []).filter(x => String(x.id) !== String(v)); render(); } return; }
   if (a === 'cl-del') { S.classes = S.classes.filter(c => String(c.id) !== String(v)); S.slides.forEach(x => { if (String(x.class) === String(v)) x.class = ''; }); S.cledit = null; render(); return; }
-  if (a === 'cl-seed') { S.classes.push({id:Date.now(), name:'Paperwork: quotations, agreements, invoices and receipts', topic:'How to make them yourself, how to ask your suppliers for theirs, and why they matter. With example forms and tools like Canva.', cat:'Getting started', month:'', date:'', link:'', lesson:''}); render(); toast('Added. Paste the lesson link in when your Playbook page is ready.'); return; }
   if (a === 'cl-up') { clMove(v, -1); render(); return; }
   if (a === 'cl-down') { clMove(v, 1); render(); return; }
   if (a === 'sl-vis-noop') return;
@@ -2749,11 +2757,20 @@ document.addEventListener('submit', e => {
     if (!c || !val('rt').trim() || !/^https?:\/\//i.test(val('ru').trim())) { toast('Add a title and a link that starts with https://'); return; }
     c.res = [...(c.res || []), {id:Date.now(), title:val('rt').trim(), url:val('ru').trim(), note:val('rn').trim()}]; render(); toast('Resource added.'); return;
   }
+  if (f === 'cl-doc') {
+    const fm = e.target, pre = 'cd' + fm.dataset.id + '-', gv = n => ((fm.querySelector('#' + CSS.escape(pre + n)) || {}).value || '').trim(), fi = fm.querySelector('#' + CSS.escape(pre + 'df'));
+    if (!gv('dt')) { toast('Add a label for the document.'); return; }
+    slAdd({title:gv('dt'), url:gv('du'), file:fi && fi.files && fi.files[0], cls:fm.dataset.id, type:gv('dy') || 'Slides', to:'all', camp:0, fel:fm.querySelector('#' + CSS.escape(pre + 'dfe')).checked, fri:fm.querySelector('#' + CSS.escape(pre + 'dfr')).checked}); return;
+  }
   if (f === 'cl-save') {
     const id = e.target.dataset.id, name = g('cl-name'); if (!name) { toast('Add a title.'); return; }
-    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link'), when:g('cl-when'), deck:g('cl-deck'), cat:g('cl-cat').trim(), lesson:g('cl-lesson').trim()};
-    if (id === 'new') S.classes.push(Object.assign({id:Date.now()}, v)); else { const o = S.classes.find(c => String(c.id) === String(id)); if (o.date !== v.date) delete o.confirms; Object.assign(o, v); }
-    S.cledit = null; render(); toast('Saved.'); return;
+    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link'), when:g('cl-when'), deck:g('cl-deck'), video:g('cl-video').trim(), cat:g('cl-cat').trim(), lesson:g('cl-lesson').trim()};
+    let doc = null;
+    if (id === 'new') { const dt = g('cl-dt').trim(), du = g('cl-du').trim(), fi = document.getElementById('cl-df'), file = fi && fi.files && fi.files[0]; if (dt || du || file) { if (!dt) { toast('Add a label for the document.'); return; } if (!file && !/^https?:\/\//i.test(du)) { toast('Paste the document link starting with https://, or upload a file.'); return; } doc = {title:dt, url:du, file, type:g('cl-dy'), to:'all', camp:0, fel:document.getElementById('cl-dfe').checked, fri:document.getElementById('cl-dfr').checked}; } }
+    if (v.video && !/^https?:\/\//i.test(v.video)) { toast('The video link must start with https://'); return; }
+    const nid = Date.now();
+    if (id === 'new') S.classes.push(Object.assign({id:nid}, v)); else { const o = S.classes.find(c => String(c.id) === String(id)); if (o.date !== v.date) delete o.confirms; Object.assign(o, v); }
+    S.cledit = null; render(); toast('Saved.'); if (doc) { doc.cls = nid; slAdd(doc); } return;
   }
   if (f === 'pp-friend') { const [fid, frid] = g('pf-friend').split('|'), fr = (fd(fid).friends || []).find(x => String(x.id) === frid); if (!fr) { toast('Choose which KOL friend this login is for.'); return; } ppSendInvite({email:g('pf-email'), label:fr.name, role:'friend', friend_id:frid}); return; }
   if (f === 'me-save') { meSave(); return; }

@@ -234,3 +234,12 @@ People cards hold up to 3 platforms with followers, niche, audience (who, person
 
 - Pressing Share with the team also saves the proposal as a PDF in the fellow's Drive folder (`..._Campaign1_Proposal_v1.pdf`, then v2, v3 on each re-share). Setup: `drive-upload/SETUP.md`, plus the `upload-proposal` Edge Function. If the upload fails, the proposal is still shared and the fellow is asked to upload it by hand.
 - If a proposal marked Ready to go is edited and shared again, it returns to the team as "Changed after approval", with the old and new totals. Approving it again clears the flag.
+
+## Masterclasses: start empty, add your own
+
+The Masterclasses tab starts empty and shows only what the team adds. There is no placeholder or example masterclass.
+
+- **Add a masterclass** (team): title, optional date, short description, category, lesson link, video link, main slides link, and an optional first document.
+- **Video:** paste a link (YouTube, Vimeo, Drive or any web link). Fellows see a "Watch the video" button.
+- **Documents:** each masterclass has "+ Add a document" for slides, worksheets or any other file. Paste a link or, in the live portal, upload a file (up to 45 MB). Choose whether fellows and KOL friends can see it.
+- No schema change. Video links are stored with the masterclass record.
