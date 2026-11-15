@@ -1,6 +1,6 @@
 # The Good Chat portal
 
-Web app for The Good Chat (makesense Asia): paperwork status, campaign plans, social listening, events, The Social Club and leaderboards.
+Web app for The Good Chat (makesense Asia): paperwork status, campaign plans, social listening, events, community and leaderboards.
 Money, ID copies and invoices stay in Google Sheets and a restricted Drive folder. They are never stored here.
 
 - **Site:** static files on GitHub Pages (`index.html`, no build step).
@@ -11,7 +11,7 @@ Money, ID copies and invoices stay in Google Sheets and a restricted Drive folde
 
 Live and shared in real time: programme coordinator, country coordinators, social listening expert, programme partners.
 They can enter paperwork status and notes, organisation invoice details, benchmarks, listening briefs and analysis, deck status,
-programme events (agenda, hotel, check-in), the events board, ways to help, and the The Social Club.
+programme events (agenda, hotel, check-in), the events board, ways to help, and the community feed.
 
 Not yet live: fellow, KOL friend and CSO pages. Those accounts can be created but show a "still being built" message.
 Fellow campaign data (plans, posts, KPIs, KOL friends, suppliers) is the next phase and needs per-fellow storage.
@@ -48,7 +48,7 @@ After that nobody needs the Supabase dashboard. In the portal, open **People**:
 - Programme coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, the social listening expert and partners).
 - Country coordinator: the same for fellows, organisations and logins in their own country.
 - Invited people get an email, click the link and choose their own password.
-Fellow logins now open a first page with Slides, Events, People and The Social Club. Their own campaign pages are still being built. KOL friend and organisation logins can be created, but see a short "still being built" message.
+Fellow logins now open a first page with Slides, Events, People and Community. Their own campaign pages are still being built. KOL friend and organisation logins can be created, but see a short "still being built" message.
 
 **Campaign dates:** the programme coordinator sets them on the Campaigns tab. Until then the portal shows "Dates to be confirmed".
 
@@ -84,7 +84,7 @@ Run the latest `supabase/schema.sql` once to create the bucket and its rules (sa
 ## KOL friends
 A fellow adds a KOL friend on their KOL friends tab (name, how to reach them, what they will do). The country coordinator or programme coordinator then opens
 **People**, picks that friend under KOL friends, and enters their email to send the login. The friend sees their invitation and the campaign message, logs posts with
-numbers and insight screenshots, and sees masterclasses, events, the The Social Club and Impact. Friend posts are saved under the friend's fellow
+numbers and insight screenshots, and sees masterclasses, events, the community and Impact. Friend posts are saved under the friend's fellow
 (`fp:posts`), so the fellow, the country coordinator, the programme coordinator and the social listening expert can read them. The fellow cannot edit them.
 Country coordinators (their own country), the programme coordinator and the social listening expert can edit a friend's post. The database records who edited last
 and the post shows "Last edited by ...", unless the friend made the last edit themselves. Re-deploy the `invite-user` function after updating, because friend logins now link to a specific friend.
@@ -121,7 +121,7 @@ Under every coming date on **Key dates**, a country coordinator can **Confirm** 
 
 ## Operations login and tab order
 - **Operations** is a login type for paperwork and logistics: it edits Paperwork, Reminders, Events and Key dates, and can read People, Impact and Community. Features, posts, listening data and logins are hidden or read-only. Invite it from People, Team logins. Re-run schema.sql and redeploy `invite-user` once.
-- Tab order: team logins start with People, then Paperwork. Impact and Leaderboard sit together. Masterclasses, Events and The Social Club sit together.
+- Tab order: team logins start with People, then Paperwork. Impact and Leaderboard sit together. Masterclasses, Events and Community sit together.
 
 ## Money: USD is the main currency
 Spending proposals are reviewed in **USD**. A fellow can price lines in THB or IDR as an estimate, and gives an exchange rate ("1 USD equals ..."). Every line and total then shows the USD figure, and the team's Campaign plans table totals the plans in USD with the local amount beside it. New plans start in USD. If no rate is entered, the USD figure shows a dash until one is added. No bank details or invoices are stored in the portal.
@@ -130,62 +130,3 @@ Spending proposals are reviewed in **USD**. A fellow can price lines in THB or I
 - **Exchange rates:** paperwork pages and the spending proposal link to exchangerates.org.uk.
 - **Links tab:** the programme coordinator or director adds named links (budget page, coordination sheet, communication assets with photos, videos and social media assets, or anything else) and ticks which roles can see each one: country coordinators, communications expert, social listening expert, operations, fellows, KOL friends, CSOs, partners. Everyone else never sees it, and the database enforces that. Country coordinators also see their links as buttons at the top of Paperwork and Campaign plans.
 - **Operations** also gets the Campaign plans tab and read access to every plan, proposal, setup, supplier, event and support record, so it can see all spending. Re-run schema.sql once.
-
-## Fellow contact details and private Drive folders
-
-Each fellow has a contact card (email, phone, LINE, WhatsApp) and a link to their private Drive folder. The portal stores only the link, never the documents.
-
-- Who sees it: programme team, ops, the country coordinator for that fellow's country, and the fellow. Nobody else (not other fellows, KOL friends, CSOs, partners or experts).
-- Team edit it on the People tab (Edit contact). Fellows edit their own contact under My profile.
-- The folder opens only for people signed in to a Google account you shared it with. In Drive, set the folder's General access to Restricted and add the fellow's email.
-- Fellows see "Open my private folder" on their Paperwork tab when a document is still needed.
-- Setup: re-run `supabase/schema.sql` (adds the `fellow_private` table and `update_my_contact`), then upload `index.html`.
-
-## Points (no cap)
-
-Points are open-ended. Nothing is capped at 20, 25 or 100.
-
-- **Reach**: people reached by posts (own and KOL friends'). With a confirmed benchmark: 5 points for every "usual post's worth" of reach. Without one: 1 point per 1,000 people.
-- **Engagement**: reactions, comments, saves, shares and reposts, the same way (5 points per usual post's worth, or 1 per 50).
-- **Civic action**: 1 point per 5 people who took the action the fellow asked for. Fellows count these on the Log tab, Civic action. The numbers are stored with the campaign plan, so no database change is needed.
-- **Self-designed KPIs**: 20 points when all of a fellow's KPIs are met, more when they go beyond them.
-- **Mainstream integration**: 2 points for each collaborator, KOL friend, CSO partner and community event.
-
-The Impact page's Mainstream integration card also shows civic actions, per campaign and per fellow.
-
-## Coordinators and benchmarks
-
-- The programme coordinator is also the Thailand country coordinator. You do not need a separate Thailand country login. In Key dates, the programme coordinator confirms dates for Thailand. Only create a country coordinator login for Indonesia.
-- Starting benchmarks start empty. The social listening expert does the analysis outside the portal and enters the averages on the Benchmarks tab, then presses Confirm. Fellows then see their starting point on Listening insights, with every post compared against it (for example "1.4x your usual reach").
-- The regional kickoff (12 to 14 Jan 2027, Bangkok, fellows from both countries) is in Key dates. Use "Add the programme dates" on a fresh portal, or add it by hand.
-
-## Who can invite KOL friends
-
-Programme coordinator (any country), country coordinators (friends of fellows in their own country) and the communications expert (any country). Fellows add the friend first on their KOL friends tab; then one of these people picks the friend on the People tab and sends the invite. Re-run `schema.sql` and redeploy the `invite-user` function after updating.
-
-## Invoice details
-
-One organisation for fellows in both countries: Sensecube LTD (for The Good Chat project), UEN 202324473C, 60 Paya Lebar Road #06-28 Paya Lebar Square, Singapore 409051. These are built in as the defaults, so fellows see them from day one. The programme coordinator can edit them on the Paperwork tab (changes apply to both countries). Add the "Send invoices to" email there when you have it.
-
-## Masterclasses are open-ended
-
-Team members (programme and country coordinators, social listening and communications experts) add and edit masterclasses themselves. Month and date are optional, and a free-text "Time or other details" line covers things like "mid-March, date to be confirmed". Any number per month is fine. Each masterclass can also carry a main slides link and, optionally, relevant links the expert mentions in class (title, link, one-line note), shown to fellows and KOL friends. No database change is needed.
-
-## When campaigns are designed
-
-Campaign 1 is designed at the regional kickoff (12 to 14 Jan 2027, Bangkok) and Campaign 2 at the co-creation event (Bangkok 21 to 23 Apr or Jakarta 28 to 30 Apr 2027, by country). Fellows see this on their campaign card and plan, with the dates taken from the Events tab. The team's "needs a nudge" list does not chase unfinished Campaign 1 proposals until the kickoff has ended.
-
-The regional kickoff (12 to 14 Jan 2027, Bangkok) is always on the Key dates list, even on an empty portal. Events added on the Events tab also appear in Key dates automatically, so nothing is typed twice.
-
-Key dates shows the full programme list (application deadline, fellow announcement, kickoff, both campaigns, both co-creation events, closing events, masterclasses) even before anyone types a date. Events that fellows lead in their own communities (from the The Social Club and the events fellows plan) are marked "Fellow-led", and the page can filter All, Programme or Fellow-led.
-
-## Tab groups, reminders and content (restructure)
-- One tab bar with small group labels: People and paperwork, Programme, Campaigns, Results, Together.
-- Campaign plans are now Campaign proposals and come before Campaigns, Posts and Fellow-led events.
-- Programme events and Links sit in the Programme group; the Events tab for the team is now Fellow-led events.
-- The Reminders tab is gone. Remind buttons live on People, Paperwork and Campaign proposals (Remind all is on People).
-- The Features tab is gone. Communications posts content on the Posts list, and fellows, KOL friends and CSOs see content featuring them on their home page. "Ask for an interview or photo" is on each People card.
-- No Supabase change needed.
-
-## Proposal screenshots
-Fellows add screenshots (rental rates, prices, quotations) with a short note on their Campaign proposal while it is a draft. Files go to the existing private insights bucket under fellowId/timestamp/. The team sees them on Campaign proposals. No Supabase change.

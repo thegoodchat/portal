@@ -1,6 +1,5 @@
 // Edge Function: lets coordinators create and switch off logins without touching the database.
 // Programme coordinator: any role. Country coordinator: fellows, CSOs and KOL friends in their own country.
-// Communications expert: KOL friends (any country).
 // Deploy: Supabase dashboard > Edge Functions > Deploy a new function > paste this file, name it "invite-user".
 // Set one secret: SITE_URL = your site address, e.g. https://thegoodchat.github.io/portal/
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -20,7 +19,6 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function allowed(me: any, target: any): string | null {
   if (!me || !me.active) return 'Not allowed.';
   if (me.role === 'program') return null;
-  if (me.role === 'comms') return target.role === 'friend' ? null : 'The communications expert can manage KOL friends only.';
   if (me.role !== 'country') return 'Only coordinators can manage logins.';
   if (!COUNTRY_MANAGED.includes(target.role)) return 'Country coordinators can manage fellows, CSOs and KOL friends only.';
   if (!me.country || target.country !== me.country) return 'You can only manage people in your own country.';
