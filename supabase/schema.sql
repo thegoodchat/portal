@@ -135,6 +135,12 @@ begin
   if k = 'fp:posts' and p.role = 'friend' and coalesce(rec->>'friend','-') <> coalesce(p.friend_id,'-') then return false; end if;
   if k = 'list:pevents' and p.role = 'friend' and coalesce(rec->>'friends','false') not in ('true') then return false; end if;
   if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
+  -- content features: fellows, KOL friends and CSOs only see the ones that feature them
+  if k = 'list:features' and p.role in ('fellow','friend','cso') and not exists (
+    select 1 from jsonb_array_elements(coalesce(rec->'who','[]'::jsonb)) w
+    where (p.role = 'fellow' and w->>'t' = 'fellow' and w->>'id' = p.fellow_id)
+       or (p.role = 'friend' and w->>'t' = 'friend' and w->>'id' = p.friend_id)
+       or (p.role = 'cso' and w->>'t' = 'cso' and w->>'id' = p.cso_id)) then return false; end if;
   return case sc
     when 'all' then true
     when 'country' then rc is not null and rc = p.country
@@ -260,6 +266,7 @@ declare p public.profiles; k text := split_part(path, '/', 1); r text := split_p
 begin
   select * into p from public.profiles where id = auth.uid() and active;
   if p.id is null then return false; end if;
+  if k = 'me' then return r = auth.uid()::text; end if;   -- anyone may change their own profile photo
   if p.role = 'program' then return true; end if;
   if p.role <> 'country' then return false; end if;
   if k = 'fellow' then select f.country into c from public.fellows f where f.id = r;
@@ -291,7 +298,7 @@ grant execute on all functions in schema public to authenticated, service_role;
 insert into storage.buckets (id, name, public) values ('slides', 'slides', false) on conflict (id) do nothing;
 create or replace function public.can_manage_slides() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles where id = auth.uid() and active and role in ('program','country','listener'));
+  select exists (select 1 from public.profiles where id = auth.uid() and active and role in ('program','country','listener','comms'));
 $$;
 drop policy if exists slide_files_read on storage.objects;
 create policy slide_files_read on storage.objects for select using (bucket_id = 'slides' and (
@@ -320,7 +327,7 @@ begin
   if p.role = 'friend' then return p.friend_id is not null and p.friend_id = split_part(path, '/', 2); end if;
   if p.role = 'fellow' then return p.fellow_id is not null and p.fellow_id = fid and (not want_write or split_part(path, '/', 2) ~ '^[0-9]+$'); end if;
   if want_write then return false; end if;
-  if p.role = 'listener' then return true; end if;
+  if p.role in ('listener','comms') then return true; end if;
   if p.role = 'country' then
     select country into fc from public.fellows where id = fid;
     return fc is not null and fc = p.country;
@@ -377,3 +384,113 @@ begin
 end $$;
 grant execute on function public.friend_context() to authenticated;
 
+
+
+-- =====================================================================
+-- Everyone can change their own name and profile photo
+-- =====================================================================
+alter table public.profiles add column if not exists photo text;
+
+create or replace function public.update_my_profile(new_name text, new_photo text default null) returns void
+language plpgsql security definer set search_path = public as $$
+declare p public.profiles; nm text := btrim(coalesce(new_name, '')); ph text := nullif(btrim(coalesce(new_photo, '')), '');
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null then raise exception 'not signed in'; end if;
+  if nm = '' or length(nm) > 80 then raise exception 'Add a name of up to 80 characters'; end if;
+  if ph is not null and ph not like 'me/' || auth.uid()::text || '/%' then raise exception 'photo path not allowed'; end if;
+  update public.profiles set label = nm, photo = coalesce(ph, photo) where id = p.id;
+  if p.role = 'fellow' and p.fellow_id is not null then
+    update public.fellows set name = nm, photo = coalesce(ph, photo) where id = p.fellow_id;
+  elsif p.role = 'cso' and p.cso_id is not null then
+    update public.records set data = data || jsonb_build_object('name', nm) || case when ph is null then '{}'::jsonb else jsonb_build_object('photo', ph) end
+      where kind = 'list:csos' and key = p.cso_id;
+  elsif p.role = 'friend' and p.friend_id is not null then
+    update public.records set data = data || jsonb_build_object('name', nm) || case when ph is null then '{}'::jsonb else jsonb_build_object('photo', ph) end
+      where kind = 'fd:friends' and key like '%/' || p.friend_id;
+  end if;
+end $$;
+revoke all on function public.update_my_profile(text, text) from public;
+grant execute on function public.update_my_profile(text, text) to authenticated;
+
+
+-- =====================================================================
+-- Communications expert (same access as the social listening expert) and content features
+-- =====================================================================
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('program','country','fellow','friend','cso','listener','comms','partner'));
+
+-- Features: a piece of content that features fellows, KOL friends or CSOs, with requests to them
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('list:features','program','all','all'),('list:features','listener','all','all'),('list:features','country','all','none'),
+  ('list:features','fellow','all','none'),('list:features','friend','all','none'),('list:features','cso','all','none'),
+  ('list:csos','listener','all','none')
+on conflict (kind, role) do nothing;
+
+-- The communications expert has the same access as the social listening expert
+insert into public.kind_access (kind, role, read_scope, write_scope)
+  select kind, 'comms', read_scope, write_scope from public.kind_access where role = 'listener'
+on conflict (kind, role) do nothing;
+
+-- A featured person ticks a request done (they cannot edit the feature itself)
+create or replace function public.feature_done(feat_id text, req_id text, is_done boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare p public.profiles; r public.records; hit boolean := false; arr jsonb;
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null then raise exception 'not signed in'; end if;
+  select * into r from public.records where kind = 'list:features' and key = feat_id;
+  if r.kind is null then raise exception 'feature not found'; end if;
+  select coalesce(jsonb_agg(
+      case when e->>'id' = req_id
+             and ((p.role = 'fellow' and e->'to'->>'t' = 'fellow' and e->'to'->>'id' = p.fellow_id)
+               or (p.role = 'friend' and e->'to'->>'t' = 'friend' and e->'to'->>'id' = p.friend_id)
+               or (p.role = 'cso' and e->'to'->>'t' = 'cso' and e->'to'->>'id' = p.cso_id))
+           then e || jsonb_build_object('done', is_done, 'doneBy', p.label)
+           else e end order by ord), '[]'::jsonb)
+    into arr from jsonb_array_elements(coalesce(r.data->'requests','[]'::jsonb)) with ordinality as t(e, ord);
+  if arr = coalesce(r.data->'requests','[]'::jsonb) then raise exception 'That request is not yours'; end if;
+  update public.records set data = jsonb_set(data, '{requests}', arr) where kind = 'list:features' and key = feat_id;
+end $$;
+revoke all on function public.feature_done(text, text, boolean) from public;
+grant execute on function public.feature_done(text, text, boolean) to authenticated;
+
+-- Names of KOL friends for the "featuring" picker (names only, no contact or payment details)
+create or replace function public.feature_people() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles;
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null or p.role not in ('program','listener','comms') then return '[]'::jsonb; end if;
+  return coalesce((select jsonb_agg(jsonb_build_object('id', split_part(r.key,'/',2), 'name', r.data->>'name', 'fellow', split_part(r.key,'/',1),
+            'fellowName', (select f.name from public.fellows f where f.id = split_part(r.key,'/',1)), 'country', r.country))
+          from public.records r where r.kind = 'fd:friends'), '[]'::jsonb);
+end $$;
+revoke all on function public.feature_people() from public;
+grant execute on function public.feature_people() to authenticated;
+
+
+-- =====================================================================
+-- Operations login: paperwork, reminders, events and key dates. Everything else is read-only or hidden.
+-- =====================================================================
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('program','country','fellow','friend','cso','listener','comms','ops','partner'));
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('map:paper','ops','all','all'),('map:notes','ops','all','all'),('map:reminded','ops','all','all'),
+  ('map:camps','ops','all','none'),('map:org','ops','all','none'),
+  ('list:pevents','ops','all','all'),('list:cevents','ops','all','all'),('list:boosts','ops','all','none'),('list:feed','ops','all','all'),
+  ('list:dates','ops','all','all'),('list:classes','ops','all','none'),('list:slides','ops','all','none'),('list:csos','ops','all','none')
+on conflict (kind, role) do nothing;
+
+
+-- Budget pages (Notion links) per country: the programme coordinator sets them, coordinators and operations open them
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('map:links','program','all','all'),('map:links','country','all','none'),('map:links','ops','all','none')
+on conflict (kind, role) do nothing;
+
+-- Operations can see every plan, proposal and spending-related record
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('fd:plan','ops','all','all'),('fd:setup','ops','all','none'),('fd:collabs','ops','all','none'),('fd:events','ops','all','none'),('list:support','ops','all','none')
+on conflict (kind, role) do nothing;

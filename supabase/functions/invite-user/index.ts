@@ -11,7 +11,7 @@ const cors = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-const ROLES = ['program', 'country', 'fellow', 'friend', 'cso', 'listener', 'partner'];
+const ROLES = ['program', 'country', 'fellow', 'friend', 'cso', 'listener', 'comms', 'ops', 'partner'];
 const COUNTRY_MANAGED = ['fellow', 'cso', 'friend'];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

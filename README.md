@@ -106,3 +106,27 @@ It is read only: forms are blocked, nothing is saved, and local changes are disc
 1. KOL friend logging pages (a friend's own posts), CSO pages.
 2. KOL friend and CSO pages with row-level limits, including session-level agenda filtering for CSOs.
 3. In-app invites (Edge Function), email notifications for event changes, change history.
+
+## My profile
+Everyone signed in sees a **My profile** button in the top bar. They can change their own name and photo. It runs through the `update_my_profile` function (schema.sql), so people can only change themselves. Photos go to the private `people` bucket under `me/<user id>/`. Re-run schema.sql once to switch it on.
+
+## Communications expert, features, masterclass leads
+- **Communications expert** is a login type with the same access as the social listening expert. Invite it from People, Team logins. Redeploy the `invite-user` function once so it accepts the new role.
+- **Features** tab: the programme coordinator, social listening expert and communications expert log content that features fellows, KOL friends and CSOs, and ask them for an interview, photo, quote or clip. Featured people see only their own features and mark requests done.
+- **Masterclasses** have "Led by" and an expertise tag (social media, energy, community building, advocacy, communications, other). The leader does not need a login.
+- **Impact** now starts with "Who is involved": fellows, KOL friends and CSOs in total and per campaign, with each fellow's own campaign listed inside Campaign 1 and Campaign 2.
+
+## Country check on dates
+Under every coming date on **Key dates**, a country coordinator can **Confirm** that it does not clash with a public holiday or anything else that affects the programme in their country, or **Flag a conflict** with a short note. Everyone can see the status. A date for one country only needs that country's confirmation. Changing a date clears its confirmations so it is checked again. Masterclass dates work the same way.
+
+## Operations login and tab order
+- **Operations** is a login type for paperwork and logistics: it edits Paperwork, Reminders, Events and Key dates, and can read People, Impact and Community. Features, posts, listening data and logins are hidden or read-only. Invite it from People, Team logins. Re-run schema.sql and redeploy `invite-user` once.
+- Tab order: team logins start with People, then Paperwork. Impact and Leaderboard sit together. Masterclasses, Events and Community sit together.
+
+## Money: USD is the main currency
+Spending proposals are reviewed in **USD**. A fellow can price lines in THB or IDR as an estimate, and gives an exchange rate ("1 USD equals ..."). Every line and total then shows the USD figure, and the team's Campaign plans table totals the plans in USD with the local amount beside it. New plans start in USD. If no rate is entered, the USD figure shows a dash until one is added. No bank details or invoices are stored in the portal.
+
+## Budget pages, exchange rates, operations and spending
+- **Exchange rates:** paperwork pages and the spending proposal link to exchangerates.org.uk.
+- **Budget pages (Notion):** the programme coordinator pastes one Notion link per country under Paperwork or Campaign plans (Edit links). Country coordinators see an **Open the Thailand/Indonesia budget page** button for their own country. Operations sees both. Notion asks them to sign in.
+- **Operations** also gets the Campaign plans tab and read access to every plan, proposal, setup, supplier, event and support record, so it can see all spending. Re-run schema.sql once.
