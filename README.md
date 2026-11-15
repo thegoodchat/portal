@@ -178,3 +178,14 @@ Campaign 1 is designed at the regional kickoff (12 to 14 Jan 2027, Bangkok) and 
 The regional kickoff (12 to 14 Jan 2027, Bangkok) is always on the Key dates list, even on an empty portal. Events added on the Events tab also appear in Key dates automatically, so nothing is typed twice.
 
 Key dates shows the full programme list (application deadline, fellow announcement, kickoff, both campaigns, both co-creation events, closing events, masterclasses) even before anyone types a date. Events that fellows lead in their own communities (from the The Social Club and the events fellows plan) are marked "Fellow-led", and the page can filter All, Programme or Fellow-led.
+
+## Tab groups, reminders and content (restructure)
+- One tab bar with small group labels: People and paperwork, Programme, Campaigns, Results, Together.
+- Campaign plans are now Campaign proposals and come before Campaigns, Posts and Fellow-led events.
+- Programme events and Links sit in the Programme group; the Events tab for the team is now Fellow-led events.
+- The Reminders tab is gone. Remind buttons live on People, Paperwork and Campaign proposals (Remind all is on People).
+- The Features tab is gone. Communications posts content on the Posts list, and fellows, KOL friends and CSOs see content featuring them on their home page. "Ask for an interview or photo" is on each People card.
+- No Supabase change needed.
+
+## Proposal screenshots
+Fellows add screenshots (rental rates, prices, quotations) with a short note on their Campaign proposal while it is a draft. Files go to the existing private insights bucket under fellowId/timestamp/. The team sees them on Campaign proposals. No Supabase change.
