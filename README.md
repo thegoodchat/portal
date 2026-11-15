@@ -81,9 +81,22 @@ Insight screenshots go to a private storage bucket called `insights`, resized to
 Who can open them: the fellow, the coordinator of that fellow's country, the programme coordinator and the social listening expert. Not partners or other fellows.
 Run the latest `supabase/schema.sql` once to create the bucket and its rules (safe to run again).
 
+## KOL friends
+A fellow adds a KOL friend on their KOL friends tab (name, how to reach them, what they will do). The country coordinator or programme coordinator then opens
+**People**, picks that friend under KOL friends, and enters their email to send the login. The friend sees their invitation and the campaign message, logs posts with
+numbers and insight screenshots, and sees masterclasses, events, the community and Impact. Friend posts are saved under the friend's fellow
+(`fp:posts`), so the fellow, the country coordinator, the programme coordinator and the social listening expert can read them. The fellow cannot edit them.
+Country coordinators (their own country), the programme coordinator and the social listening expert can edit a friend's post. The database records who edited last
+and the post shows "Last edited by ...", unless the friend made the last edit themselves. Re-deploy the `invite-user` function after updating, because friend logins now link to a specific friend.
+
+## View as (preview)
+The programme coordinator can preview any fellow's or KOL friend's pages, a country coordinator can preview those in their own country, and the social listening expert can preview fellows.
+On the **People** tab, use **View as** on a fellow's card, or on a KOL friend under KOL friends. A yellow banner shows who you are viewing and has an **Exit preview** button.
+It is read only: forms are blocked, nothing is saved, and local changes are discarded when you exit. It uses your own access, so a draft the fellow cannot see yet may show.
+
 ## Known limits (first version)
 - Programme partners cannot read events, so their Events tab is empty.
-- Fellows can log in and use their pages. KOL friend pages and CSO pages are not live yet (CSO accounts are still blocked; friends see masterclasses, events and the community).
+- Fellows and KOL friends can log in and use their pages. CSO pages are not live yet (CSO accounts are still blocked).
 - Everyone signed in has an Impact tab with programme totals (posts, reach, engagement, events, civic actions). Totals come from a database function, so fellows and partners see numbers only, never other fellows' posts, reflections, screenshots, spending lines or KOL friend contacts.
 - The feed lets any signed-in team member edit any post (needed for reactions and replies). Moderation is by coordinators.
 - The Leaderboard and some benchmark charts still use built-in sample scores until real posts exist.

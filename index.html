@@ -162,6 +162,7 @@ tfoot td{border-bottom:0;padding-top:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 .pp-head{display:flex;gap:14px;align-items:center}
+.va-banner{position:sticky;top:0;z-index:20;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#FFF30D;color:#1C1E2A;border:2px solid #3B1E3A;border-radius:12px;padding:10px 14px;margin-bottom:14px}
 .pp-head .grow{flex:1;min-width:0}
 </style>
 </head>
@@ -288,7 +289,13 @@ const S = {
     {id:1, name:'Masterclass 1', month:'2027-01', date:'2027-01-15', topic:'Why energy is everyone\'s business', link:'https://example.com/join-1'},
     {id:2, name:'Masterclass 2', month:'2027-02', date:'2027-02-19', topic:'Storytelling for civic action', link:''},
     {id:3, name:'Masterclass 3', month:'2027-03', date:'', topic:'', link:''}],
-  cledit:null, camps:{}, evEdit:null, pedit:null, pinv:null, accounts:[],
+  dates:[
+    {id:1, title:'Campaign 1', date:'2027-02-08', end:'2027-03-26', type:'Campaign', country:'', note:''},
+    {id:2, title:'Co-creation event, Bangkok', date:'2027-04-21', end:'2027-04-23', type:'Event', country:'TH', note:''},
+    {id:3, title:'Co-creation event, Jakarta', date:'2027-04-28', end:'2027-04-30', type:'Event', country:'ID', note:''},
+    {id:4, title:'Campaign 2', date:'2027-06-07', end:'2027-07-30', type:'Campaign', country:'', note:''},
+    {id:5, title:'Closing events, Bangkok and Jakarta', date:'2027-10-03', end:'', type:'Event', country:'', note:''}],
+  kdedit:null, cledit:null, camps:{}, evEdit:null, pedit:null, pinv:null, accounts:[],
   pevents:[
     {id:1, name:'Kickoff', kind:'Kickoff', country:'All', start:'2027-01-20', end:'2027-01-21', city:'Bangkok', venue:'Sample Hotel Bangkok', vlink:'https://maps.example.com/sample-hotel-bangkok', checkin:'Check-in from 14:00 on 19 Jan. Show your name at the front desk. Rooms are booked by the team. Bring your own ID for check-in.', alink:'https://example.com/kickoff-agenda', rlink:'', csos:'sessions', friends:false,
       agenda:[{t:'Day 1, 09:30', s:'Welcome and how the programme works', cso:false},{t:'Day 1, 13:30', s:'Meet the civil society organisations', cso:true},{t:'Day 2, 10:00', s:'Designing your campaign and KPIs', cso:false},{t:'Day 2, 15:00', s:'Open space: who can help whom', cso:true}]},
@@ -446,8 +453,8 @@ function vSetup(){
     <div class="row"><button class="btn" type="submit">Save campaign</button>${su ? '<button class="btn ghost" type="button" data-act="cancel-setup">Cancel</button>' : ''}</div></form></div>`;
 }
 function vDates(){
-  const rows = [['Tuesdays','Check-in calls and masterclasses, 60 to 90 minutes'],['8 Feb to 26 Mar 2027','Campaign 1'],['21 to 23 Apr 2027','Co-creation event, Bangkok'],['28 to 30 Apr 2027','Co-creation event, Jakarta'],['7 Jun to 30 Jul 2027','Campaign 2'],['3 Oct 2027','Closing events, Bangkok and Jakarta']];
-  return `<div class="card"><h2>Programme dates</h2><p class="sub2">January to July 2027 fellowship.</p>${rows.map(r => `<div class="item" style="padding:8px 0"><div class="row spread"><b>${r[0]}</b><span class="meta">${r[1]}</span></div></div>`).join('')}</div>`;
+  const today = iso(new Date()), up = keyDates().filter(d => (d.end || d.date) >= today).slice(0, 5);
+  return `<div class="card"><h2>Next key dates</h2>${up.map(d => `<div class="item" style="padding:8px 0"><div class="row spread"><b>${esc(d.title)}</b><span class="meta">${dRange(d.date, d.end)}</span></div></div>`).join('') || '<p class="meta">No dates added yet.</p>'}<p class="note" style="margin-top:8px"><button type="button" class="btn ghost sm" data-act="tab" data-v="kdates">See all key dates</button></p></div>`;
 }
 function vTPosts(){
   const fl = F.filter(f => S.scope === 'ALL' || !S.scope || f.c === S.scope), sel = fl.some(f => f.id === S.pf) ? S.pf : 'all';
@@ -649,9 +656,12 @@ const opt = (list, sel) => list.map(x => `<option ${x === sel ? 'selected' : ''}
 
 const FPS = {};
 const fpList = (fid, frid) => FPS[fid + '/' + frid] || (FPS[fid + '/' + frid] = []);
-const myFriend = () => LIVE ? (fd(CUR).friends[0] || null) : S.friends.find(x => x.id === 'f1');
+const myFriend = () => LIVE ? ((VA && VA.frid ? fd(CUR).friends.find(x => String(x.id) === String(VA.frid)) : fd(CUR).friends[0]) || null) : S.friends.find(x => x.id === 'f1');
 const FN = () => LIVE ? ((F.find(x => x.id === CUR) || {}).n || 'your fellow') : 'Thai Fellow 1';
-const canEditFP = () => LIVE && !!PROFILE && ['friend','program','country','listener'].includes(PROFILE.role);
+let VA = null; // "view as": a read-only preview of a fellow's or KOL friend's pages
+const vaAllowed = fid => LIVE && !VA && !!PROFILE && (PROFILE.role === 'program' || PROFILE.role === 'listener' || (PROFILE.role === 'country' && (F.find(x => x.id === fid) || {}).c === PROFILE.country));
+const vaBtn = (fid, label, k, frid) => vaAllowed(fid) ? `<div style="margin-top:10px"><button type="button" class="btn ghost sm" data-act="va-enter" data-k="${k || 'fellow'}" data-f="${fid}" ${frid ? `data-fr="${esc(String(frid))}"` : ''}>View as ${esc(label)}</button></div>` : '';
+const canEditFP = () => !VA && LIVE && !!PROFILE && ['friend','program','country','listener'].includes(PROFILE.role);
 const frStatus = f => f.posts.length >= f.expected ? 'Delivered' : (f.posts.length ? 'In progress' : f.status);
 const FR_PILL = {'Invited':'p-req','Accepted':'p-recv','In progress':'p-recv','Delivered':'p-ok'};
 const frPill = f => `<span class="pill ${FR_PILL[frStatus(f)]}">${frStatus(f)}</span>`;
@@ -1118,6 +1128,54 @@ function deckCard(){
   const d = S.listen.decks, vis = DECKS.filter(x => d[x.k] && (d[x.k].st === 'Shared' || d[x.k].st === 'Final'));
   return `<div class="card"><h2>Slides</h2>${vis.map(x => `<div class="item"><b>${x.t}</b>${d[x.k].link ? `<div class="meta">${esc(d[x.k].link)}</div>` : ''}</div>`).join('') || '<p class="meta">Slides from the social listening expert will appear here. Deck 1 comes before Campaign 1, deck 2 before Campaign 2, and deck 3 at the end.</p>'}<p class="note">The decks cover every fellow. Your pages are marked for you.</p></div>`;
 }
+
+/* ---------- key dates (one shared list for everyone) ---------- */
+const KD_TYPES = ['Masterclass','Campaign','Event','Deadline','Check-in','Other'];
+const canEditKD = () => !VA && (S.role === 'team' || S.role === 'listener');
+const pIso = x => { const [y, m, d] = String(x).split('-').map(Number); return new Date(y, m - 1, d); };
+const dFull = x => { const d = pIso(x); return d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); };
+function dRange(a, b){
+  if (!b || b === a) return dFull(a);
+  const x = pIso(a), y = pIso(b);
+  if (x.getFullYear() === y.getFullYear()) return x.getDate() + (x.getMonth() === y.getMonth() ? '' : ' ' + MON[x.getMonth()]) + ' to ' + dFull(b);
+  return dFull(a) + ' to ' + dFull(b);
+}
+function keyDates(){
+  const own = (S.dates || []).filter(d => d.date).map(d => ({id:d.id, own:true, title:d.title, date:d.date, end:d.end || '', type:d.type || 'Other', country:d.country || '', note:d.note || ''}));
+  const mc = (S.classes || []).filter(c => c.date).map(c => ({id:'mc' + c.id, own:false, title:c.name + (c.topic ? ': ' + c.topic : ''), date:c.date, end:'', type:'Masterclass', country:'', note:c.link ? 'Join: ' + c.link : ''}));
+  return [...own, ...mc].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+}
+function kdWhen(d){
+  const t = pIso(iso(new Date())), a = pIso(d.date), b = pIso(d.end || d.date), n = Math.round((a - t) / 864e5);
+  if (t > b) return '';
+  if (t >= a) return t.getTime() === a.getTime() && a.getTime() === b.getTime() ? 'Today' : 'Happening now';
+  return n === 1 ? 'Tomorrow' : 'In ' + n + ' days';
+}
+const KD_C = {TH:'Thailand', ID:'Indonesia'};
+function myCountry(){
+  if (S.role === 'team') return S.tm === 'country' ? S.scope : '';
+  if (S.role === 'kol' || S.role === 'friend') return (F.find(x => x.id === CUR) || {}).c || '';
+  return (S.user && S.user.country) || (PROFILE && PROFILE.country) || '';
+}
+function kdForm(c){
+  const n = c.id === 'new';
+  return `<form data-form="kd-save" data-id="${c.id}" class="stack"><label class="f">What<input type="text" id="kd-title" value="${esc(c.title || '')}" required></label>
+    <div class="formgrid"><label class="f">Starts<input type="date" id="kd-date" value="${esc(c.date || '')}" required></label><label class="f">Ends<span class="hint">Leave empty for one day</span><input type="date" id="kd-end" value="${esc(c.end || '')}"></label><label class="f">Type<select id="kd-type">${opt(KD_TYPES, c.type || 'Other')}</select></label><label class="f">For<select id="kd-country"><option value="">Everyone</option>${Object.keys(KD_C).map(k => `<option value="${k}" ${c.country === k ? 'selected' : ''}>${KD_C[k]} only</option>`).join('')}</select></label></div>
+    <label class="f">Note<span class="hint">Place, link or what to bring</span><input type="text" id="kd-note" value="${esc(c.note || '')}"></label>
+    <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="kd-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="kd-del" data-v="${c.id}">Delete</button>`}</div></form>`;
+}
+function vKeyDates(){
+  const ed = canEditKD(), all = keyDates(), today = iso(new Date());
+  const up = all.filter(d => (d.end || d.date) >= today), past = all.filter(d => (d.end || d.date) < today).reverse();
+  const mc = myCountry(), row = d => { const w = kdWhen(d), other = mc && d.country && d.country !== mc, tag = d.country ? ' <span class="meta">(' + KD_C[d.country] + ')</span>' : ''; return `<div class="item" style="padding:10px 0${other ? ';opacity:.6' : ''}"><div class="row spread" style="align-items:flex-start;gap:12px"><div>${other ? `<span style="font-weight:300">${esc(d.title)}</span>` : `<b>${esc(d.title)}</b>`}${tag}<div class="meta" style="${other ? 'font-weight:300' : 'font-weight:700'}">${dRange(d.date, d.end)}${d.note ? ' | ' + (/^Join: https?:/.test(d.note) ? 'Join: ' + lnk(d.note.slice(6), 'link') : esc(d.note)) : ''}</div></div><div class="row" style="gap:8px;flex-shrink:0"><span class="chip">${esc(d.type)}</span>${w ? `<span class="meta">${w}</span>` : ''}${ed && d.own ? `<button type="button" class="btn ghost sm" data-act="kd-edit" data-v="${d.id}">Edit</button>` : ''}</div></div></div>`; };
+  const add = ed ? (S.kdedit === 'new' ? `<div class="card"><h2>Add a date</h2>${kdForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn" data-act="kd-edit" data-v="new">Add a date</button>${(S.dates || []).length ? '' : ' <button type="button" class="btn ghost" data-act="kd-seed">Add the programme dates</button>'}</div>`) : '';
+  const editing = ed && S.kdedit && S.kdedit !== 'new' ? (S.dates.find(x => String(x.id) === String(S.kdedit)) || null) : null;
+  return `<div class="card"><h2>Key dates</h2><p class="sub2">One list for everyone: campaigns, events, deadlines and masterclasses. ${ed ? 'You can add and change dates here. Masterclass dates come from the Masterclasses tab.' : 'The programme team keeps it up to date.'}${myCountry() ? ' Dates for your country are in bold, other countries in a lighter font.' : ''}</p><p class="meta">Check-in calls and masterclasses happen on Tuesdays, 60 to 90 minutes.</p></div>
+    ${add}${editing ? `<div class="card"><h2>Edit date</h2>${kdForm(editing)}</div>` : ''}
+    <div class="card"><h2>Coming up</h2>${up.map(row).join('') || '<p class="meta">No dates added yet.</p>'}</div>
+    ${past.length ? `<div class="card"><h2>Past</h2>${past.map(row).join('')}</div>` : ''}`;
+}
+
 /* ---------- masterclasses and slides ---------- */
 const SL_TYPES = ['Masterclass','Benchmark','Before a campaign','After a campaign','Comparison of both campaigns','Programme summary','Other'];
 const FU = {};
@@ -1131,7 +1189,7 @@ function fileUrl(path){
 }
 function slTo(t){ return t === 'all' ? 'Everyone' : t === 'TH' ? 'Thailand' : t === 'ID' ? 'Indonesia' : ((F.find(f => f.id === t) || {}).n || t); }
 function slVisible(x){
-  if (S.role === 'kol' && LIVE) { const u = S.user || {}; const me = (PROFILE && PROFILE.fellow_id) || ''; return ['all', u.country, me].includes(x.to) && x.fellows !== false; }
+  if (S.role === 'kol' && LIVE) { const u = S.user || {}; const me = VA ? VA.fid : ((PROFILE && PROFILE.fellow_id) || ''); return ['all', u.country, me].includes(x.to) && x.fellows !== false; }
   if (S.role === 'friend' && LIVE) return x.friends === true && ['all', (S.user || {}).country].includes(x.to);
   if (S.role === 'partner') return ['all','TH','ID'].includes(x.to);
   return true;
@@ -1482,12 +1540,13 @@ function vPeople(){
   const fellows = F.map(f => {
     if (S.pedit === 'f:' + f.id && canF(f)) return `<div class="card"><h2>Edit ${esc(f.n)}</h2><form data-form="pp-fellow" data-id="${f.id}" class="stack"><label class="f">Name<input type="text" id="pp-name" value="${esc(f.n)}" required></label><label class="f">About<span class="hint">A line or two for the other fellows, CSOs and partners.</span><textarea id="pp-bio">${esc(f.bio || '')}</textarea></label>${ppFields(f, f.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
     return `<div class="card"><div class="pp-head">${avatar(f.photo, f.n)}<div class="grow"><b>${esc(f.n)}</b> <span class="tag">${f.c === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(f.handles) || ''}</div></div>${canF(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="f:${f.id}">Edit</button>` : ''}</div>
-      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}</div>`; }).join('');
+      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}${vaBtn(f.id, f.n)}</div>`; }).join('');
   const csoForm = o => { const n = o.id === 'new'; return `<div class="card"><h2>${n ? 'Add an organisation' : 'Edit ' + esc(o.name)}</h2><form data-form="pp-cso" data-id="${o.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="pp-name" value="${esc(o.name || '')}" required></label>${n && prog ? '<label class="f">Country<select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label>' : ''}</div><label class="f">What they work on<input type="text" id="pp-focus" value="${esc(o.focus || '')}"></label><label class="f">About<textarea id="pp-about">${esc(o.about || '')}</textarea></label>${ppFields(o, o.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`; };
   const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
       ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
   const addC = team ? (S.pedit === 'c:new' ? csoForm({id:'new'}) : `<div class="card"><button type="button" class="btn" data-act="pp-edit" data-v="c:new">Add an organisation</button></div>`) : '';
   const friendsCard = team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and the community board. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
+      ${F.flatMap(f => fd(f.id).friends.map(x => ({f, x}))).filter(({f}) => vaAllowed(f.id)).map(({f, x}) => `<div class="item"><div class="row spread"><span><b>${esc(x.name)}</b> <span class="meta">for ${esc(f.n)}, ${esc(CAMPS[(x.camp || 1) - 1].n)}</span></span><button type="button" class="btn ghost sm" data-act="va-enter" data-k="friend" data-f="${f.id}" data-fr="${esc(String(x.id))}">View as ${esc(x.name)}</button></div></div>`).join('')}
       <form data-form="pp-friend" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Which KOL friend?<select id="pf-friend" required><option value="">Choose</option>${friendChoices()}</select></label><label class="f">Email<input type="email" id="pf-email" required></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, the social listening expert and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.role}${a.country ? ', ' + a.country : ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
       <form data-form="pp-team" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name shown<input type="text" id="pp-label" required></label><label class="f">Email<input type="email" id="pp-email" required></label><label class="f">Role<select id="pp-role"><option value="country">Country coordinator</option><option value="listener">Social listening expert</option><option value="partner">Programme partner</option><option value="program">Programme coordinator</option><option value="program">Programme director</option></select></label><label class="f">Country<span class="hint">Country coordinators only</span><select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
@@ -1516,12 +1575,24 @@ function vOverviewBase(){
     <text x="${x(0)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 1</text><text x="${x(7)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 8</text></svg>`;
   return `<div class="card"><h2>Fellows at a glance</h2><p class="sub2">Who needs a nudge on reflections, paperwork, or setting up a campaign and its KPIs.</p>
     <div class="tw"><table><thead><tr><th>Fellow</th><th>Country</th><th>Posts logged</th><th>Reflections due</th><th>Paperwork open</th><th>Benchmark</th><th>Campaign 1</th><th>Campaign 2</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>
-    <div class="grid2"><div class="card"><h2>Mainstream integration</h2><p class="sub2">Share of campaign-keyword mentions from accounts outside the climate community${LIVE ? '.' : ' (sample data).'}</p>${LIVE ? '<p class="meta">Appears once campaign data is added.</p>' : chart}</div>
-    <div class="card"><h2>What listening would show</h2><p class="sub2">${LIVE ? 'Planned: a listening tool or a CSV import.' : 'Sample view. Connects to a listening tool or a CSV import.'}</p>
-      <div class="stack">
-        <div class="item"><b>Who is joining</b><div class="meta">Media, brands, local officials and neighbourhood groups using campaign hashtags</div></div>
-        <div class="item"><b>Keywords by language</b><div class="meta">Thai, Bahasa and Tagalog energy-transition terms, including slang</div></div>
-        <div class="item"><b>Offline to online echo</b><div class="meta">Posts within 48 hours of each event, linked to the event record</div></div></div></div></div>`;
+    ${mainstreamCard()}`;
+}
+
+
+function fellowEng(f){
+  if (!hasData(f.id)) return null;
+  const d = fd(f.id), rows = [...d.posts.map(p => p.refl || null), ...d.friends.flatMap(x => x.posts.map(q => q.m || null))].filter(Boolean);
+  const sum = k => rows.reduce((a, m) => a + (Number(m[k]) || 0), 0);
+  const eng = sum('reactions') + sum('comments') + sum('saves') + sum('shares') + sum('repost');
+  return {posts:d.posts.length + d.friends.reduce((a, x) => a + x.posts.length, 0), reach:sum('reach'), eng, rate:sum('reach') ? (Math.round(eng / sum('reach') * 1000) / 10) + '%' : '0%'};
+}
+function mainstreamCard(){
+  const m = pMetrics();
+  const scoped = F.filter(f => S.scope === 'ALL' || !S.scope || f.c === S.scope);
+  const per = LIVE ? `<div class="tw" style="margin-top:14px"><table><thead><tr><th>Fellow</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th></tr></thead><tbody>${scoped.map(f => { const x = fellowEng(f) || {posts:0, reach:0, eng:0, rate:'0%'}; return `<tr><td><b>${esc(f.n)}</b></td><td class="num">${fmt(x.posts)}</td><td class="num">${x.reach ? fmt(x.reach) : '—'}</td><td class="num">${x.eng ? fmt(x.eng) : '—'}</td><td class="num">${x.reach ? x.rate : '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '';
+  return `<div class="card"><h2>Mainstream integration</h2><p class="sub2">How far the campaigns reached and how people responded${LIVE ? '' : ' (sample numbers)'}. These are engagement numbers from each post's insights, not counts of keyword mentions.</p>
+    <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">${pTile(fmt(m.posts), 'Posts')}${pTile(fmt(m.reach), 'People reached')}${pTile(fmt(m.eng), 'Engagements', 'reactions, comments, shares, saves, reposts')}${pTile(m.rate, 'Engagement rate', 'engagements per person reached')}</div>
+    <div class="tw" style="margin-top:14px"><table><thead><tr><th>Campaign</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th></tr></thead><tbody>${m.byCamp.map(r => `<tr><td><b>${r.n}</b></td><td class="num">${fmt(r.posts)}</td><td class="num">${fmt(r.reach)}</td><td class="num">${fmt(r.eng)}</td><td class="num">${r.rate}</td></tr>`).join('')}</tbody></table></div>${per}</div>`;
 }
 
 /* ---------- shell ---------- */
@@ -1544,11 +1615,12 @@ function render(){
     return;
   }
   $('#who').innerHTML = LOGIN_ON
-    ? `<span>Signed in as <b>${esc(S.user.label)}</b></span><span class="row" style="gap:10px"><a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
+    ? `<span>Signed in as <b>${esc(VA && PROFILE ? PROFILE.label : S.user.label)}</b></span><span class="row" style="gap:10px"><a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
     : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Programme coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
   const tabs = pt ? [['pimpact','Impact'],['pcollab','Collaboration'],['pstories','Campaign stories'],['preports','Reports'],['slides','Masterclasses'],['events','Events'],['people','People'],['feed','Community']] : ls ? [['lbench','Benchmarks'],['lbrief','Before a campaign'],['lpost','After a campaign'],['ldata','KPIs and data'],['ldeck','Slides'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : cs ? [['chome','My partnerships'],['clog','Log support'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : fr && LIVE ? [['fhome','My invitation'],['flog','Log a post'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : fr ? [['fhome','My invitation'],['flog','Log a post'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : kol && LIVE ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community']] : kol ? [['home','Home'],['plan','Campaign plan'],['insights','Listening insights'],['friends','KOL friends'],['cso','CSO partners'],['log','Log'],['paper','My paperwork'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : S.tm === 'country' ? [['mine','My fellows'],['camps','Campaigns'],['paper','Paperwork'],['props','Campaign plans'],['over','Programme'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']] : [['over','Programme'],['camps','Campaigns'],['mine','Reminders'],['paper','Paperwork'],['props','Campaign plans'],['slides','Masterclasses'],['pimpact','Impact'],['events','Events'],['people','People'],['feed','Community'],['board','Leaderboard']];
+  tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'events')), 0, ['kdates','Key dates']);
   if (LIVE && (ls || (!mine && !pt))) tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'slides' || t[0] === 'ldeck')), 0, ['tposts','Posts']);
   const cur = mine ? S.tab : S.teamTab;
   const need = openItems(CUR).length;
@@ -1559,11 +1631,11 @@ function render(){
   $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? 'Log the posts you made for this campaign and their numbers.' : kol ? 'Log what you post, what you expected, and what you learned.' : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
   let html = '';
   if (cur === 'board') html = vBoard();
-  else if (cs) html = {chome:vCsoHome, clog:vCsoLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else if (fr) html = {slides:vSlides, fhome:vFriendHome, flog:vFriendLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else if (kol) html = {slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
-  else html = {events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, tposts:vTPosts, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
-  $('#view').innerHTML = html;
+  else if (cs) html = {kdates:vKeyDates, chome:vCsoHome, clog:vCsoLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (fr) html = {kdates:vKeyDates, slides:vSlides, fhome:vFriendHome, flog:vFriendLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else if (kol) html = {kdates:vKeyDates, slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
+  else html = {kdates:vKeyDates, events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, tposts:vTPosts, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
+  $('#view').innerHTML = (VA ? `<div class="va-banner" role="status"><span>Viewing as <b>${esc(VA.name)}</b> (${VA.k === 'friend' ? 'KOL friend' : 'fellow'}). Preview only, nothing you do here is saved.</span><button type="button" class="btn sun sm" data-act="va-exit">Exit preview</button></div>` : '') + html;
   if (LIVE) scheduleFlush();
 }
 
@@ -1641,6 +1713,26 @@ function fpEditModal(fid, frid, id){
   set('fe-plat', q.platform); set('fe-date', q.date); set('fe-type', q.fmt); set('fe-url', q.url); set('fe-cap', q.caption); set('fe-note', q.note);
   METRICS.forEach(m => set('fe-' + m[0], (q.m || {})[m[0]]));
 }
+async function vaEnter(k, fid, frid){
+  const f = F.find(x => x.id === fid); if (!f || !vaAllowed(fid)) return;
+  const fr = k === 'friend' ? fd(fid).friends.find(x => String(x.id) === String(frid)) : null;
+  if (k === 'friend' && !fr) return;
+  clearTimeout(FLUSH_T); await flush();
+  VA = {k, fid, frid:frid || null, name:fr ? fr.name : f.n, prev:{role:S.role, tm:S.tm, scope:S.scope, teamTab:S.teamTab, tab:S.tab, user:S.user, coord:S.coord, lf:S.lf, camp:S.camp, cur:CUR, pedit:S.pedit}};
+  CUR = fid; S.role = k === 'friend' ? 'friend' : 'kol'; S.tab = k === 'friend' ? 'fhome' : 'home'; S.scope = f.c; S.pedit = null;
+  if (fr) S.camp = Number(fr.camp) || 1;
+  S.user = {role:S.role, label:VA.name, scope:f.c, country:f.c};
+  document.body.classList.add('va'); render(); window.scrollTo(0, 0);
+}
+async function vaExit(){
+  const v = VA; if (!v) return;
+  VA = null; document.body.classList.remove('va');
+  const keep = S.live, p = v.prev;
+  try { blankLive(); await loadAll(); } catch (e) { console.error('reload failed', e); }
+  S.live = keep; Object.assign(S, {role:p.role, tm:p.tm, scope:p.scope, teamTab:p.teamTab, tab:p.tab, user:p.user, coord:p.coord, lf:p.lf, camp:p.camp, pedit:null}); CUR = p.cur;
+  if (PROFILE && ['program', 'country'].includes(PROFILE.role)) { try { await loadAccounts(); } catch (e) {} }
+  render(); window.scrollTo(0, 0);
+}
 function reflectModal(id){
   const p = S.posts.find(x => x.id === id);
   S.shots = [];
@@ -1682,6 +1774,10 @@ document.addEventListener('click', e => {
   if (a === 'sl-del') { const x = S.slides.find(y => String(y.id) === String(v)); S.slides = S.slides.filter(y => String(y.id) !== String(v)); if (x && x.file && LIVE) SB.storage.from('slides').remove([x.file]); render(); return; }
   if (a === 'sl-up') { slMove(v, -1); return; }
   if (a === 'sl-down') { slMove(v, 1); return; }
+  if (a === 'kd-edit') { S.kdedit = isNaN(Number(v)) ? v : Number(v); render(); return; }
+  if (a === 'kd-cancel') { S.kdedit = null; render(); return; }
+  if (a === 'kd-del') { S.dates = S.dates.filter(c => String(c.id) !== String(v)); S.kdedit = null; render(); toast('Deleted.'); return; }
+  if (a === 'kd-seed') { [['Campaign 1','2027-02-08','2027-03-26','Campaign',''],['Co-creation event, Bangkok','2027-04-21','2027-04-23','Event','TH'],['Co-creation event, Jakarta','2027-04-28','2027-04-30','Event','ID'],['Campaign 2','2027-06-07','2027-07-30','Campaign',''],['Closing events, Bangkok and Jakarta','2027-10-03','','Event','']].forEach((r, i) => S.dates.push({id:Date.now() + i, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:''})); render(); toast('Programme dates added. Edit any that change.'); return; }
   if (a === 'cl-edit') { S.cledit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'cl-cancel') { S.cledit = null; render(); return; }
   if (a === 'cl-del') { S.classes = S.classes.filter(c => String(c.id) !== String(v)); S.slides.forEach(x => { if (String(x.class) === String(v)) x.class = ''; }); S.cledit = null; render(); return; }
@@ -1723,6 +1819,8 @@ document.addEventListener('click', e => {
   if (a === 'logtab') { S.logTab = v; render(); return; }
   if (a === 'expand') { S.open = S.open === v ? null : v; render(); return; }
   if (a === 'reflect') { reflectModal(Number(v)); return; }
+  if (a === 'va-enter') { vaEnter(el.dataset.k, el.dataset.f, el.dataset.fr); return; }
+  if (a === 'va-exit') { vaExit(); return; }
   if (a === 'fp-edit') { fpEditModal(el.dataset.f, el.dataset.fr, el.dataset.id); return; }
   if (a === 'coord-kol') { S.coord = v; render(); return; }
   if (a === 'copy-org') {
@@ -1776,6 +1874,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('submit', e => {
   e.preventDefault();
+  if (VA) { toast('This is a preview. Nothing is saved.'); return; }
   const f = e.target.dataset.form, g = id => { const n = document.getElementById(id); return n ? n.value.trim() : ''; };
   if (f === 'login' && LIVE) { liveLogin(g('l-email'), document.getElementById('l-pw').value); return; }
   if (f === 'newpw') { liveNewPw(document.getElementById('l-pw').value); return; }
@@ -1830,6 +1929,14 @@ document.addEventListener('submit', e => {
     for (const c of CAMPS) { const a = g('cd-s' + c.id), b = g('cd-e' + c.id); if ((a && !b) || (!a && b) || (a && b && a > b)) { toast('Check ' + c.n + ': add a start and an end date, with the start first.'); return; } }
     CAMPS.forEach(c => { const a = g('cd-s' + c.id), b = g('cd-e' + c.id); if (a && b) S.camps[c.id] = {start:a, end:b}; else delete S.camps[c.id]; });
     render(); toast('Dates saved.'); return;
+  }
+  if (f === 'kd-save') {
+    if (!canEditKD()) return;
+    const id = e.target.dataset.id, title = g('kd-title'), date = g('kd-date'), end = g('kd-end'); if (!title || !date) { toast('Add what it is and the start date.'); return; }
+    if (end && end < date) { toast('The end date is before the start date.'); return; }
+    const v = {title, date, end, type:g('kd-type'), country:g('kd-country'), note:g('kd-note')};
+    if (id === 'new') S.dates.push(Object.assign({id:Date.now()}, v)); else Object.assign(S.dates.find(c => String(c.id) === String(id)), v);
+    S.kdedit = null; render(); toast('Saved.'); return;
   }
   if (f === 'cl-save') {
     const id = e.target.dataset.id, name = g('cl-name'); if (!name) { toast('Add a name.'); return; }
@@ -1955,7 +2062,7 @@ document.addEventListener('submit', e => {
 /* ---------- live mode: real logins and shared, real-time data ---------- */
 let SB = null, PROFILE = null, LAST = {}, FLUSH_T = null, RENDER_T = null, CH = null;
 S.live = {phase:'loading', msg:''};
-const LISTS = ['pevents','cevents','boosts','feed','csos','support','asks','slides','classes'];
+const LISTS = ['pevents','cevents','boosts','feed','csos','support','asks','slides','classes','dates'];
 const MAPS = ['paper','notes','org','reminded','followed','camps'];
 const LISTEN2 = ['pre','post'], LISTEN1 = ['bench','cmp','data','decks','sec'];
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -2027,9 +2134,9 @@ async function loadAll(){
   const fr = await SB.from('fellows').select('*'); (fr.data || []).forEach(applyFellow);
   LAST = {}; const c = collect(); Object.keys(c).forEach(id => { LAST[id] = stable(c[id].data); });
 }
-function scheduleFlush(){ if (S.live.phase !== 'ready') return; clearTimeout(FLUSH_T); FLUSH_T = setTimeout(flush, 500); }
+function scheduleFlush(){ if (S.live.phase !== 'ready' || VA) return; clearTimeout(FLUSH_T); FLUSH_T = setTimeout(flush, 500); }
 async function flush(){
-  if (S.live.phase !== 'ready') return;
+  if (S.live.phase !== 'ready' || VA) return;
   const cur = collect(), up = [], del = [];
   Object.keys(cur).forEach(id => { const j = stable(cur[id].data); if (LAST[id] !== j) up.push({id, row:{kind:cur[id].kind, key:cur[id].key, data:cur[id].data}, j}); });
   Object.keys(LAST).forEach(id => { if (!cur[id]) del.push(id); });
@@ -2144,7 +2251,19 @@ document.addEventListener('input', () => { if (LIVE) scheduleFlush(); });
 document.addEventListener('change', () => { if (LIVE) scheduleFlush(); });
 if (DEMO) { const t = document.getElementById('protoText'); t.innerHTML = '<b>DEMO PAGE</b>: This is a demo with made-up names and numbers, not the real portal. Nothing here is saved, and changes reset when you reload. Use the role menu to see each view. <a href="' + location.pathname + '" style="display:inline-block;margin-left:8px;padding:3px 12px;border-radius:999px;background:#fff;color:#3B1E3A;font-weight:700;text-decoration:none">Back to sign in</a>'; document.title = 'DEMO, ' + document.title; }
 else if (LIVE) { const t = document.getElementById('protoText'); t.textContent = 'The Good Chat portal, makesense Asia'; }
-if (LIVE) liveBoot(); else { if (!LOGIN_ON) S.user = FELLOW; render(); }
+const DEMO_PW = 'makesenseasia';
+function demoUnlocked(){ try { return sessionStorage.getItem('gcDemo') === '1'; } catch (e) { return false; } }
+function demoGate(){
+  $('#tabs').innerHTML = '';
+  $('#view').innerHTML = `<div class="card stack" style="max-width:440px;width:100%;margin:12px auto 0"><h2 class="h sec">Demo password</h2><p class="sub2">The demo is for people at makesense Asia. Enter the password to continue.</p>
+    <form id="demoGate" class="stack"><label class="f">Password<input type="password" id="dg-pw" autocomplete="off" required></label><p class="alert need" id="dg-err" role="alert" style="padding:12px 16px;display:none">That is not the password. Try again.</p><div class="row"><button class="btn" type="submit">Open the demo</button></div></form></div>`;
+  $('#demoGate').addEventListener('submit', e => {
+    e.preventDefault();
+    if ($('#dg-pw').value.trim() === DEMO_PW) { try { sessionStorage.setItem('gcDemo', '1'); } catch (x) {} if (!LOGIN_ON) S.user = FELLOW; render(); }
+    else { $('#dg-err').style.display = ''; $('#dg-pw').select(); }
+  });
+}
+if (LIVE) liveBoot(); else if (DEMO && !demoUnlocked()) demoGate(); else { if (!LOGIN_ON) S.user = FELLOW; render(); }
 </script>
 </body>
 </html>

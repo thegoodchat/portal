@@ -85,6 +85,9 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   -- fellows: see events, the community board and organisations; post to the board and the events board
   ('list:pevents','fellow','all','none'),('list:cevents','fellow','all','all'),('list:boosts','fellow','all','all'),
   ('list:feed','fellow','all','all'),('list:csos','fellow','all','none'),
+  -- key dates: everyone reads, coordinators and the listening expert edit
+  ('list:dates','program','all','all'),('list:dates','country','all','all'),('list:dates','listener','all','all'),
+  ('list:dates','fellow','all','none'),('list:dates','friend','all','none'),('list:dates','cso','all','none'),('list:dates','partner','all','none'),
   -- monthly masterclasses (Jan to July) and who may arrange their slides
   ('list:classes','program','all','all'),('list:classes','country','all','all'),('list:classes','listener','all','all'),
   ('list:classes','fellow','all','none'),('list:classes','friend','all','none'),('list:classes','partner','all','none'),
@@ -95,6 +98,7 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   ('fd:posts','fellow','own','own'),('fd:posts','country','country','none'),('fd:posts','program','all','all'),('fd:posts','listener','all','none'),('fd:posts','partner','all','none'),
   ('fd:events','fellow','own','own'),('fd:events','country','country','none'),('fd:events','program','all','all'),('fd:events','listener','all','none'),('fd:events','partner','all','none'),
   ('fd:collabs','fellow','own','own'),('fd:collabs','country','country','none'),('fd:collabs','program','all','all'),
+  ('fp:posts','friend','all','all'),('fp:posts','fellow','own','none'),('fp:posts','country','country','country'),('fp:posts','program','all','all'),('fp:posts','listener','all','all'),
   ('fd:friends','fellow','own','own'),('fd:friends','country','country','none'),('fd:friends','program','all','all'),
   ('fd:plan','fellow','own','own'),('fd:plan','country','country','country'),('fd:plan','program','all','all'),('fd:plan','listener','all','none'),
   ('fd:setup','fellow','own','own'),('fd:setup','country','country','none'),('fd:setup','program','all','all'),('fd:setup','listener','all','none'),('fd:setup','partner','all','none'),
@@ -128,6 +132,7 @@ begin
   -- fellows see expert write-ups only once they are shared, and a benchmark only once confirmed
   if p.role = 'fellow' and k in ('listen:pre','listen:post','listen:cmp') and coalesce(rec->>'status','') <> 'Shared' then return false; end if;
   if p.role = 'fellow' and k = 'listen:bench' and coalesce(rec->>'st','') <> 'Confirmed' then return false; end if;
+  if k = 'fp:posts' and p.role = 'friend' and coalesce(rec->>'friend','-') <> coalesce(p.friend_id,'-') then return false; end if;
   if k = 'list:pevents' and p.role = 'friend' and coalesce(rec->>'friends','false') not in ('true') then return false; end if;
   if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
   return case sc
@@ -139,10 +144,26 @@ end $$;
 
 create or replace function public.records_set_meta() returns trigger
 language plpgsql security definer set search_path = public as $$
-declare f text;
+declare f text; pr public.profiles;
 begin
   new.updated_at := now();
   new.updated_by := auth.uid();
+  -- KOL friend posts: <fellow>/<friend>/<post>. A friend can only write their own. The server records who edited last.
+  if new.kind = 'fp:posts' then
+    f := split_part(new.key, '/', 1);
+    select * into pr from public.profiles where id = auth.uid();
+    if pr.role = 'friend' and (pr.friend_id is null or split_part(new.key, '/', 2) <> pr.friend_id
+        or not exists (select 1 from public.records where kind = 'fd:friends' and key = f || '/' || pr.friend_id)) then
+      raise exception 'not your post';
+    end if;
+    new.data := (new.data - 'edited' - 'country') || jsonb_build_object('fellow', f, 'friend', split_part(new.key, '/', 2));
+    if pr.role is not null and pr.role <> 'friend' then
+      new.data := new.data || jsonb_build_object('edited', jsonb_build_object('by', pr.label, 'role', pr.role, 'at', now()));
+    end if;
+    select country into new.country from public.fellows where id = f;
+    new.owner_ref := 'f:' || f;
+    return new;
+  end if;
   if new.kind = 'map:org' then
     new.country := new.key;
   elsif new.data ? 'country' and new.data->>'country' in ('TH','ID') then
@@ -295,7 +316,9 @@ begin
   if p.id is null then return false; end if;
   fid := split_part(path, '/', 1);
   if p.role = 'program' then return true; end if;
-  if p.role = 'fellow' then return p.fellow_id is not null and p.fellow_id = fid; end if;
+  -- KOL friends: <fellow id>/<friend id>/<post id>/ is theirs. A fellow can read it but only writes their own posts (numeric post ids).
+  if p.role = 'friend' then return p.friend_id is not null and p.friend_id = split_part(path, '/', 2); end if;
+  if p.role = 'fellow' then return p.fellow_id is not null and p.fellow_id = fid and (not want_write or split_part(path, '/', 2) ~ '^[0-9]+$'); end if;
   if want_write then return false; end if;
   if p.role = 'listener' then return true; end if;
   if p.role = 'country' then
@@ -324,8 +347,8 @@ language sql stable security definer set search_path = public as $$
                  'm', case when jsonb_typeof(data->'refl') = 'object' then jsonb_build_object('reach', data->'refl'->'reach', 'reactions', data->'refl'->'reactions', 'comments', data->'refl'->'comments', 'saves', data->'refl'->'saves', 'shares', data->'refl'->'shares', 'repost', data->'refl'->'repost') else null end))
                  from public.records where kind = 'fd:posts'), '[]'::jsonb),
     'events',  coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'camp', data->>'camp', 'att', data->>'attendance')) from public.records where kind = 'fd:events'), '[]'::jsonb),
-    'friends', coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'camp', data->>'camp', 'status', data->>'status',
-                 'm', coalesce((select jsonb_agg(q->'m') from jsonb_array_elements(case when jsonb_typeof(data->'posts') = 'array' then data->'posts' else '[]'::jsonb end) q), '[]'::jsonb))) from public.records where kind = 'fd:friends'), '[]'::jsonb),
+    'friends', coalesce((select jsonb_agg(jsonb_build_object('f', split_part(r.key,'/',1), 'camp', r.data->>'camp', 'status', r.data->>'status',
+                 'm', coalesce((select jsonb_agg(q.data->'m') from public.records q where q.kind = 'fp:posts' and q.key like r.key || '/%'), '[]'::jsonb))) from public.records r where r.kind = 'fd:friends'), '[]'::jsonb),
     'plans',   coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'c', split_part(key,'/',2), 'message', data->>'message', 'action', data->'action')) from public.records where kind = 'fd:plan'), '[]'::jsonb),
     'setup',   coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'c', split_part(key,'/',2), 'name', data->>'name', 'type', data->>'type', 'partners', coalesce(data->'partners','[]'::jsonb))) from public.records where kind = 'fd:setup'), '[]'::jsonb),
     'kpis',    coalesce((select jsonb_agg(jsonb_build_object('f', split_part(key,'/',1), 'c', split_part(key,'/',2), 'n', jsonb_array_length(case when jsonb_typeof(data->'_v') = 'array' then data->'_v' else '[]'::jsonb end))) from public.records where kind = 'fd:kpis'), '[]'::jsonb),
@@ -334,4 +357,23 @@ language sql stable security definer set search_path = public as $$
   ) else null end;
 $$;
 grant execute on function public.impact_stats() to authenticated;
+
+
+-- What a KOL friend needs to see on their own page: their invitation and the campaign message, nothing else from the fellow.
+create or replace function public.friend_context() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles; r public.records; fid text; c text; pl jsonb; su jsonb;
+begin
+  select * into p from public.profiles where id = auth.uid() and active and role = 'friend';
+  if p.id is null or p.friend_id is null then return null; end if;
+  select * into r from public.records where kind = 'fd:friends' and key like '%/' || p.friend_id limit 1;
+  if r.key is null then return null; end if;
+  fid := split_part(r.key, '/', 1); c := r.data->>'camp';
+  select data into pl from public.records where kind = 'fd:plan' and key = fid || '/' || c;
+  select data into su from public.records where kind = 'fd:setup' and key = fid || '/' || c;
+  return jsonb_build_object('fellow', fid, 'fellowName', (select name from public.fellows where id = fid),
+    'friend', (r.data - 'posts' - 'token'), 'message', coalesce(pl->>'message', ''), 'action', coalesce(pl->'action', '{}'::jsonb),
+    'campaign', coalesce(su->>'name', ''), 'type', coalesce(su->>'type', ''));
+end $$;
+grant execute on function public.friend_context() to authenticated;
 
