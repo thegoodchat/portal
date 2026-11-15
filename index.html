@@ -56,8 +56,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin:0 0 10px}
 .hdr h1{font-size:clamp(22px,5vw,34px);max-width:16em}
 .hdr p.sub{margin:10px 0 0;max-width:46ch;opacity:.9}
-.tabs{display:flex;gap:4px;margin-top:22px;overflow-x:auto}
-.tabs button{border:0;background:transparent;color:var(--hdr-ink);opacity:.75;padding:12px 16px;cursor:pointer;font-weight:600;border-radius:14px 14px 0 0;white-space:nowrap}
+.tabwrap{position:relative;margin-top:22px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.45) transparent;padding-bottom:4px}
+.tabs::-webkit-scrollbar{height:6px}.tabs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.45);border-radius:3px}
+.tabwrap::before,.tabwrap::after{content:"";position:absolute;top:0;bottom:10px;width:44px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:2}
+.tabwrap::before{left:0;background:linear-gradient(90deg,var(--hdr),transparent)}
+.tabwrap::after{right:0;background:linear-gradient(270deg,var(--hdr),transparent)}
+.tabwrap.more-l::before,.tabwrap.more-r::after{opacity:1}
+.tabarrow{position:absolute;top:50%;transform:translateY(-62%);z-index:3;width:30px;height:30px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none;padding:0}
+.tabarrow.l{left:2px}.tabarrow.r{right:2px}
+.tabwrap.more-l .tabarrow.l,.tabwrap.more-r .tabarrow.r{display:block}
+.tabs button{border:0;background:transparent;color:#fff;opacity:.92;padding:12px 16px;cursor:pointer;font-weight:600;border-radius:14px 14px 0 0;white-space:nowrap}
 .tabs button[aria-selected="true"]{background:var(--bg);color:var(--ink);opacity:1}
 .tabs .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--coral);color:var(--nest);font-size:11px;text-align:center;margin-left:6px;padding:0 5px}
 
@@ -129,6 +138,26 @@ textarea{min-height:84px;resize:vertical}
 .av::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--hi)}
 .sc{font-weight:700;font-size:22px;text-align:right;font-variant-numeric:tabular-nums}
 .ldet{padding:4px 18px 16px 18px;display:grid;gap:8px;border-top:1px dashed var(--line)}
+.tabgrp{align-self:flex-end;white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sun);opacity:.9;margin:0 2px 0 12px;padding:0 0 15px 12px;border-left:1px solid rgba(255,243,13,.35)}
+.tabgrp:first-child{margin-left:0;border-left:0;padding-left:0}
+.shotlink{display:inline-flex;flex-direction:column;gap:2px;align-items:flex-start}
+.lk{display:grid;grid-template-columns:1fr auto;gap:4px 18px;align-items:start;padding:18px 0;border-top:1px solid var(--line)}
+.lk:first-child{border-top:0;padding-top:4px}
+.lk:last-child{padding-bottom:4px}
+.lk-main{display:grid;gap:5px;min-width:0}
+.lk-t{font-weight:700;font-size:17px;line-height:1.3;color:var(--punk-dark);text-decoration:none;border-bottom:2px solid var(--sun);justify-self:start;padding-bottom:1px}
+.lk-t:hover{background:var(--sun)}
+.lk-host{font-size:12.5px;color:var(--muted);margin-top:-2px}
+.lk-note{color:var(--muted);max-width:70ch}
+.lk-aud{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.lk-aud small{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.lk-aud span{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--p-ok-bg);color:var(--p-ok-fg)}
+.lk-aud span.off{background:var(--p-none-bg);color:var(--p-none-fg)}
+.lk > .btn{align-self:start}
+.btn.lk-add{background:var(--p-ok-bg);color:var(--p-ok-fg);border:2px dashed var(--mint-dark);box-shadow:none}
+.btn.lk-add:hover{background:var(--mint);color:var(--mint-dark)}
+@media (max-width:560px){.lk{grid-template-columns:1fr}}
+.item.kd-led{border-left:3px solid var(--coral);padding-left:12px !important}
 .tag{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;background:var(--track);color:var(--ink);margin-left:6px}
 .badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--hi);color:var(--hi-ink);margin-left:6px;white-space:nowrap}
 .battle{display:grid;gap:12px}
@@ -180,7 +209,7 @@ tfoot td{border-bottom:0;padding-top:12px}
     <p class="eyebrow" id="eyebrow">A programme by makesense Asia</p>
     <h1 class="h" id="ttl">The Good Chat</h1>
     <p class="sub" id="sub"></p>
-    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav>
+    <div class="tabwrap" id="tabwrap"><button type="button" class="tabarrow l" id="tabL" aria-label="Show earlier sections">&#8249;</button><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav><button type="button" class="tabarrow r" id="tabR" aria-label="Show more sections">&#8250;</button></div>
   </div>
 </header>
 
@@ -202,17 +231,18 @@ const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') 
 
 const STATUS = {none:'Not requested', req:'Requested', recv:'Received', fix:'Needs fix', ok:'Approved'};
 const DOCS = ['ID copy','Bank & tax details','Agreement','Quotation','Invoice'];
-const WEIGHTS = [['Consistency',20],['Reach & engagement vs own baseline',20],['Self-set KPI attainment',20],['Mainstream integration',25],['Reflection & learning',15]];
-const KPI_MENU = ['Reach','Saves','Comments from non-climate audiences','Press or media pickup','Partner sign-ups','Offline event attendance'];
+const WEIGHTS = [['Reach',null],['Engagement',null],['Civic action',null],['Self-designed KPIs',null],['Mainstream integration',null]];
+const KPI_MENU = ['Reach','Civic actions taken','Saves','Comments from non-climate audiences','Press or media pickup','Partner sign-ups','Offline event attendance'];
 
 const F = [
-  {id:'nok',n:'Thai Fellow 1',c:'TH'}, {id:'mind',n:'Thai Fellow 2',c:'TH',c5:[17,15,14,18,12],posts:5,pend:0},
-  {id:'pim',n:'Thai Fellow 3',c:'TH',c5:[14,17,12,15,9],posts:4,pend:1}, {id:'ton',n:'Thai Fellow 4',c:'TH',c5:[19,12,16,20,13],posts:6,pend:0},
-  {id:'sari',n:'Indonesian Fellow 1',c:'ID',c5:[18,16,15,21,14],posts:6,pend:0}, {id:'dimas',n:'Indonesian Fellow 2',c:'ID',c5:[15,18,11,14,8],posts:4,pend:2},
-  {id:'ayu',n:'Indonesian Fellow 3',c:'ID',c5:[20,14,17,17,13],posts:6,pend:0}, {id:'raka',n:'Indonesian Fellow 4',c:'ID',c5:[12,10,13,12,7],posts:3,pend:1}
+  {id:'nok',n:'Thai Fellow 1',c:'TH'}, {id:'mind',n:'Thai Fellow 2',c:'TH',c5:[38,22,18,24,16],posts:5,pend:0},
+  {id:'pim',n:'Thai Fellow 3',c:'TH',c5:[30,19,12,20,12],posts:4,pend:1}, {id:'ton',n:'Thai Fellow 4',c:'TH',c5:[45,28,20,26,20],posts:6,pend:0},
+  {id:'sari',n:'Indonesian Fellow 1',c:'ID',c5:[41,30,24,22,21],posts:6,pend:0}, {id:'dimas',n:'Indonesian Fellow 2',c:'ID',c5:[27,24,9,17,14],posts:4,pend:2},
+  {id:'ayu',n:'Indonesian Fellow 3',c:'ID',c5:[44,26,19,25,17],posts:6,pend:0}, {id:'raka',n:'Indonesian Fellow 4',c:'ID',c5:[18,12,6,15,8],posts:3,pend:1}
 ];
 const SHARED_PW = 'goodchat4';
 const LISTENER = {role:'listener', label:'Social listening expert'};
+const COMMS = {role:'listener', label:'Communications expert', comms:true};
 const PARTNER = {role:'partner', label:'Programme partner'};
 const CSOUSER = {role:'cso', label:'CSO 1'};
 const FRIEND = {role:'friend', label:'KOL friend 1'};
@@ -231,16 +261,15 @@ const CAMPS = [
   {id:1,n:'Campaign 1',w:'8 Feb to 26 Mar 2027',start:new Date(2027,1,8),end:new Date(2027,2,26)},
   {id:2,n:'Campaign 2',w:'7 Jun to 30 Jul 2027',start:new Date(2027,5,7),end:new Date(2027,6,30)}
 ];
+/* the same organisation receives invoices from fellows in both countries */
+const ORG_DEFAULT = {name:'Sensecube LTD (for The Good Chat project)', address:'60 Paya Lebar Road #06-28 Paya Lebar Square,\nSingapore 409051', taxid:'202324473C', email:'', note:'Address the invoice to this organisation. Include your campaign name and links to the posts it covers.'};
 const S = {
-  org:{
-    TH:{name:'Sample Organisation (Thailand) Co., Ltd.', address:'123 Sample Road, Sample District, Bangkok 10000, Thailand', taxid:'0-0000-00000-00-0', email:'finance-th@example.org', note:'Address the invoice to this entity. Include your campaign name and links to the posts it covers.'},
-    ID:{name:'Sample Organisation Indonesia', address:'Jl. Contoh No. 1, Jakarta 10110, Indonesia', taxid:'00.000.000.0-000.000', email:'finance-id@example.org', note:'Address the invoice to this entity. Include your campaign name and links to the posts it covers.'}
-  },
+  org:{ TH:{...ORG_DEFAULT}, ID:{...ORG_DEFAULT} },
   plan:{
     1:{message:'Rooftop solar is something ordinary families can understand, ask about and act on.', audience:'Home owners and condo committees in Bangkok who do not follow climate accounts',
       posts:[{what:'Podcast episode 1: solar neighbours', fmt:'Podcast', date:'2027-02-15'},{what:'Reel: what we learned at the expo', fmt:'Reel / video', date:'2027-03-10'}],
-      events:[{what:'Solar Buddies expo', date:'2027-03-06', place:'Community hall, Bangkok'}],
-      action:{type:'Contact a decision-maker', text:'Ask building committees or the district office to allow shared rooftop solar.', measure:'People who sign the letter at the expo and share it online.'},
+      events:[{what:'Solar Buddies expo', type:'Expo', date:'2027-03-06', place:'Community hall, Bangkok'}],
+      action:{type:'Contact a decision-maker', text:'Ask building committees or the district office to allow shared rooftop solar.', measure:'People who sign the letter at the expo and share it online.', log:[{id:1, date:'2027-03-06', count:64, note:'Letters signed at the expo'},{id:2, date:'2027-03-09', count:38, note:'Signed online after the reel'}]},
       cur:'THB', fx:35,
       lines:[
         {cat:'Venue rental', what:'Community hall', where:'Bangkok', rate:6000, unit:'per day', qty:2, support:'A letter from makesense to the venue'},
@@ -272,7 +301,7 @@ const S = {
   ],
   csoNotes:[{cso:'c1', fellow:'nok', camp:1, date:'28 Feb', text:'Consider handing out a one-page checklist of the permit steps at the expo.'}],
   friends:[
-    {id:'f1', name:'KOL friend 1', camp:1, contact:'LINE (sample)', role:'Podcast guest and one reel', expected:2, pay:'Paid by makesense', status:'Accepted', token:'k1x9a',
+    {id:'f1', name:'KOL friend 1', camp:1, contact:'LINE (sample)', role:'Podcast guest and one reel', why:'Her listeners already trust her on home life, and solar is the missing piece for many of them.', hope:'More households see rooftop solar as something their neighbours do.', expected:2, pay:'Paid by makesense', status:'Accepted', token:'k1x9a',
       posts:[{id:101, date:'2027-02-15', platform:'Podcast', fmt:'Podcast', caption:'Solar neighbours, episode 1 (guest)', url:'podcast.example/solar-neighbours-1', m:{reach:5200, reactions:310, comments:48, saves:75, shares:60, repost:9}, shots:[{name:'podcast-stats.png'}]}]},
     {id:'f2', name:'KOL friend 2', camp:1, contact:'Email (sample)', role:'One reel about the expo', expected:1, pay:'Unpaid', status:'Invited', token:'q7m2c', posts:[]},
     {id:'f3', name:'KOL friend 3', camp:1, contact:'WhatsApp (sample)', role:'Two stories at the expo', expected:2, pay:'Unpaid', status:'Accepted', token:'t5w8d',
@@ -295,10 +324,10 @@ const S = {
   dates:[
     {id:1, title:'Fellowship application deadline', date:'2026-11-22', end:'', type:'Deadline', country:'', note:''},
     {id:2, title:'Announcement of TGC4 Fellows', date:'2026-12-15', end:'', type:'Other', country:'', note:''},
-    {id:3, title:'Regional kickoff event in Bangkok', date:'2027-01-12', end:'2027-01-14', type:'Event', country:'', note:''},
+    {id:3, title:'Regional kickoff event in Bangkok', date:'2027-01-12', end:'2027-01-14', type:'Event', country:'', note:'Organised in Bangkok. Fellows from Thailand and Indonesia join and design Campaign 1.'},
     {id:4, title:'Campaign 1', date:'2027-02-08', end:'2027-03-26', type:'Campaign', country:'', note:''},
-    {id:5, title:'Co-creation event in Bangkok', date:'2027-04-21', end:'2027-04-23', type:'Event', country:'TH', note:''},
-    {id:6, title:'Co-creation event in Jakarta', date:'2027-04-28', end:'2027-04-30', type:'Event', country:'ID', note:''},
+    {id:5, title:'Co-creation event in Bangkok', date:'2027-04-21', end:'2027-04-23', type:'Event', country:'TH', note:'Fellows design Campaign 2 here.'},
+    {id:6, title:'Co-creation event in Jakarta', date:'2027-04-28', end:'2027-04-30', type:'Event', country:'ID', note:'Fellows design Campaign 2 here.'},
     {id:7, title:'Campaign 2', date:'2027-06-07', end:'2027-07-30', type:'Campaign', country:'', note:''},
     {id:8, title:'Closing events in Bangkok and Jakarta', date:'2027-08-03', end:'', type:'Event', country:'', note:''}],
   features:[
@@ -356,7 +385,7 @@ const S = {
       refl:{reach:9800, reactions:760, comments:420, saves:60, shares:34, repost:6, happened:'Lots of comments, a few people corrected each other politely.', surprise:'A local shop owner replied with her own bill.', change:'Pin one comment to steer the conversation.', shots:[{name:'tiktok-insights.png'}]}},
     {id:3, camp:1, date:new Date(2027,1,26), platform:'Facebook', format:'Carousel', url:'facebook.com/thaifellow1/posts/sample-3', topic:'What our building committee asked about solar', audience:'Condo committees and juristic persons', expect:'Small reach, but I want to follow up with people from the meetup.', kpis:[{n:'Partner sign-ups',t:5}], refl:null}
   ],
-  events:[{camp:1, date:'27 Feb', place:'Community meetup, Ratchada hall', attendance:42, echo:'1 reel and 2 stories the same day'}],
+  events:[{camp:1, name:'Community meetup', type:'Meetup', date:'27 Feb', place:'Ratchada hall, Bangkok', attendance:42, echo:'1 reel and 2 stories the same day'}],
   collabs:[
     {n:'Supplier 1', type:'Supplier', role:'Event photographer', pay:'Paid by makesense'}
   ],
@@ -389,7 +418,8 @@ const S = {
 /* ---------- per-fellow data: the same shapes as the demo, kept separately for each fellow ---------- */
 const FD = {};
 const FKEYS = ['posts','plan','setup','kpis','events','collabs','friends'];
-const epPlan = () => ({message:'', audience:'', posts:[], events:[], action:{type:'', text:'', measure:''}, cur:'USD', fx:0, lines:[], status:'Draft', comment:''});
+const EV_TYPES = ['Workshop','Expo','Fair','Class','Meetup','Talk or panel','Screening','Clean-up or action day','Other'];
+const epPlan = () => ({message:'', audience:'', posts:[], events:[], action:{type:'', text:'', measure:''}, cur:'USD', fx:0, lines:[], refs:[], status:'Draft', comment:''});
 const fdBlank = () => ({posts:[], plan:{1:epPlan(), 2:epPlan()}, setup:{1:null, 2:null}, kpis:{1:[], 2:[]}, events:[], collabs:[], friends:[]});
 let CUR = 'nok'; // whose data the S.posts, S.plan, S.setup ... shortcuts point at
 FD.nok = {}; FKEYS.forEach(k => { FD.nok[k] = S[k]; delete S[k]; });
@@ -405,17 +435,26 @@ const allFD = () => LIVE_() ? Object.keys(FD).map(k => FD[k]) : [FD.nok];
 
 /* ---------- scoring ---------- */
 function reflDone(){ return S.posts.filter(p => p.refl).length; }
+/* Points are open-ended: nothing is capped. Reach and engagement are compared with each person's own starting point. */
+const logSum = a => (a && Array.isArray(a.log) ? a.log : []).reduce((t, x) => t + (Number(x.count) || 0), 0);
+function civicOf(fid, camp){
+  const cs = camp ? [camp] : [1, 2];
+  if (hasData(fid)) return cs.reduce((t, c) => t + logSum((fd(fid).plan[c] || {}).action), 0);
+  return LIVE ? impD().plans.filter(x => x.f === fid && (!camp || Number(x.c) === camp)).reduce((t, x) => t + logSum(x.action), 0) : 0;
+}
 function comps(f){
   if (hasData(f.id) && CUR !== f.id) return as(f.id, () => comps(f));
   if (hasData(f.id)) {
-    const posts = S.posts.length;
-    const cons = Math.min(20, Math.round(20 * posts / 6));
-    const learn = Math.round(15 * (posts ? reflDone() / posts : 0));
-    const main = Math.min(25, 10 + 2 * (S.collabs.length + S.friends.length + S.csos.filter(o => o.partners.some(q => q.fellow === f.id)).length) + 2 * S.events.length);
-    return [cons, 15, kpiScore(), main, learn];
+    const e = fellowEng(f) || {reach:0, eng:0}, b = S.listen.bench[f.id], ok = b && b.st === 'Confirmed' && Number(b.reach) > 0;
+    const bEng = ok ? ['reactions','comments','saves','shares','repost'].reduce((t, k) => t + (Number(b[k]) || 0), 0) : 0;
+    const reachP = ok ? Math.round(5 * e.reach / b.reach) : Math.round(e.reach / 1000);
+    const engP = bEng ? Math.round(5 * e.eng / bEng) : Math.round(e.eng / 50);
+    const main = 2 * (S.collabs.length + S.friends.length + S.csos.filter(o => o.partners.some(q => q.fellow === f.id)).length) + 2 * S.events.length;
+    return [reachP, engP, Math.round(civicOf(f.id) / 5), kpiScore(), main];
   }
   return f.c5;
 }
+const compMax = () => { const all = F.map(comps); return [0,1,2,3,4].map(j => Math.max(1, ...all.map(c => c[j]))); };
 const total = f => comps(f).reduce((a,b) => a + b, 0);
 function ranked(list){ return [...list].sort((a,b) => total(b) - total(a)); }
 function openItems(id){ return S.paper[id].filter(x => x.s === 'req' || x.s === 'fix'); }
@@ -426,7 +465,7 @@ function kpiActual(k, c){
 }
 function kpiScore(){
   const all = [];
-  [1,2].forEach(c => S.kpis[c].forEach(k => { if (k.t > 0) all.push(Math.min(1, kpiActual(k,c) / k.t)); }));
+  [1,2].forEach(c => S.kpis[c].forEach(k => { if (k.t > 0) all.push(kpiActual(k,c) / k.t); }));
   return all.length ? Math.round(20 * all.reduce((a,b) => a + b, 0) / all.length) : 0;
 }
 const CAMPDATA = {
@@ -444,11 +483,18 @@ function campInfo(id, c){
   return d ? {name:d.name, type:d.partners.length ? 'Collab' : 'Solo', partners:d.partners, kpis:d.kpis} : null;
 }
 const names = ids => ids.map(id => F.find(f => f.id === id).n).join(' and ');
+/* Campaign 1 is designed at the regional kickoff, Campaign 2 at the co-creation event */
+function designAt(c){
+  const kind = c === 1 ? 'Kickoff' : 'Co-creation', mine = myCountry();
+  const evs = (S.pevents || []).filter(e => e.kind === kind && e.start && (!mine || !e.country || e.country === 'All' || e.country === mine)).sort((a, b) => a.start.localeCompare(b.start));
+  if (!evs.length) return c === 1 ? 'You design Campaign 1 together at the regional kickoff.' : 'You design Campaign 2 together at the co-creation event.';
+  return 'You design ' + CAMPS[c-1].n + ' at ' + (c === 1 ? 'the regional kickoff' : 'the co-creation event') + ': ' + evs.map(e => (e.city ? e.city + ', ' : '') + dRange(e.start, e.end)).join(' or ') + '. Come with ideas, and leave with a plan.';
+}
 function vSetup(){
   const c = S.camp, cm = CAMPS[c-1], su = S.setup[c];
   const live = TODAY >= cm.start && TODAY <= cm.end;
   const st = cm.set === false ? 'Dates to be confirmed' : TODAY < cm.start ? 'Starts in ' + Math.ceil((cm.start - TODAY) / 864e5) + ' days' : (live ? 'Live now' : 'Finished');
-  const head = `<div class="row spread"><h2>My ${cm.n}</h2><span class="pill ${live ? 'p-ok' : 'p-req'}">${st}</span></div><p class="sub2">${cm.w}</p>`;
+  const head = `<div class="row spread"><h2>My ${cm.n}</h2><span class="pill ${live ? 'p-ok' : 'p-req'}">${st}</span></div><p class="sub2">${cm.w}</p><p class="note" style="margin:-4px 0 12px">${esc(designAt(c))}</p>`;
   if (su && !S.editSetup) return `<div class="card">${head}
     <h3>${esc(su.name)}<span class="tag">${su.type}${su.partners.length ? ' with ' + esc(names(su.partners)) : ''}</span></h3>
     <p class="meta" style="margin:8px 0 14px">Everyday conversation: ${esc(su.topic || 'Not set yet')}</p>
@@ -474,7 +520,7 @@ function vTPosts(){
       <div class="row" style="gap:6px;margin-top:6px">${(p.refl.shots || []).map(shotImg).join('')}</div>` : ''}</div>`).join('') || '<p class="meta">No posts logged yet for this campaign.</p>';
   const fl2 = fl.filter(f => sel === 'all' || f.id === sel).flatMap(f => fd(f.id).friends.filter(x => x.camp === S.camp && x.posts.length).map(x => ({f, x})));
   const friendCards = fl2.length ? `<div class="card"><h2>KOL friend posts</h2><p class="sub2">Posts logged by KOL friends. You can edit them, and your name shows as the last editor.</p>${fl2.map(({f, x}) => `<div class="item"><div class="row spread"><b>${esc(x.name)}</b><span class="meta">for ${esc(f.n)}</span></div>${friendPostList(x, f.id)}</div>`).join('')}</div>` : '';
-  return `<div class="card"><div class="row spread"><div><h2>Posts and insights</h2><p class="sub2" style="margin:0">What fellows have logged, with their numbers, reflections and insight screenshots.</p></div><label class="f" style="min-width:200px">Fellow<select data-act="pfilter">${opts}</select></label></div><div style="margin-top:14px">${campSeg()}</div></div><div class="card">${list}</div>${friendCards}`;
+  return `<div class="card"><div class="row spread"><div><h2>Posts and insights</h2><p class="sub2" style="margin:0">What fellows have logged, with their numbers, reflections and insight screenshots.</p></div><label class="f" style="min-width:200px">Fellow<select data-act="pfilter">${opts}</select></label></div><div style="margin-top:14px">${campSeg()}</div></div><div class="card">${list}</div>${friendCards}` + `<h2 class="h sec" style="margin:18px 0 6px">Content by the communications team</h2>` + vFeatures();
 }
 function campSeg(){
   return `<div class="sub-tabs" role="group" aria-label="Campaign">${CAMPS.map(c => `<button type="button" data-act="camp" data-v="${c.id}" aria-pressed="${S.camp===c.id}">${c.n}</button>`).join('')}</div>`;
@@ -491,22 +537,21 @@ function toast(msg){
 
 function board(list, meId){
   const r = ranked(list);
-  const maxMain = Math.max(...r.map(f => comps(f)[3]));
-  const maxLearn = Math.max(...r.map(f => comps(f)[4]));
-  const bMain = r.find(f => comps(f)[3] === maxMain).id;
-  const bLearn = r.find(f => comps(f)[4] === maxLearn).id;
+  const mx = compMax(), maxTot = Math.max(1, ...r.map(total));
+  const bMain = r.find(f => comps(f)[4] === mx[4]).id;
+  const bCivic = mx[2] > 1 ? r.find(f => comps(f)[2] === mx[2]).id : null;
   const rows = r.map((f,i) => {
     const c = comps(f), tot = total(f), me = f.id === meId;
     const badges = (i === 0 ? '<span class="badge">Pace-setter</span>' : '') +
       (f.id === bMain ? '<span class="badge">Collab catalyst</span>' : '') +
-      (f.id === bLearn ? '<span class="badge">Sharpest reflection</span>' : '');
+      (f.id === bCivic ? '<span class="badge">Community mover</span>' : '');
     const det = S.open === f.id ? `<div class="ldet">${WEIGHTS.map((w,j) =>
-      `<div class="mini"><span>${w[0]}</span>${bar(c[j], w[1])}<span>${c[j]}/${w[1]}</span></div>`).join('')}</div>` : '';
+      `<div class="mini"><span>${w[0]}</span>${bar(c[j], mx[j])}<span>${c[j]}</span></div>`).join('')}</div>` : '';
     return `<div class="lrow ${me ? 'me' : ''}">
       <button class="lhead" type="button" data-act="expand" data-v="${f.id}" aria-expanded="${S.open === f.id}">
         <span class="rank">${i+1}</span>
         <span class="av ${({TH:'sh-ci',ID:'sh-cl',PH:'sh-sq'})[f.c]}" aria-hidden="true">${f.c}${(f.n.match(/\d+$/) || [''])[0]}</span>
-        <span><b>${esc(f.n)}</b>${me ? ' (you)' : ''}<span class="tag">${f.c}</span>${badges}<br>${bar(tot,100)}</span>
+        <span><b>${esc(f.n)}</b>${me ? ' (you)' : ''}<span class="tag">${f.c}</span>${badges}<br>${bar(tot,maxTot)}</span>
         <span class="sc">${tot}</span>
       </button>${det}</div>`;
   }).join('');
@@ -514,8 +559,8 @@ function board(list, meId){
   const avg = countries.map(c => {
     const m = list.filter(f => f.c === c); return {c, v: Math.round(m.reduce((a,f) => a + total(f), 0) / m.length * 10) / 10};
   });
-  const battle = `<div class="card"><h2>Country vs country</h2><p class="sub2">Average score per country. Everyone adds to their team.</p>
-    <div class="battle">${avg.map(a => `<div><div class="row spread"><b>${a.c}</b><span>${a.v}</span></div>${bar(a.v,100)}</div>`).join('')}</div></div>`;
+  const battle = `<div class="card"><h2>Country vs country</h2><p class="sub2">Average points per country. Everyone adds to their team.</p>
+    <div class="battle">${avg.map(a => `<div><div class="row spread"><b>${a.c}</b><span>${a.v}</span></div>${bar(a.v, Math.max(1, ...avg.map(x => x.v)))}</div>`).join('')}</div></div>`;
   return {rows, battle};
 }
 
@@ -542,10 +587,10 @@ function vHome(){
   }).join('') || `<p class="meta">No KPIs set for ${cn} yet. Add your first one below.</p>`;
   out += `<div class="grid2" style="align-items:start">${vSetup()}${vDates()}</div>`;
   out += `<div class="grid2">
-    <div class="card"><h2>Your score</h2><p class="sub2">Rank ${rk} of 8 fellows.</p>
-      <div class="row" style="gap:20px;align-items:flex-end"><div class="big">${total(me)}<span class="meta"> /100</span></div></div>
-      <div class="stack" style="margin-top:16px">${WEIGHTS.map((w,j) => `<div class="mini"><span>${w[0]}</span>${bar(c[j],w[1])}<span>${c[j]}/${w[1]}</span></div>`).join('')}</div>
-      <p class="note" style="margin-top:12px">Reflections add to your learning score, so logging what you learned counts as much as the numbers. KPI attainment averages your progress across both campaigns.</p></div>
+    <div class="card"><h2>Your points</h2><p class="sub2">You are number ${rk} of 8 fellows right now, and it keeps changing as the conversation grows.</p>
+      <div class="row" style="gap:20px;align-items:flex-end"><div class="big">${total(me)}<span class="meta"> points</span></div></div>
+      <div class="stack" style="margin-top:16px">${(mxv => WEIGHTS.map((w,j) => `<div class="mini"><span>${w[0]}</span>${bar(c[j], mxv[j])}<span>${c[j]}</span></div>`).join(''))(compMax())}</div>
+      <p class="note" style="margin-top:12px">Every person you reach, every conversation you spark and every action people take adds to your points. There is no ceiling. Reach and engagement are measured against your own starting point, and your own KPIs count as you move toward them and beyond.</p></div>
     <div class="card"><h2>My KPIs for ${cn}</h2><p class="sub2">${S.setup[S.camp] && S.setup[S.camp].type === 'Collab' ? 'Shared with ' + names(S.setup[S.camp].partners) + ' for this campaign.' : 'You set these for this campaign.'} Reach and attendance update from your logs.</p>
       <div class="stack">${kp}</div>
       <form data-form="kpi" class="row" style="margin-top:16px;align-items:flex-end">
@@ -557,14 +602,14 @@ function vHome(){
       ${p.refl ? '<span class="pill p-ok">Reflected</span>' : '<span class="pill p-req">Awaiting reflection</span>'}</div>
       <div>${esc(p.caption || p.topic || 'Untitled post')}</div>
       <div class="meta">Expected: ${esc(p.expect)}</div>
-      ${p.refl ? `<div class="meta">${metricsLine(p.refl)}<br>Learned: ${esc(p.refl.happened)}</div>
+      ${p.refl ? `<div class="meta">${metricsLine(p.refl)}${(b => b && b.st === 'Confirmed' && b.reach ? '<br>' + ((p.refl.reach || 0) / b.reach).toFixed(1) + 'x your usual reach' : '')(S.listen.bench[CUR])}<br>Learned: ${esc(p.refl.happened)}</div>
         <div class="row" style="gap:6px">${(p.refl.shots || []).map(shotImg).join('')}</div>` :
         `<div><button class="btn sm" data-act="reflect" data-v="${p.id}">Add reflection</button></div>`}</div>`).join('')}</div>`;
   return out;
 }
 
 function vLog(){
-  const tabs = `<div class="sub-tabs" role="group" aria-label="What are you logging?">${[['post','Post'],['event','Community meetup'],['collab','Supplier']].map(t =>
+  const tabs = `<div class="sub-tabs" role="group" aria-label="What are you logging?">${[['post','Post'],['event','Community event'],['action','Civic action'],['collab','Supplier']].map(t =>
     `<button type="button" data-act="logtab" data-v="${t[0]}" aria-pressed="${S.logTab===t[0]}">${t[1]}</button>`).join('')}</div>`;
   let body = '';
   if (S.logTab === 'post') body = `<form data-form="post" class="stack">
@@ -582,12 +627,24 @@ function vLog(){
       ${S.kpis[S.camp].length ? S.kpis[S.camp].map((k,i) => `<div class="kpirow"><input type="checkbox" id="k${i}" aria-label="${esc(k.n)}"><label for="k${i}">${esc(k.n)}</label><span></span></div>`).join('') : `<p class="meta">No KPIs set for ${CAMPS[S.camp-1].n} yet. Add them on Home.</p>`}</div>
     <div class="row"><button class="btn" type="submit">Save post</button><span class="note">You will get a reminder at Day 7 to add reach, reactions, comments, saves, shares, reposts and your insights screenshots.</span></div></form>`;
   if (S.logTab === 'event') body = `<form data-form="event" class="stack"><div class="formgrid">
+      <label class="f">Name of the event<input type="text" id="e-name" placeholder="e.g. Rooftop solar workshop" required></label>
+      <label class="f">Type<select id="e-type">${opt(EV_TYPES, 'Workshop')}</select></label>
       <label class="f">Date<input type="date" id="e-date" value="${iso(TODAY)}"></label>
       <label class="f">Place<input type="text" id="e-place" placeholder="Venue and city" required></label>
       <label class="f">People who came<input type="number" id="e-att" min="0" placeholder="40"></label></div>
       <label class="f">How did it show up online afterwards?<input type="text" id="e-echo" placeholder="e.g. 2 stories and a reel"></label>
       <div><button class="btn" type="submit">Save event</button></div></form>
-      <div style="margin-top:18px">${S.events.map(e => `<div class="item"><b>${esc(e.date)}, ${esc(e.place)}</b><span class="tag">${CAMPS[e.camp-1].n}</span><div class="meta">${e.attendance} people, ${esc(e.echo)}</div></div>`).join('')}</div>`;
+      <div style="margin-top:18px">${S.events.map(e => `<div class="item"><b>${esc(e.name || e.place)}</b>${e.type ? ` <span class="tag">${esc(e.type)}</span>` : ''} <span class="tag">${CAMPS[e.camp-1].n}</span><div class="meta">${esc(e.date)}, ${esc(e.place)}</div><div class="meta">${e.attendance} people, ${esc(e.echo)}</div></div>`).join('')}</div>`;
+  if (S.logTab === 'action') { const pl = S.plan[S.camp], a = pl.action || {}, lg = a.log || [], tot = logSum(a);
+    body = `<p class="sub2">${a.text ? 'The action you invited people to take: <b>' + esc(a.type || 'Your action') + '</b>. ' + esc(a.text) : 'Add your civic action on the Campaign proposal, then count the people who take it here.'}</p>
+      ${a.measure ? `<p class="meta">How we know: ${esc(a.measure)}</p>` : ''}
+      <form data-form="action" class="stack"><div class="formgrid">
+        <label class="f">Date<input type="date" id="a-date" value="${iso(TODAY)}"></label>
+        <label class="f">How many people took action?<input type="number" id="a-n" min="1" placeholder="25" required></label></div>
+        <label class="f">What happened?<input type="text" id="a-note" placeholder="e.g. Letters signed at the expo, or shares of the pledge"></label>
+        <div><button class="btn" type="submit">Add to the count</button></div></form>
+      <div class="big" style="margin-top:18px">${fmt(tot)}<span class="meta"> people have taken action</span></div>
+      <div style="margin-top:8px">${[...lg].reverse().map(x => `<div class="item"><div class="row spread"><span><b>${fmt(x.count)}</b> people${x.note ? ', ' + esc(x.note) : ''}<div class="meta">${dd(x.date)}</div></span><button type="button" class="btn ghost sm" data-act="act-del" data-v="${x.id}">Remove</button></div></div>`).join('')}</div>`; }
   if (S.logTab === 'collab') body = `<form data-form="collab" class="stack"><div class="formgrid">
       <label class="f">Name<input type="text" id="c-n" required></label>
       <label class="f">They are a<select id="c-t"><option>Supplier</option><option>Other</option></select></label>
@@ -595,21 +652,21 @@ function vLog(){
       <label class="f">Payment<select id="c-p"><option>Unpaid</option><option>Paid by makesense</option><option>Paid by me</option></select></label></div>
       <div><button class="btn" type="submit">Add</button></div></form>
       <div style="margin-top:18px">${S.collabs.map(c => `<div class="item"><div class="row spread"><b>${esc(c.n)}</b><span class="tag">${esc(c.type)}</span></div><div class="meta">${esc(c.role)}, ${esc(c.pay)}</div></div>`).join('')}</div>`;
-  return `<div class="card"><h2>Log</h2><p class="sub2">Posts, events, and the people you bring in. Each one adds to your mainstream integration score.</p>${tabs}${S.logTab !== 'collab' ? `<div style="margin-top:12px"><span class="note">Logging for</span> ${campSeg()}</div>` : ''}<div style="margin-top:18px">${body}</div></div>`;
+  return `<div class="card"><h2>Log</h2><p class="sub2">Posts, events, the people you bring in and the actions people take. Every one adds to your points.</p>${tabs}${S.logTab !== 'collab' ? `<div style="margin-top:12px"><span class="note">Logging for</span> ${campSeg()}</div>` : ''}<div style="margin-top:18px">${body}</div></div>`;
 }
 
-const ORG_FIELDS = [['name','Legal name of the organisation'],['address','Registered address'],['taxid','Tax ID or registration number'],['email','Send invoices to'],['note','Invoice instructions']];
+const ORG_FIELDS = [['name','Legal name of the organisation'],['address','Registered address'],['taxid','UEN (company registration number)'],['email','Send invoices to'],['note','Invoice instructions']];
 const DOC_HINT = {'ID copy':'The legal address on this ID is the one to use on all your paperwork.','Bank & tax details':'Use your legal address, the same as on your ID.','Agreement':'Use your legal address, the same as on your ID.','Invoice':'Use your legal address, the same as on your ID, and the organisation details below.'};
 function vOrg(){
-  const cs = ['TH','ID'].filter(c => S.scope === 'ALL' || S.scope === c);
-  const nm = {TH:'Thailand', ID:'Indonesia'};
-  return `<div class="card"><h2>Organisation details for invoices</h2><p class="sub2">Fellows see these on their paperwork page, so they can put them on their invoices. Changes show straight away.</p>
-    <div class="stack">${cs.map(c => `<div class="item"><h3>${nm[c]} fellows</h3><div class="formgrid">${ORG_FIELDS.map(f => `<label class="f">${f[1]}${f[0] === 'address' || f[0] === 'note' ? `<textarea data-act="org" data-c="${c}" data-k="${f[0]}">${esc(S.org[c][f[0]])}</textarea>` : `<input type="text" data-act="org" data-c="${c}" data-k="${f[0]}" value="${esc(S.org[c][f[0]])}">`}</label>`).join('')}</div></div>`).join('')}</div></div>`;
+  const ed = S.role === 'team' && S.tm === 'program', o = S.org.TH;
+  return `<div class="card"><h2>Organisation details for invoices</h2><p class="sub2">The same organisation for fellows in both countries. Fellows see these on their paperwork page, so they can put them on their invoices.${ed ? ' Changes show straight away.' : ''}</p>
+    ${ed ? `<div class="formgrid">${ORG_FIELDS.map(f => `<label class="f">${f[1]}${f[0] === 'address' || f[0] === 'note' ? `<textarea data-act="org" data-c="TH" data-k="${f[0]}">${esc(o[f[0]])}</textarea>` : `<input type="text" data-act="org" data-c="TH" data-k="${f[0]}" value="${esc(o[f[0]])}">`}</label>`).join('')}</div>`
+    : `<div class="stack">${ORG_FIELDS.filter(f => o[f[0]]).map(f => `<div><div class="meta">${f[1]}</div><div style="white-space:pre-line">${esc(o[f[0]])}</div></div>`).join('')}</div>`}</div>`;
 }
 function vOrgFellow(){
   const o = S.org.TH;
   return `<div class="card"><div class="row spread"><div><h2>Where to send your invoices</h2><p class="sub2" style="margin:0">Put these organisation details on your invoice.</p></div><button class="btn sm" type="button" data-act="copy-org">Copy details</button></div>
-    <div class="stack" style="margin-top:14px">${ORG_FIELDS.map(f => `<div><div class="meta">${f[1]}</div><div style="white-space:pre-line">${esc(o[f[0]])}</div></div>`).join('')}</div>
+    <div class="stack" style="margin-top:14px">${ORG_FIELDS.filter(f => o[f[0]]).map(f => `<div><div class="meta">${f[1]}</div><div style="white-space:pre-line">${esc(o[f[0]])}</div></div>`).join('')}</div>
     <p class="note" style="margin-top:12px">Your own name and address on the invoice must be your legal ones, the same as on your ID.</p></div>`;
 }
 function vPaper(){
@@ -619,12 +676,12 @@ function vPaper(){
   const nc = nn.length ? `<div class="card"><h2>Notes from the team</h2><p class="sub2">Messages from ops and your coordinator.</p>${[...nn].reverse().map(x => `<div class="item"><div class="row spread"><b>${esc(x.by)}</b><span class="meta">${x.date}</span></div><div>${esc(x.text)}</div></div>`).join('')}</div>` : '';
   const legal = `<div class="alert time"><h2>Use your legal address</h2><div>On your agreement, invoices and bank details, write the legal address that is on your ID copy. Do not use the address where you live now.</div></div>`;
   return legal + nc + `<div class="card"><h2>My paperwork</h2>
-    <p class="sub2">${n ? n + ' item' + (n>1?'s':'') + ' still needed.' : 'Nothing needed from you right now.'} Your coordinator updates this list. Exchange rates for any USD estimate: ${fxLink}. Documents are never stored here: upload to the secure folder link.</p>
+    <p class="sub2">${n ? n + ' item' + (n>1?'s':'') + ' still needed.' : 'Nothing needed from you right now.'} Your coordinator updates this list. Exchange rates for any USD estimate: ${fxLink}. Documents are never stored here: upload them to your private Drive folder${fpr(CUR).folder ? ' (' + lnk(fpr(CUR).folder, 'open it') + '), which opens only when you are signed in to the Google account we shared it with' : ''}.</p>
     ${rows.map(x => `<div class="item"><div class="row spread"><b>${x.doc}</b>${pill(x.s)}</div>
       ${DOC_HINT[x.doc] ? `<div class="meta">${DOC_HINT[x.doc]}</div>` : ''}
       ${x.note ? `<div>${esc(x.note)}</div>` : ''}
       ${x.due && (x.s==='req'||x.s==='fix') ? `<div class="meta">Due ${dstr(new Date(x.due))}</div>` : ''}
-      ${(x.s==='req'||x.s==='fix') ? `<div><button class="btn sm" data-act="upload">Open secure upload folder</button></div>` : ''}</div>`).join('')}
+      ${(x.s==='req'||x.s==='fix') ? (fpr(CUR).folder ? `<div><a class="btn sm" href="${esc(fpr(CUR).folder)}" target="_blank" rel="noopener noreferrer">Open my private folder</a></div>` : `<div class="meta">Your private folder link is coming. Your coordinator will add it.</div>`) : ''}</div>`).join('')}
     <p class="note" style="margin-top:12px">Payments: you will also see a reason here if a payment is on hold, for example "waiting for invoice".</p></div>` + vOrgFellow();
 }
 
@@ -637,7 +694,7 @@ const LK_AUD = [['country','Country coordinators'],['comms','Communications expe
 function myRoleKey(){
   if (S.role === 'team') return S.tm === 'country' ? 'country' : S.tm === 'ops' ? 'ops' : 'program';
   if (S.role === 'kol') return 'fellow';
-  if (S.role === 'listener') return (PROFILE && PROFILE.role === 'comms') ? 'comms' : 'listener';
+  if (S.role === 'listener') return ((PROFILE && PROFILE.role === 'comms') || (S.user && S.user.comms)) ? 'comms' : 'listener';
   return S.role;
 }
 const isProgramTeam = () => S.role === 'team' && S.tm === 'program';
@@ -657,8 +714,10 @@ function lkForm(c){
 function vLinks(){
   const ed = canEditLK(), v = lkVisible(), editing = ed && S.lkedit && S.lkedit !== 'new' ? (S.keylinks || []).find(x => String(x.id) === String(S.lkedit)) : null;
   const audTxt = l => (l.aud || []).map(a => (LK_AUD.find(x => x[0] === a) || [a, a])[1]).join(', ') || 'Programme team only';
-  const add = ed ? (S.lkedit === 'new' ? `<div class="card"><h2>Add a link</h2>${lkForm({id:'new', aud:['country']})}</div>` : `<div class="card"><button type="button" class="btn" data-act="lk-edit" data-v="new">Add a link</button></div>`) : '';
-  const rows = v.map(l => `<div class="item" style="padding:10px 0"><div class="row spread" style="align-items:flex-start;gap:12px"><div><a class="btn" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a>${l.note ? `<div class="meta" style="margin-top:6px">${esc(l.note)}</div>` : ''}${ed ? `<div class="meta">Seen by: ${esc(audTxt(l))}</div>` : ''}</div>${ed ? `<button type="button" class="btn ghost sm" data-act="lk-edit" data-v="${l.id}">Edit</button>` : ''}</div></div>`).join('');
+  const add = ed ? (S.lkedit === 'new' ? `<div class="card"><h2>Add a link</h2>${lkForm({id:'new', aud:['country']})}</div>` : `<div class="card"><button type="button" class="btn lk-add" data-act="lk-edit" data-v="new">+ Add a link</button></div>`) : '';
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+  const aud = l => (l.aud || []).length ? (l.aud || []).map(a => `<span>${esc((LK_AUD.find(x => x[0] === a) || [a, a])[1])}</span>`).join('') : '<span class="off">Programme team only</span>';
+  const rows = v.map(l => `<div class="lk"><div class="lk-main"><a class="lk-t" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)} &#8599;</a>${host(l.url) ? `<div class="lk-host">${esc(host(l.url))}</div>` : ''}${l.note ? `<div class="lk-note">${esc(l.note)}</div>` : ''}${ed ? `<div class="lk-aud"><small>Seen by</small>${aud(l)}</div>` : ''}</div>${ed ? `<button type="button" class="btn ghost sm" data-act="lk-edit" data-v="${l.id}">Edit</button>` : ''}</div>`).join('');
   return `<div class="card"><h2>Links</h2><p class="sub2">The sheets, folders and pages the team works from. You may need to sign in to open them. ${ed ? 'You choose who sees each one.' : ''}</p></div>${add}${editing ? `<div class="card"><h2>Edit link</h2>${lkForm(editing)}</div>` : ''}<div class="card">${rows || '<p class="meta">No links here yet.</p>'}</div>`;
 }
 const CURS = ['USD','THB','IDR'];
@@ -695,7 +754,7 @@ function spendTable(pl, ed){
   const rows = pl.lines.map((l,i) => `<tr><td>${esc(l.cat)}</td><td>${esc(l.what)}</td><td>${esc(l.where || '')}</td><td class="num">${fmt(l.rate)} ${cur}<br><span class="meta">${l.unit} × ${l.qty}</span></td>${loc ? `<td class="num">${fmt(lineTotal(l))}</td>` : ''}<td class="num"><b>${usdTxt(usdOf(pl, lineTotal(l)))}</b></td><td style="white-space:normal;min-width:170px">${esc(l.support || '')}</td>${ed ? `<td><button type="button" class="btn ghost sm" data-act="plan-del" data-t="lines" data-i="${i}">Remove</button></td>` : ''}</tr>`).join('');
   return `<div class="tw"><table><thead><tr><th>Category</th><th>What or who</th><th>Where</th><th>Rate</th>${loc ? `<th>Total (${cur}, estimate)</th>` : ''}<th>Total (USD)</th><th>Support needed</th>${ed ? '<th></th>' : ''}</tr></thead><tbody>${rows || `<tr><td colspan="${col}" class="meta">No spending lines yet.</td></tr>`}</tbody><tfoot><tr><td colspan="${loc ? 4 : 4}"><b>Proposed total</b></td>${loc ? `<td class="num">${fmt(planTotal(pl))} ${cur}</td>` : ''}<td class="num"><b>${usdTxt(usdOf(pl, planTotal(pl)))}</b></td><td></td>${ed ? '<td></td>' : ''}</tr></tfoot></table></div>`;
 }
-const planList = (arr, t, ed) => arr.map((x,i) => `<div class="item" style="padding:10px 0"><div class="row spread"><b>${esc(x.what)}</b>${ed ? `<button type="button" class="btn ghost sm" data-act="plan-del" data-t="${t}" data-i="${i}">Remove</button>` : ''}</div><div class="meta">${esc(t === 'posts' ? x.fmt : x.place)}, ${x.date ? dstr(new Date(x.date + 'T00:00:00')) : 'Date to be set'}</div></div>`).join('') || '<p class="meta">Nothing added yet.</p>';
+const planList = (arr, t, ed) => arr.map((x,i) => `<div class="item" style="padding:10px 0"><div class="row spread"><b>${esc(x.what)}</b>${ed ? `<button type="button" class="btn ghost sm" data-act="plan-del" data-t="${t}" data-i="${i}">Remove</button>` : ''}</div><div class="meta">${esc(t === 'posts' ? x.fmt : (x.type ? x.type + ', ' : '') + x.place)}, ${x.date ? dstr(new Date(x.date + 'T00:00:00')) : 'Date to be set'}</div></div>`).join('') || '<p class="meta">Nothing added yet.</p>';
 const opt = (list, sel) => list.map(x => `<option ${x === sel ? 'selected' : ''}>${x}</option>`).join('');
 
 const FPS = {};
@@ -809,7 +868,7 @@ function vCsoTable(){
     <h3 style="margin:18px 0 6px">Requests for organisations not in the portal yet</h3><p class="sub2">Fellows asked for these. Arrange the introduction offline, then add the organisation.</p>
     ${S.asks.filter(a => !a.cso).map(a => `<div class="item"><div class="row spread"><b>${esc(a.org)}</b><span class="meta">${fname(a.fellow)}, ${esc(campName(a.fellow, a.camp))}</span></div><div>${esc(a.support)}</div><div class="meta">Actions needed: ${esc(a.actions) || '—'}${a.due ? ', by ' + dstr(new Date(a.due + 'T00:00:00')) : ''}</div></div>`).join('') || '<p class="meta">None right now.</p>'}</div>`;
 }
-function vOverviewAll(){ return vOverviewBase() + vCsoTable(); }
+function vOverviewAll(){ return vEvents('prog') + vOverviewBase() + vCsoTable(); }
 
 function vFriends(){
   const c = S.camp, list = S.friends.filter(f => f.camp === c);
@@ -819,17 +878,19 @@ function vFriends(){
     <div class="card"><div class="meta">Friends invited</div><div class="big">${list.length}</div></div>
     <div class="card"><div class="meta">Posts delivered</div><div class="big">${got}<span class="meta"> /${exp}</span></div></div>
     <div class="card"><div class="meta">Reach from friends</div><div class="big">${fmt(reach)}</div></div></div>`;
-  const cards = list.map(f => `<div class="card"><div class="row spread"><div><h2>${esc(f.name)}</h2><p class="sub2" style="margin:0">${esc(f.role)}, ${esc(f.pay)}</p></div>${frPill(f)}</div>
+  const cards = list.map(f => `<div class="card"><div class="row spread"><div><h2>${esc(f.name)}</h2><p class="sub2" style="margin:0">${esc(f.role)}</p></div>${frPill(f)}</div>
+    ${f.why ? `<div style="margin-top:10px"><div class="meta">Why we invited them</div><div>${esc(f.why)}</div></div>` : ''}${f.hope ? `<div style="margin-top:8px"><div class="meta">What we hope changes</div><div>${esc(f.hope)}</div></div>` : ''}
     <div style="margin:12px 0 4px"><div class="row spread" style="font-size:13px"><span>Posts delivered</span><span class="meta">${f.posts.length} of ${f.expected}</span></div>${bar(f.posts.length, f.expected)}</div>
     ${f.posts.length ? friendPostList(f, LIVE ? CUR : null) : `<p class="meta">Nothing posted yet.</p>`}
-    ${LIVE ? (f.posts.length < f.expected ? `<p class="meta" style="margin-top:10px">${esc(f.name)} needs a login to log posts. Ask your country coordinator to create it on the People tab${f.contact ? ' (contact: ' + esc(f.contact) + ')' : ''}.</p>` : '') : f.posts.length < f.expected ? `<div class="row" style="margin-top:10px"><span class="meta">Invite link</span><code>https://portal.example/join/${f.token}</code><button type="button" class="btn ghost sm" data-act="copy-link" data-v="${f.token}">Copy link</button></div>` : ''}</div>`).join('') || '<div class="card"><p class="meta">No friends invited for this campaign yet.</p></div>';
-  const invite = `<div class="card"><h2>Invite a KOL friend</h2><p class="sub2">They get their own simple page to log posts and insights, so you do not have to chase the numbers. You see everything they post.</p>
+    ${LIVE ? (f.posts.length < f.expected ? `<p class="meta" style="margin-top:10px">${esc(f.name)} needs a login to log posts. Ask your coordinator to create it on the People tab${f.contact ? ' (contact: ' + esc(f.contact) + ')' : ''}.</p>` : '') : f.posts.length < f.expected ? `<div class="row" style="margin-top:10px"><span class="meta">Invite link</span><code>https://portal.example/join/${f.token}</code><button type="button" class="btn ghost sm" data-act="copy-link" data-v="${f.token}">Copy link</button></div>` : ''}</div>`).join('') || '<div class="card"><p class="meta">No friends invited for this campaign yet.</p></div>';
+  const invite = `<div class="card"><h2>Invite a KOL friend</h2><p class="sub2">Tell them why you are inviting them and what you hope this can do. They see this on their own page, where they can also log posts and insights.</p>
     <form data-form="invite" class="stack"><div class="formgrid">
       <label class="f">Name<input type="text" id="fi-name" required></label>
-      <label class="f">How to reach them<input type="text" id="fi-contact" placeholder="Email, LINE or WhatsApp"></label>
-      <label class="f">What will they do?<input type="text" id="fi-role" placeholder="e.g. One reel about the expo"></label>
-      <label class="f">Posts expected<input type="number" id="fi-exp" min="1" value="1"></label>
-      <label class="f">Payment<select id="fi-pay">${opt(['Unpaid','Paid by makesense','Paid by me'])}</select></label></div>
+      <label class="f">How to reach them<input type="text" id="fi-contact" placeholder="Email, LINE or WhatsApp"></label></div>
+      <label class="f">Why are you inviting them?<textarea id="fi-why" placeholder="e.g. Her audience of young parents is exactly who needs to hear that solar is within reach"></textarea></label>
+      <label class="f">What would you love them to do?<input type="text" id="fi-role" placeholder="e.g. One reel about the expo, in their own voice"></label>
+      <label class="f">What do you hope changes because of it?<textarea id="fi-hope" placeholder="e.g. Neighbours start asking each other about rooftop solar"></textarea></label>
+      <div class="formgrid"><label class="f">Posts expected<input type="number" id="fi-exp" min="1" value="1"></label></div>
       <div><button class="btn sm" type="submit">Create invite</button></div></form></div>`;
   return `<div class="card"><h2>KOL friends</h2><p class="sub2">Friends helping with ${esc(S.setup[c] ? S.setup[c].name : CAMPS[c-1].n)}. Switch campaign to see the others.</p>${campSeg()}</div>${tiles}${cards}${invite}`;
 }
@@ -840,7 +901,7 @@ function vFriendHome(){
   const pl = S.plan[f.camp], su = S.setup[f.camp], cm = CAMPS[f.camp-1], fn = esc(FN());
   return `<div class="card"><h2 class="h sec">Hi ${esc(f.name)}</h2>
     <p class="sub2">${fn} invited you to help with <b>${esc(su ? su.name : cm.n)}</b> (${cm.w}).</p>
-    <div class="stack"><div><div class="meta">What we would like from you</div><div>${esc(f.role)}</div></div>
+    <div class="stack">${f.why ? `<div><div class="meta">Why we invited you</div><div>${esc(f.why)}</div></div>` : ''}<div><div class="meta">What we would love from you</div><div>${esc(f.role)}</div></div>${f.hope ? `<div><div class="meta">What we hope changes</div><div>${esc(f.hope)}</div></div>` : ''}
       <div><div class="meta">Posts expected</div><div class="row spread"><span>${f.posts.length} of ${f.expected} delivered</span>${frPill(f)}</div>${bar(f.posts.length, f.expected)}</div></div>
     <div style="margin-top:16px"><button class="btn" type="button" data-act="tab" data-v="flog">Log a post</button></div></div>
     <div class="card"><h2>What the campaign is about</h2>
@@ -864,11 +925,15 @@ function vFriendLog(){
       <div><button class="btn" type="submit">Save post</button></div></form></div>`;
 }
 
+function refsView(pl, ed){
+  const r = pl.refs || [];
+  return r.length ? `<div class="row" style="gap:12px;align-items:flex-start;flex-wrap:wrap">${r.map((x, i) => `<figure style="margin:0;max-width:180px">${shotImg(x)}<figcaption class="meta">${esc(x.note || x.name)}</figcaption>${ed ? `<button type="button" class="btn ghost sm" data-act="ref-del" data-v="${i}">Remove</button>` : ''}</figure>`).join('')}</div>` : '<p class="meta">None added.</p>';
+}
 function vPlan(){
   const c = S.camp, cm = CAMPS[c-1], pl = S.plan[c], su = S.setup[c];
   const ed = pl.status === 'Draft', dis = ed ? '' : 'disabled';
   const lp = S.posts.filter(p => p.camp === c).length, le = S.events.filter(e => e.camp === c).length;
-  const head = `<div class="card"><div class="row spread"><div><h2>Campaign plan, ${esc(su ? su.name : cm.n)}</h2><p class="sub2" style="margin:0">${cm.w}. Describe the campaign, then propose what you want to spend.</p></div>${planPill(pl.status)}</div>
+  const head = `<div class="card"><div class="row spread"><div><h2>Campaign proposal, ${esc(su ? su.name : cm.n)}</h2><p class="sub2" style="margin:0">${cm.w}. Describe the campaign, then propose what you want to spend.</p><p class="note" style="margin:6px 0 0">${esc(designAt(c))}</p></div>${planPill(pl.status)}</div>
     <div style="margin-top:14px">${campSeg()}</div>
     ${pl.comment ? `<div class="alert time" style="margin-top:14px"><h2>Feedback from the team</h2><div>${esc(pl.comment)}</div></div>` : ''}
     <div class="row" style="margin-top:14px">${ed ? '<button class="btn" type="button" data-act="plan-submit">Share with the team</button>' : `<button class="btn ghost" type="button" data-act="plan-edit">Edit again</button>`}
@@ -885,7 +950,8 @@ function vPlan(){
       <label class="f">Format<select id="pp-fmt">${opt(['Reel / video','Carousel','Photo','Story','Live','Podcast','Text'])}</select></label>
       <label class="f">Planned date<input type="date" id="pp-date"></label><div><button class="btn sm" type="submit">Add post</button></div></form>` : ''}</div>`;
   const events = `<div class="card"><h2>Planned events</h2><p class="sub2">Meetups and offline moments.</p>${planList(pl.events, 'events', ed)}
-    ${ed ? `<form data-form="plan-event" class="formgrid" style="margin-top:12px;align-items:end"><label class="f">Event<input type="text" id="pe-what" placeholder="e.g. Community meetup"></label>
+    ${ed ? `<form data-form="plan-event" class="formgrid" style="margin-top:12px;align-items:end"><label class="f">Event name<input type="text" id="pe-what" placeholder="e.g. Rooftop solar workshop"></label>
+      <label class="f">Type<select id="pe-type">${opt(EV_TYPES, 'Workshop')}</select></label>
       <label class="f">Where<input type="text" id="pe-place" placeholder="Venue and city"></label>
       <label class="f">Planned date<input type="date" id="pe-date"></label><div><button class="btn sm" type="submit">Add event</button></div></form>` : ''}</div>`;
   const act = `<div class="card"><h2>Civic action</h2><p class="sub2">What do you want people to do after they see your posts or come to your event?</p><div class="stack">
@@ -905,7 +971,9 @@ function vPlan(){
       <label class="f">Quantity<input type="number" id="ln-qty" min="1" value="1"></label></div>
       <label class="f">Support needed from makesense<input type="text" id="ln-sup" placeholder="e.g. A letter to the venue, an introduction"></label>
       <div><button class="btn sm" type="submit">Add line</button></div></form>` : ''}</div>`;
-  return head + csoCard(c) + `<div class="grid2" style="align-items:start">${msg}${act}</div><div class="grid2" style="align-items:start">${posts}${events}</div>` + spend;
+  const refs = `<div class="card"><h2>Supporting screenshots</h2><p class="sub2">Add proof for your numbers: a rental rate, product prices, a quotation, a message from a venue. The team sees them with your spending proposal.</p>${refsView(pl, ed)}
+    ${ed ? `<div class="formgrid" style="margin-top:12px"><label class="f">What does it show?<input type="text" id="rf-note" placeholder="e.g. Hall rental quote, 6,000 THB per day"></label><label class="f">Screenshot or photo<input type="file" accept="image/*" multiple data-act="ref-file"></label></div>` : ''}</div>`;
+  return head + csoCard(c) + `<div class="grid2" style="align-items:start">${msg}${act}</div><div class="grid2" style="align-items:start">${posts}${events}</div>` + spend + refs;
 }
 
 function vProposals(){
@@ -914,12 +982,12 @@ function vProposals(){
 }
 function vProposals0(){
   const who = LIVE ? S.coord : 'nok', rows = propRows();
-  const table = `<div class="card"><h2>Campaign plans</h2><p class="sub2">Plans and spending ideas from fellows. Lines marked ready to go are copied to the finance sheet.${LIVE ? '' : " Only Thai Fellow 1's plan opens in this prototype."}</p>
+  const table = `<div class="card"><h2>Campaign proposals</h2><p class="sub2">Proposals and spending ideas from fellows. Lines marked ready to go are copied to the finance sheet.${LIVE ? '' : " Only Thai Fellow 1's plan opens in this prototype."}</p>
     <div class="tw"><table><thead><tr><th>Fellow</th><th>Campaign</th><th>Name</th><th>Proposed total (USD)</th><th>In local currency (estimate)</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr data-act="${hasData(r.f.id) ? 'prop-open' : ''}" data-f="${r.f.id}" data-c="${r.c}" class="${r.f.id === who && r.c === S.camp ? 'pick' : ''}"><td><b>${r.f.n}</b></td><td>${CAMPS[r.c-1].n}</td><td>${esc(r.name)}</td><td class="num"><b>${usdTxt(r.usd)}</b></td><td class="num">${r.cur === 'USD' ? '—' : fmt(r.total) + ' ' + r.cur}</td><td>${planPill(r.status)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="3"><b>All plans in view</b></td><td class="num"><b>${usdTxt(rows.reduce((a, r) => a + (r.usd || 0), 0))}</b></td><td colspan="2" class="meta">${rows.some(r => r.usd == null && r.total) ? 'Some plans have no exchange rate yet' : ''}</td></tr></tfoot></table></div></div>`;
   if (!LIVE && S.scope !== 'ALL' && S.scope !== 'TH') return table;
   const c = S.camp, pl = S.plan[c], i = campInfo(who, c);
   const rev = pl.status === 'Draft'
-    ? `<p class="meta">Not shared yet.</p>`
+    ? `<p class="meta">Not shared yet.</p>${remindScope(F.find(x => x.id === who)) ? remindBlock(F.find(x => x.id === who), false, 'Hi ' + F.find(x => x.id === who).n + ', could you share your campaign proposal and spending ideas when you can? We would like to give you suggestions before the campaign gets busy.') : ''}`
     : `<form data-form="review" class="stack"><div class="formgrid"><label class="f">Our take<select id="rv-status">${opt(['Ready to go','Suggestions to consider'], pl.status === 'Shared with team' ? '' : pl.status)}</select></label></div>
        <label class="f">Note to the fellow<textarea id="rv-comment" placeholder="What looks good, and what would you suggest?">${esc(pl.comment)}</textarea></label><div><button class="btn" type="submit">Send feedback</button></div></form>`;
   const detail = `<div class="card"><div class="row spread"><div><h2>${esc(F.find(x => x.id === who).n)}, ${esc(i ? i.name : CAMPS[c-1].n)}</h2><p class="sub2" style="margin:0">${CAMPS[c-1].w}</p></div>${planPill(pl.status)}</div>
@@ -930,15 +998,16 @@ function vProposals0(){
       <div><div class="meta">Civic action</div><div>${pl.action.type ? '<b>' + esc(pl.action.type) + '.</b> ' : ''}${esc(pl.action.text) || '—'}<br><span class="meta">Measured by: ${esc(pl.action.measure) || '—'}</span></div></div>
       <div class="grid2"><div><div class="meta">Planned posts (${pl.posts.length})</div>${planList(pl.posts, 'posts', false)}</div><div><div class="meta">Planned events (${pl.events.length})</div>${planList(pl.events, 'events', false)}</div></div>
       <div><div class="meta" style="margin-bottom:6px">Spending</div>${spendTable(pl, false)}</div>
+      <div><div class="meta" style="margin-bottom:6px">Supporting screenshots</div>${refsView(pl, false)}</div>
       <div style="border-top:1px solid var(--line);padding-top:14px"><h3 style="margin-bottom:8px">Feedback</h3>${rev}</div></div></div>`;
   return table + detail;
 }
 
 function vBoard(){
   const b = board(F, S.role === 'kol' ? CUR : null);
-  const head = `<div class="card"><h2>The Good Chat fellows</h2><p class="sub2">4 in Thailand, 4 in Indonesia. Tap a name to see the breakdown. ${LIVE ? '' : '5 Philippines KOL friends joined moments this month (sample).'}</p></div>`;
+  const head = `<div class="card"><h2>The Good Chat fellows</h2><p class="sub2">Every conversation started, every person reached and every action inspired adds to the whole. Tap a name to see what is growing. ${LIVE ? '' : '5 Philippines KOL friends joined moments this month (sample).'}</p></div>`;
   return `${head}<div class="grid2" style="align-items:start"><div class="lb">${b.rows}</div>${b.battle}</div>
-    <p class="note">Scores compare each person with their own benchmark (the average of their posts in the 6 months before joining), so a smaller account can lead. Payments never appear here.</p>`;
+    <p class="note">Reach and engagement are compared with each person's own starting point (the average of their posts in the 6 months before joining), so a smaller account can lead. There is no cap on points. Payments never appear here.</p>`;
 }
 
 function vTeamPaper(){
@@ -948,6 +1017,8 @@ function vTeamPaper(){
   const matrix = `<div class="tw"><table><thead><tr><th>Fellow</th><th>Country</th>${DOCS.map(d => `<th>${d}</th>`).join('')}</tr></thead><tbody>${
     list.map(f => `<tr data-act="coord-kol" data-v="${f.id}" class="${f.id===S.coord?'pick':''}"><td><b>${f.n}</b></td><td>${f.c}</td>${S.paper[f.id].map(x => `<td>${pill(x.s)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   const edit = `<div class="card"><h2>Update paperwork for ${esc(k.n)}</h2><p class="sub2">What you write in the note is shown to ${esc(k.n)} in plain language. Select a row above to switch fellow.</p>
+    <div class="meta" style="margin-bottom:8px">${fpr(k.id).email ? 'Email: <a href="mailto:' + esc(fpr(k.id).email) + '">' + esc(fpr(k.id).email) + '</a>. ' : 'No email added yet. '}Private folder: ${fpr(k.id).folder ? lnk(fpr(k.id).folder, 'Open Drive folder') : 'not added yet (add it on the People tab)'}</div>
+    ${remindScope(k) ? remindBlock(k, false) : ''}
     ${cur.map((x,i) => `<div class="item"><div class="formgrid">
       <label class="f">${x.doc}<select data-act="set-status" data-i="${i}">${Object.keys(STATUS).map(s => `<option value="${s}" ${x.s===s?'selected':''}>${STATUS[s]}</option>`).join('')}</select></label>
       <label class="f">Due date<input type="date" data-act="set-due" data-i="${i}" value="${x.due}"></label></div>
@@ -980,6 +1051,20 @@ function remindText(f){
 function remindSend(f, text){
   (S.notes[f.id] = S.notes[f.id] || []).push({by:S.user.label, date:dstr(TODAY), text});
   S.reminded[f.id] = dstr(TODAY);
+}
+/* reminders live where the work is: People, Paperwork and Campaign proposals */
+function remindBlock(f, open, msg){
+  const it = chaseItems(f);
+  if (!it.length && !msg) return `<div style="margin-top:10px"><span class="pill p-ok">All caught up</span></div>`;
+  return `<details style="margin-top:10px"${open ? ' open' : ''}><summary style="cursor:pointer"><span class="pill ${it.length ? 'p-fix' : 'p-none'}">${it.length ? it.length + ' open' : 'Reminder'}</span> <span class="meta">${S.reminded[f.id] ? 'Last reminded ' + S.reminded[f.id] : 'Not reminded yet'}</span></summary>
+    ${it.length ? `<ul style="margin:8px 0 10px;padding-left:18px">${it.map(x => `<li>${esc(x.t)}</li>`).join('')}</ul>` : ''}
+    <label class="f">Message<span class="hint">Edit it before sending. The fellow sees it as a note on their paperwork page.</span><textarea id="rm-${f.id}">${esc(msg || remindText(f))}</textarea></label>
+    <div><button type="button" class="btn sm" data-act="remind" data-v="${f.id}">Send reminder</button></div></details>`;
+}
+const remindScope = f => S.role === 'team' && (S.scope === 'ALL' || f.c === S.scope);
+function remindAllCard(){
+  const n = chaseCount();
+  return `<div class="card"><div class="row spread"><div><h2 style="margin:0">Reminders</h2><p class="sub2" style="margin:0">Open paperwork, reflections and campaign set-up show on each fellow below. Send one in a tap, or nudge everyone at once.</p></div><button type="button" class="btn" data-act="remind-all" ${n ? '' : 'disabled'}>Remind all with open items (${n})</button></div></div>`;
 }
 function vTeamMine(){
   const all = S.scope === 'ALL', nm = {TH:'Thailand', ID:'Indonesia'};
@@ -1014,7 +1099,9 @@ function campFlags(f){
   const accepted = st.csoP.filter(x => x.q.status === 'Accepted'), inv = st.csoP.filter(x => x.q.status === 'Invited');
   const pr = propRows().find(r => r.f.id === f.id && r.c === 1);
   if (!S.listen.bench[f.id] || S.listen.bench[f.id].st !== 'Confirmed') fl.push({key:f.id + '-bench', t:'Starting benchmark not confirmed yet (social listening expert)', who:'cso'});
-  if (!pr || pr.status === 'Draft') fl.push({key:f.id + '-prop', t:'Campaign proposal is still a draft', msg:'Hi ' + f.n + ', could you share your campaign plan and spending ideas when you can? We would like to give you suggestions before the campaign gets busy.', who:'fellow'});
+  const ko = (S.pevents || []).filter(e => e.kind === 'Kickoff' && e.end).map(e => e.end).sort().pop(), designed = !ko || iso(new Date()) > ko;
+  if (!designed) { /* Campaign 1 is designed at the kickoff, so no chasing before it */ }
+  else if (!pr || pr.status === 'Draft') fl.push({key:f.id + '-prop', t:'Campaign proposal is still a draft', msg:'Hi ' + f.n + ', could you share your campaign plan and spending ideas when you can? We would like to give you suggestions before the campaign gets busy.', who:'fellow'});
   else if (pr.status === 'Suggestions to consider') fl.push({key:f.id + '-sug', t:'Waiting for the fellow to respond to our suggestions', msg:'Hi ' + f.n + ', we left suggestions on your campaign plan. Have a look when you can and update the plan or tell us what you think.', who:'fellow'});
   if (st.logged < st.planned * 0.5 && st.planned) fl.push({key:f.id + '-post', t:'Posting is behind plan (' + st.logged + ' of ' + st.planned + ' logged)', msg:'Hi ' + f.n + ', we see ' + st.logged + ' of ' + st.planned + ' planned posts logged. Is there anything blocking you? We can help.', who:'fellow'});
   if (st.logged > st.insights) fl.push({key:f.id + '-ins', t:(st.logged - st.insights) + ' post' + (st.logged - st.insights === 1 ? ' has' : 's have') + ' no insights yet', msg:'Hi ' + f.n + ', please add the numbers, screenshots and your reflection to the posts you have logged.', who:'fellow'});
@@ -1071,19 +1158,18 @@ function vLBrief(){
 }
 function lReach(){ return S.posts.filter(p => p.camp === 1).reduce((a,p) => a + (p.refl ? p.refl.reach : 0), 0) + S.friends.filter(x => x.camp === 1).reduce((a,x) => a + x.posts.reduce((b,q) => b + (q.m.reach || 0), 0), 0); }
 const BM = [['reach','Reach / views'],['reactions','Reactions'],['comments','Comments'],['saves','Saves'],['shares','Shares'],['repost','Repost']];
+const benchEng = m => ['reactions','comments','saves','shares','repost'].reduce((t, k) => t + (Number(m[k]) || 0), 0);
 function benchPill(f){ const b = S.listen.bench[f.id]; return b ? `<span class="pill ${b.st === 'Confirmed' ? 'p-ok' : 'p-req'}">${b.st}</span>` : '<span class="pill p-none">Not set</span>'; }
 function vLBench(){
   if (['all','TH','ID'].includes(S.lf)) S.lf = 'nok';
   const f = F.find(x => x.id === S.lf), b = S.listen.bench[f.id] || {};
   const tbl = `<div class="tw"><table><thead><tr><th>Fellow</th><th>Status</th><th>Posts used</th>${BM.map(m => `<th>${m[1]}</th>`).join('')}</tr></thead><tbody>${F.map(x => { const y = S.listen.bench[x.id]; return `<tr><td><b>${x.n}</b></td><td>${benchPill(x)}</td><td class="num">${y ? y.n : '—'}</td>${BM.map(m => `<td class="num">${y ? fmt(y[m[0]]) : '—'}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>`;
   const inp = (k, l) => `<label class="f">${l}<input type="number" min="0" id="l-b-${k}" value="${b[k] !== undefined ? b[k] : ''}"></label>`;
-  return `<div class="card"><h2>Starting benchmarks</h2><p class="sub2">Each fellow's benchmark is the average of their posts in the 6 months before they joined (Jul to Dec 2026). Scores compare fellows with their own benchmark, so a smaller account can lead.</p>${tbl}</div>
+  return `<div class="card"><h2>Starting benchmarks</h2><p class="sub2">Each fellow's starting point is the average of their posts in the 6 months before they joined (Jul to Dec 2026). Do the analysis in your own tools, then enter the findings here. Once you confirm, the fellow sees it on their Listening insights page, set against each of their posts. Reach and engagement points compare fellows with their own starting point, so a smaller account can lead.</p>${tbl}</div>
     <div class="card"><label class="f" style="max-width:260px">Fellow<select data-act="lfsel">${F.map(x => `<option value="${x.id}" ${S.lf === x.id ? 'selected' : ''}>${x.n}</option>`).join('')}</select></label></div>
-    <div class="card"><div class="row spread"><div><h2>${f.n}</h2><p class="sub2" style="margin:0">Average per post.</p></div>${benchPill(f)}</div>
+    <div class="card"><div class="row spread"><div><h2>${f.n}</h2><p class="sub2" style="margin:0">Enter the average per post from your findings.</p></div>${benchPill(f)}</div>
       <form data-form="lbench" class="stack" style="margin-top:12px">
         <div class="formgrid"><label class="f">Period<input type="text" id="l-bperiod" value="${esc(b.period || 'Jul to Dec 2026')}"></label><label class="f">Accounts counted<input type="text" id="l-bwhere" value="${esc(b.where || '')}" placeholder="e.g. Instagram, TikTok"></label></div>
-        <label class="f">Work it out from posts<span class="hint">Paste one post per line: reach, reactions, comments, saves, shares, repost. Then press Calculate.</span><textarea id="l-bpaste" placeholder="3200, 180, 20, 12, 9, 2"></textarea></label>
-        <div><button type="button" class="btn ghost sm" data-act="bcalc">Calculate averages</button></div>
         <div class="formgrid"><label class="f">Posts used<input type="number" min="0" id="l-bn" value="${b.n !== undefined ? b.n : ''}"></label>${BM.map(m => inp(m[0], 'Average ' + m[1].toLowerCase())).join('')}</div>
         <label class="f">How you chose the posts<span class="hint">For example, paid posts left out. Shown to the fellow.</span><textarea id="l-bnote">${esc(b.note || '')}</textarea></label>
         <div class="row"><button class="btn ghost" type="submit">Save</button>${S.listen.bench[f.id] && b.st !== 'Confirmed' ? '<button class="btn" type="button" data-act="bconfirm">Confirm benchmark</button>' : ''}</div></form></div>`;
@@ -1125,8 +1211,9 @@ function vInsights(){
     return `<div class="card"><h2>${CAMPS[c-1].n}</h2><p class="sub2">${CAMPS[c-1].w}</p>${body}</div>`; }).join('');
   const C = L.cmp[CUR], cmp = C && C.status === 'Shared' ? `<div class="card"><h2>Your two campaigns side by side</h2><div>${cmpTable(F.find(x => x.id === CUR))}</div>${blk('What we noticed', [['Summary of your impact',C.impact],['What stayed the same',C.same],['What changed and why',C.diff],['What to carry forward',C.carry]], C.date)}</div>` : `<div class="card"><h2>Your two campaigns side by side</h2><p class="meta">A comparison of Campaign 1 and Campaign 2 will appear here after Campaign 2 ends on ${dstr(CAMPS[1].end)}.</p></div>`;
   const B = L.bench[CUR], rs = S.posts.filter(p => p.refl);
-  const bench = B && B.st === 'Confirmed' ? `<div class="card"><h2>Your starting point</h2><p class="sub2">The average of your posts from ${esc(B.period)} (${B.n} posts${B.where ? ' on ' + esc(B.where) : ''}), worked out by the social listening expert. Your score compares you with this, not with anyone else.</p>
+  const bench = B && B.st === 'Confirmed' ? `<div class="card"><h2>Your starting point</h2><p class="sub2">The average of your posts from ${esc(B.period)} (${B.n} posts${B.where ? ' on ' + esc(B.where) : ''}), worked out by the social listening expert. Your reach and engagement points compare you with this starting point, not with anyone else.</p>
     <div class="tw"><table><thead><tr><th></th><th>Your benchmark</th><th>Your average now</th><th>Compared with benchmark</th></tr></thead><tbody>${BM.map(m => { const now = rs.length ? rs.reduce((a,p) => a + (p.refl[m[0]] || 0), 0) / rs.length : 0; return `<tr><td>${m[1]}</td><td class="num">${fmt(B[m[0]])}</td><td class="num">${rs.length ? fmt(Math.round(now)) : '—'}</td><td class="num">${rs.length && B[m[0]] ? (now / B[m[0]]).toFixed(1) + 'x' : '—'}</td></tr>`; }).join('')}</tbody></table></div>
+    ${rs.length ? `<div class="tw" style="margin-top:12px"><table><thead><tr><th>Your post</th><th>Reach</th><th>vs your usual reach</th><th>Engagements</th><th>vs your usual engagement</th></tr></thead><tbody>${rs.map(p => { const e = benchEng(p.refl), bE = benchEng(B); return `<tr><td>${esc(p.platform)}, ${dstr(p.date)}</td><td class="num">${fmt(p.refl.reach || 0)}</td><td class="num">${B.reach ? ((p.refl.reach || 0) / B.reach).toFixed(1) + 'x' : '—'}</td><td class="num">${fmt(e)}</td><td class="num">${bE ? (e / bE).toFixed(1) + 'x' : '—'}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
     <p class="note">Averages per post, from the ${rs.length} post${rs.length === 1 ? '' : 's'} where you added numbers. ${B.note ? esc(B.note) : ''}</p></div>` : '';
   return `${bench}<div class="card"><h2>From the social listening expert</h2><p class="sub2">Suggestions before each campaign, feedback and analysis after it, and a comparison of your two campaigns. Take what helps.</p></div>${per}${cmp}${deckCard()}`;
 }
@@ -1189,7 +1276,29 @@ function dRange(a, b){
 function keyDates(){
   const own = (S.dates || []).filter(d => d.date).map(d => ({id:d.id, ref:'dates', conf:d.confirms || {}, own:true, title:d.title, date:d.date, end:d.end || '', type:d.type || 'Other', country:d.country || '', note:d.note || ''}));
   const mc = (S.classes || []).filter(c => c.date).map(c => ({id:'mc' + c.id, ref:'classes', rid:c.id, conf:c.confirms || {}, own:false, title:c.name + (c.topic ? ': ' + c.topic : ''), date:c.date, end:'', type:'Masterclass', country:'', lead:c.lead ? 'Led by ' + c.lead + (c.exp ? ' (' + c.exp + ')' : '') : '', note:c.link ? 'Join: ' + c.link : ''}));
-  return [...own, ...mc].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  /* events from the Events tab show here too, so nothing has to be typed twice */
+  const evs = (S.pevents || []).filter(e => e.start).map(e => ({id:'ev' + e.id, ref:'pevents', rid:e.id, conf:{}, own:false, nocheck:true, title:e.name + (e.city && !String(e.name).includes(e.city) ? ' in ' + e.city : ''), date:e.start, end:e.end || '', type:'Event', country:e.country === 'TH' || e.country === 'ID' ? e.country : '', note:e.kind === 'Kickoff' ? 'Fellows from both countries join and design Campaign 1.' : e.kind === 'Co-creation' ? 'Fellows design Campaign 2 here.' : ''}));
+  /* the fixed programme dates are always on the list, unless the team has already added the same one */
+  const base = [...own, ...evs];
+  const FIXED = [
+    ['Fellowship application deadline', '2026-11-22', '', 'Deadline', '', /application/i, ''],
+    ['Announcement of TGC4 Fellows', '2026-12-15', '', 'Other', '', /announce/i, ''],
+    ['Regional kickoff event in Bangkok', '2027-01-12', '2027-01-14', 'Event', '', /kick-?off/i, 'Organised in Bangkok. Fellows from Thailand and Indonesia join and design Campaign 1.'],
+    ['Campaign 1', '2027-02-08', '2027-03-26', 'Campaign', '', /campaign 1/i, ''],
+    ['Co-creation event in Bangkok', '2027-04-21', '2027-04-23', 'Event', 'TH', /co-?creation.*bangkok|bangkok.*co-?creation/i, 'Fellows design Campaign 2 here.'],
+    ['Co-creation event in Jakarta', '2027-04-28', '2027-04-30', 'Event', 'ID', /co-?creation.*jakarta|jakarta.*co-?creation/i, 'Fellows design Campaign 2 here.'],
+    ['Campaign 2', '2027-06-07', '2027-07-30', 'Campaign', '', /campaign 2/i, ''],
+    ['Closing events in Bangkok and Jakarta', '2027-08-03', '', 'Event', '', /closing/i, '']];
+  const fixed = FIXED.filter(r => !base.some(d => r[5].test(d.title) || d.date === r[1])).map((r, i) => ({id:'fx' + i, ref:'builtin', conf:{}, own:false, nocheck:true, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:r[6]}));
+  /* events led by fellows in their own communities: The Social Club and the events fellows plan */
+  const fnames = new Set(F.map(f => f.n));
+  const led = [];
+  (S.cevents || []).filter(e => e.date && fnames.has(e.by)).forEach(e => led.push({id:'ce' + e.id, ref:'cevents', conf:{}, own:false, nocheck:true, led:true, title:e.name, date:e.date, end:'', type:e.type || 'Event', country:e.country || '', note:'Led by ' + e.by + (e.place ? ', ' + e.place : '')}));
+  F.filter(f => hasData(f.id)).forEach(f => [1, 2].forEach(c => ((fd(f.id).plan[c] || {}).events || []).filter(e => e.date && e.what).forEach(e => {
+    if (led.some(x => x.title === e.what && x.date === e.date)) return;
+    led.push({id:'pe' + f.id + c + e.date + e.what, ref:'plan', conf:{}, own:false, nocheck:true, led:true, title:e.what, date:e.date, end:'', type:e.type || 'Event', country:f.c, note:'Led by ' + f.n + (e.place && e.place !== 'Place to be set' ? ', ' + e.place : '')});
+  })));
+  return [...own, ...evs, ...fixed, ...led, ...mc].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
 function kdWhen(d){
   const t = pIso(iso(new Date())), a = pIso(d.date), b = pIso(d.end || d.date), n = Math.round((a - t) / 864e5);
@@ -1209,13 +1318,15 @@ const KD_CC = ['TH', 'ID'];
 const kdNeeds = d => d.country ? [d.country] : KD_CC;
 const kdKey = d => d.ref + '|' + (d.rid != null ? d.rid : d.id);
 const kdFind = k => { const [l, id] = k.split('|'); return (S[l] || []).find(x => String(x.id) === id); };
-const myCC = () => (!VA && S.role === 'team' && S.tm === 'country' && KD_C[S.scope]) ? S.scope : '';
+/* the programme coordinator is also the Thailand country coordinator */
+const myCC = () => VA || S.role !== 'team' ? '' : S.tm === 'program' ? 'TH' : (S.tm === 'country' && KD_C[S.scope]) ? S.scope : '';
 function kdConfState(d){
   const need = kdNeeds(d), conf = d.conf || {};
   const rows = need.map(c => { const x = conf[c]; return {c, st:x ? x.st : 'wait', by:x && x.by, note:x && x.note}; });
   return {rows, ok:rows.every(r => r.st === 'ok'), bad:rows.some(r => r.st === 'conflict')};
 }
 function kdConfRow(d){
+  if (d.nocheck) return '';
   const st = kdConfState(d), mine = myCC(), key = kdKey(d);
   const chips = st.rows.map(r => `<span class="pill ${r.st === 'ok' ? 'p-ok' : r.st === 'conflict' ? 'p-fix' : 'p-none'}">${KD_C[r.c]}: ${r.st === 'ok' ? 'confirmed' : r.st === 'conflict' ? 'conflict' : 'waiting'}</span>${r.st === 'conflict' && r.note ? ` <span class="meta">${esc(r.note)}</span>` : ''}${r.st === 'ok' && r.by ? ` <span class="meta">by ${esc(r.by)}</span>` : ''}`).join(' ');
   let act = '';
@@ -1235,18 +1346,22 @@ function kdForm(c){
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="kd-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="kd-del" data-v="${c.id}">Delete</button>`}</div></form>`;
 }
 function kdSummary(up){
+  up = up.filter(d => !d.nocheck);
   const st = up.map(kdConfState), ok = st.filter(x => x.ok).length, bad = st.filter(x => x.bad).length;
   return `<p class="note" style="margin-top:8px"><b>Country check.</b> Country coordinators confirm each coming date does not clash with a public holiday or anything else that would affect the programme in their country. ${ok} of ${up.length} dates confirmed by every country that needs to${bad ? ', ' + bad + ' with a conflict flagged' : ''}.${myCC() ? ' Use the buttons under each date.' : ''}</p>`;
 }
 function vKeyDates(){
   const ed = canEditKD(), all = keyDates(), today = iso(new Date());
-  const up = all.filter(d => (d.end || d.date) >= today), past = all.filter(d => (d.end || d.date) < today).reverse();
-  const mc = myCountry(), row = d => { const w = kdWhen(d), other = mc && d.country && d.country !== mc, tag = d.country ? ' <span class="meta">(' + KD_C[d.country] + ')</span>' : ''; return `<div class="item" style="padding:10px 0${other ? ';opacity:.6' : ''}"><div class="row spread" style="align-items:flex-start;gap:12px"><div>${other ? `<span style="font-weight:300">${esc(d.title)}</span>` : `<b>${esc(d.title)}</b>`}${tag}<div class="meta" style="${other ? 'font-weight:300' : 'font-weight:700'}">${dRange(d.date, d.end)}${d.lead ? ' | ' + esc(d.lead) : ''}${d.note ? ' | ' + (/^Join: https?:/.test(d.note) ? 'Join: ' + lnk(d.note.slice(6), 'link') : esc(d.note)) : ''}</div></div><div class="row" style="gap:8px;flex-shrink:0"><span class="chip">${esc(d.type)}</span>${w ? `<span class="meta">${w}</span>` : ''}${ed && d.own ? `<button type="button" class="btn ghost sm" data-act="kd-edit" data-v="${d.id}">Edit</button>` : ''}</div></div>${((d.end || d.date) >= today) ? kdConfRow(d) : ''}</div>`; };
+  const fl = S.kdFilter || 'all', shown = all.filter(d => fl === 'all' || (fl === 'led' ? d.led : !d.led));
+  const up = shown.filter(d => (d.end || d.date) >= today), past = shown.filter(d => (d.end || d.date) < today).reverse();
+  const nLed = all.filter(d => d.led).length;
+  const filt = `<div class="sub-tabs" role="group" aria-label="Which dates">${[['all','All dates (' + all.length + ')'],['prog','Programme dates (' + (all.length - nLed) + ')'],['led','Fellow-led events (' + nLed + ')']].map(t => `<button type="button" data-act="kd-filter" data-v="${t[0]}" aria-pressed="${fl === t[0]}">${t[1]}</button>`).join('')}</div>`;
+  const mc = myCountry(), row = d => { const w = kdWhen(d), other = mc && d.country && d.country !== mc, tag = d.country ? ' <span class="meta">(' + KD_C[d.country] + ')</span>' : ''; return `<div class="item${d.led ? ' kd-led' : ''}" style="padding:10px 0${other ? ';opacity:.6' : ''}"><div class="row spread" style="align-items:flex-start;gap:12px"><div>${other ? `<span style="font-weight:300">${esc(d.title)}</span>` : `<b>${esc(d.title)}</b>`}${tag}<div class="meta" style="${other ? 'font-weight:300' : 'font-weight:700'}">${dRange(d.date, d.end)}${d.lead ? ' | ' + esc(d.lead) : ''}${d.note ? ' | ' + (/^Join: https?:/.test(d.note) ? 'Join: ' + lnk(d.note.slice(6), 'link') : esc(d.note)) : ''}</div></div><div class="row" style="gap:8px;flex-shrink:0">${d.led ? '<span class="pill p-fix">Fellow-led</span>' : ''}<span class="chip">${esc(d.type)}</span>${w ? `<span class="meta">${w}</span>` : ''}${ed && d.own ? `<button type="button" class="btn ghost sm" data-act="kd-edit" data-v="${d.id}">Edit</button>` : ''}</div></div>${((d.end || d.date) >= today) ? kdConfRow(d) : ''}</div>`; };
   const add = ed ? (S.kdedit === 'new' ? `<div class="card"><h2>Add a date</h2>${kdForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn" data-act="kd-edit" data-v="new">Add a date</button>${(S.dates || []).length ? '' : ' <button type="button" class="btn ghost" data-act="kd-seed">Add the programme dates</button>'}</div>`) : '';
   const editing = ed && S.kdedit && S.kdedit !== 'new' ? (S.dates.find(x => String(x.id) === String(S.kdedit)) || null) : null;
-  return `<div class="card"><h2>Key dates</h2><p class="sub2">The moments we are building towards, together: campaigns, events, deadlines and masterclasses. ${ed ? 'You can add and change dates here. Masterclass dates come from the Masterclasses tab.' : 'The programme team keeps it up to date.'}${myCountry() ? ' Dates for your country are in bold, other countries in a lighter font.' : ''}</p><p class="meta">Check-in calls and masterclasses happen on Tuesdays, 60 to 90 minutes.</p>${kdSummary(up)}</div>
+  return `<div class="card"><h2>Key dates</h2><p class="sub2">The moments we are building towards, together: campaigns, events, deadlines and masterclasses. ${ed ? 'You can add and change dates here. Masterclass dates come from the Masterclasses tab.' : 'The programme team keeps it up to date.'}${myCountry() ? ' Dates for your country are in bold, other countries in a lighter font.' : ''}</p><p class="meta">Check-in calls and masterclasses happen on Tuesdays, 60 to 90 minutes.</p><p class="meta">Programme dates are set by the team. <span class="pill p-fix">Fellow-led</span> events are organised by fellows in their own communities, and you are welcome to join.</p><div style="margin-top:10px">${filt}</div>${kdSummary(up)}</div>
     ${add}${editing ? `<div class="card"><h2>Edit date</h2>${kdForm(editing)}</div>` : ''}
-    <div class="card"><h2>Coming up</h2>${up.map(row).join('') || '<p class="meta">No dates added yet.</p>'}</div>
+    <div class="card"><h2>Coming up</h2>${up.map(row).join('') || '<p class="meta">Nothing here yet.</p>'}</div>
     ${past.length ? `<div class="card"><h2>Past</h2>${past.map(row).join('')}</div>` : ''}`;
 }
 
@@ -1298,9 +1413,10 @@ function ftCard(x){
 function vFeatures(){
   const mk = canMakeFT(), list = ftMine().slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.id).localeCompare(String(a.id)));
   const editing = mk && S.fedit && S.fedit !== 'new' ? S.features.find(x => String(x.id) === String(S.fedit)) : null;
-  const add = mk ? (S.fedit === 'new' ? `<div class="card"><h2>Add a feature</h2>${ftForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn" data-act="ft-edit" data-v="new">Add a feature</button></div>`) : '';
+  if (S.fedit !== 'new') S.ftPre = null;
+  const add = mk ? (S.fedit === 'new' ? `<div class="card"><h2>Add a piece of content</h2>${ftForm({id:'new', who:S.ftPre ? [S.ftPre] : []})}</div>` : `<div class="card"><button type="button" class="btn" data-act="ft-edit" data-v="new">Add a piece of content</button></div>`) : '';
   const intro = mk ? 'Log content that features fellows, KOL friends and CSOs, and ask them for an interview, photos or a quote. They see only the features they are in.' : ftMe() ? 'Content that features you, and anything the communications team has asked of you. Mark a request done when you have sent it.' : 'Content that features fellows, KOL friends and CSOs.';
-  return `<div class="card"><h2>Features</h2><p class="sub2">${intro}</p></div>${add}${editing ? `<div class="card"><h2>Edit feature</h2>${ftForm(editing)}</div>` : ''}${list.map(ftCard).join('') || '<div class="card"><p class="meta">Nothing here yet.</p></div>'}`;
+  return `<div class="card"><h2>${ftMe() ? 'Content featuring you' : 'Content by the communications team'}</h2><p class="sub2">${intro}</p></div>${add}${editing ? `<div class="card"><h2>Edit feature</h2>${ftForm(editing)}</div>` : ''}${list.map(ftCard).join('') || '<div class="card"><p class="meta">Nothing here yet.</p></div>'}`;
 }
 async function ftDone(v){
   const [fid, rid] = v.split('|'), x = S.features.find(z => String(z.id) === fid), r = x && (x.requests || []).find(q => q.id === rid); if (!r) return;
@@ -1343,9 +1459,18 @@ function slItem(x, mode){
 }
 function clForm(c){
   const n = c.id === 'new';
-  return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
+  return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<span class="hint">Optional</span><input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<span class="hint">Leave empty if not fixed yet</span><input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
+    <label class="f">Time or other details<span class="hint">Optional. For example: 19:00 to 20:30 Bangkok time, or "mid-March, date to be confirmed"</span><input type="text" id="cl-when" value="${esc(c.when || '')}"></label>
     <label class="f">Topic<input type="text" id="cl-topic" value="${esc(c.topic || '')}"></label><label class="f">Led by<span class="hint">Name of the expert</span><input type="text" id="cl-lead" value="${esc(c.lead || '')}"></label><label class="f">Expertise<select id="cl-exp">${opt(['', ...CL_EXP], c.exp || '')}</select></label><label class="f">Join link<span class="hint">Zoom, Meet or the room details</span><input type="text" id="cl-link" value="${esc(c.link || '')}"></label>
+    <label class="f">Main slides link<span class="hint">Optional. The deck the expert uses in class (Google Slides, Drive or any web link)</span><input type="url" id="cl-deck" value="${esc(c.deck || '')}" placeholder="https://"></label>
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="cl-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="cl-del" data-v="${c.id}">Delete masterclass</button>`}</div></form>`;
+}
+/* links the expert mentions in class and wants to share: articles, videos, tools, reading */
+function clResources(c, team){
+  const r = c.res || [];
+  if (!r.length && !team) return '';
+  const form = team ? `<details style="margin-top:8px"${r.length ? '' : ''}><summary class="meta" style="cursor:pointer">+ Add a relevant link</summary><form data-form="cl-res" data-id="${c.id}" class="stack" style="margin-top:8px"><div class="formgrid"><label class="f">Title<input type="text" name="rt" placeholder="e.g. The video Mai mentioned" required></label><label class="f">Link<input type="url" name="ru" placeholder="https://" required></label></div><label class="f">Why it helps<input type="text" name="rn" placeholder="Optional. One line on what to look for"></label><div><button class="btn sm" type="submit">Add link</button></div></form></details>` : '';
+  return `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">${r.length ? `<div class="meta">Relevant links</div>${r.map(x => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${lnk(x.url, x.title)}</b>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</span>${team ? `<button type="button" class="btn ghost sm" data-act="cl-res-del" data-id="${c.id}" data-v="${x.id}">Remove</button>` : ''}</div></div>`).join('')}` : ''}${form}</div>`;
 }
 function vSlides(){
   const team = S.role === 'team', cls = slClasses(), vis = S.slides.filter(slVisible);
@@ -1356,14 +1481,15 @@ function vSlides(){
   const cards = cls.map(c => {
     if (team && S.cledit === c.id) return `<div class="card"><h2>Edit ${esc(c.name)}</h2>${clForm(c)}</div>`;
     const items = inClass(c);
-    if (!team && !items.length && !c.date && !c.topic) return '';
-    return `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}${c.topic ? ': ' + esc(c.topic) : ''}</h2><p class="sub2" style="margin:0">${c.date ? dd(c.date) + ', ' : ''}${esc(monthName(c.month))}${c.lead ? ', led by ' + esc(c.lead) + (c.exp ? ' (' + esc(c.exp) + ')' : '') : ''}${c.link ? ', ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button>` : ''}</div>
-      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || '<p class="meta">Slides will appear here.</p>'}</div></div>`;
+    if (!team && !items.length && !c.date && !c.topic && !c.deck && !(c.res || []).length) return '';
+    return `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}${c.topic ? ': ' + esc(c.topic) : ''}</h2><p class="sub2" style="margin:0">${[c.date ? dd(c.date) : '', monthName(c.month) ? esc(monthName(c.month)) : '', c.when ? esc(c.when) : ''].filter(Boolean).join(', ') || 'Date to be confirmed'}${c.lead ? ', led by ' + esc(c.lead) + (c.exp ? ' (' + esc(c.exp) + ')' : '') : ''}${c.link ? ', ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button>` : ''}</div>
+      ${c.deck ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.deck)}" target="_blank" rel="noopener noreferrer">Open the main slides &#8599;</a></div>` : ''}
+      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || (c.deck ? '' : '<p class="meta">Slides will appear here.</p>')}</div>${clResources(c, team)}</div>`;
   }).join('');
-  const seed = team && !cls.length ? `<div class="card"><p class="sub2">There is one masterclass a month from January to July. Set up the seven slots, then add dates and topics.</p><button type="button" class="btn" data-act="cl-seed">Set up January to July</button></div>` : '';
+  const seed = team && !cls.length ? `<div class="card"><p class="sub2">Add masterclasses in whatever pattern suits the programme, with a month, an exact date or just a topic. You can also start with one a month from January to July.</p><button type="button" class="btn ghost" data-act="cl-seed">Start with January to July</button></div>` : '';
   const addC = team ? (S.cledit === 'new' ? `<div class="card"><h2>Add a masterclass</h2>${clForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn ghost" data-act="cl-edit" data-v="new">Add a masterclass</button></div>`) : '';
   const oth = other.length ? `<div class="card"><h2>Other slides</h2>${other.map(x => slItem(x, team ? 'manage' : 'view')).join('')}</div>` : '';
-  const head = `<div class="card"><h2>Masterclasses and slides</h2><p class="sub2">${team ? 'Arrange the slides for each masterclass: change the order, and choose who sees each one. Fellows and KOL friends see them in this order.' : 'One masterclass a month, with the slides shared after each one.'}</p></div>`;
+  const head = `<div class="card"><h2>Masterclasses and slides</h2><p class="sub2">${team ? 'Arrange the slides for each masterclass: change the order, and choose who sees each one. Fellows and KOL friends see them in this order.' : 'Masterclasses led by experts, with their slides and the resources they recommend.'}</p></div>`;
   return head + seed + (cards || (!team ? '<div class="card"><p class="meta">Nothing shared yet.</p></div>' : '')) + oth + addC + (team ? slEditor() : '');
 }
 function slEditor(){
@@ -1458,8 +1584,10 @@ function pMetrics(){
   t.eng = t.reactions + t.comments + t.saves + t.shares + t.repost;
   const rate = (e, r) => r ? (Math.round(e / r * 1000) / 10) + '%' : '0%';
   t.rate = rate(t.eng, t.reach);
+  const civC = c => LIVE ? im.plans.filter(x => Number(x.c) === c).reduce((a, x) => a + logSum(x.action), 0) : allFD().reduce((a, d) => a + logSum((d.plan[c] || {}).action), 0);
+  t.civic = civC(1) + civC(2) + (LIVE ? 0 : 310);
   t.att = (LIVE ? im.events.reduce((a, e) => a + (Number(e.att) || 0), 0) : allFD().reduce((a, d) => a + d.events.reduce((b, e) => b + (Number(e.attendance) || 0), 0), 0)) + extra.att;
-  t.byCamp = [1, 2].map(c => { const x = tot(rows.filter(r => r.camp === c)); const e = x.reactions + x.comments + x.saves + x.shares + x.repost; return {n:CAMPS[c-1].n, posts:x.posts, reach:x.reach, eng:e, rate:rate(e, x.reach)}; });
+  t.byCamp = [1, 2].map(c => { const x = tot(rows.filter(r => r.camp === c)); const e = x.reactions + x.comments + x.saves + x.shares + x.repost; return {n:CAMPS[c-1].n, posts:x.posts, reach:x.reach, eng:e, rate:rate(e, x.reach), civic:civC(c) + (LIVE || c !== 1 ? 0 : 310)}; });
   return t;
 }
 
@@ -1513,9 +1641,9 @@ function vPImpact(){
     <div class="card"><h2 class="h sec">1. Capacity building</h2><p class="sub2">Fellows learn to plan, measure and reflect on their own campaigns.</p>
       <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">${pTile(f.camps, 'Campaigns designed by fellows', 'of 16 possible')}${pTile(f.kset + ' of ' + F.length, 'Fellows with their own KPIs')}${pTile(f.refl + ' of ' + f.posts, 'Posts with a written reflection')}${pTile(f.hrs + ' hours', 'Advice from civil society orgs', 'logged so far')}</div></div>
     <div class="card"><h2 class="h sec">2. Public conversation and narrative shift</h2><p class="sub2">How far the campaigns reached and how people responded. Totals for posts by fellows and their KOL friends${LIVE ? '' : ' (sample numbers)'}.</p>
-      <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">${pTile(fmt(m.posts), 'Posts')}${pTile(fmt(m.reach), 'People reached')}${pTile(fmt(m.eng), 'Engagements', 'reactions, comments, shares, saves, reposts')}${pTile(m.rate, 'Engagement rate', 'engagements per person reached')}</div>
+      <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">${pTile(fmt(m.posts), 'Posts')}${pTile(fmt(m.reach), 'People reached')}${pTile(fmt(m.eng), 'Engagements', 'reactions, comments, shares, saves, reposts')}${pTile(m.rate, 'Engagement rate', 'engagements per person reached')}${pTile(fmt(m.civic), 'Civic actions', 'people who took the action asked of them')}</div>
       <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-top:12px">${pTile(fmt(m.reactions), 'Reactions')}${pTile(fmt(m.comments), 'Comments')}${pTile(fmt(m.shares), 'Shares')}${pTile(fmt(m.saves), 'Saves')}${pTile(fmt(m.repost), 'Reposts')}${pTile(f.events, 'Offline events', 'planned and held')}${pTile(fmt(m.att), 'People at events')}</div>
-      <div class="tw" style="margin-top:14px"><table><thead><tr><th>Campaign</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th></tr></thead><tbody>${m.byCamp.map(r => `<tr><td><b>${r.n}</b></td><td class="num">${fmt(r.posts)}</td><td class="num">${fmt(r.reach)}</td><td class="num">${fmt(r.eng)}</td><td class="num">${r.rate}</td></tr>`).join('')}</tbody></table></div></div>
+      <div class="tw" style="margin-top:14px"><table><thead><tr><th>Campaign</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th><th>Civic actions</th></tr></thead><tbody>${m.byCamp.map(r => `<tr><td><b>${r.n}</b></td><td class="num">${fmt(r.posts)}</td><td class="num">${fmt(r.reach)}</td><td class="num">${fmt(r.eng)}</td><td class="num">${r.rate}</td><td class="num">${fmt(r.civic)}</td></tr>`).join('')}</tbody></table></div></div>
     <div class="card"><h2 class="h sec">3. Civic action</h2><p class="sub2">Every campaign asks people to do one concrete thing. Here is what fellows chose.</p>
       <div class="row" style="gap:8px;flex-wrap:wrap;margin:6px 0 12px">${Object.keys(byType).map(k => `<span class="tag">${esc(k)}, ${byType[k]}</span>`).join('')}</div>
       ${civ.map(x => `<div class="item"><div class="row spread"><b>${fname(x[0])}</b><span class="tag">${esc(x[1] || 'Not chosen yet')}</span></div><div>${esc(x[2] || '')}</div>${x[3] ? `<div class="meta">Measured by: ${esc(x[3])}</div>` : ''}</div>`).join('')}</div>`;
@@ -1546,14 +1674,14 @@ function vPReports(){
 }
 
 const FEED_TYPES = ['Update','Ask for help','Thanks','Event','Resource'];
-function feedRole(){ if (S.role === 'team' && S.tm === 'ops') return 'Operations'; return S.role === 'kol' ? 'Fellow' : S.role === 'friend' ? 'KOL friend' : S.role === 'cso' ? 'CSO' : S.role === 'listener' ? (PROFILE && PROFILE.role === 'comms' ? 'Communications expert' : 'Social listening expert') : S.role === 'partner' ? 'Programme partner' : S.tm === 'country' ? 'Country coordinator' : 'Programme coordinator'; }
+function feedRole(){ if (S.role === 'team' && S.tm === 'ops') return 'Operations'; return S.role === 'kol' ? 'Fellow' : S.role === 'friend' ? 'KOL friend' : S.role === 'cso' ? 'CSO' : S.role === 'listener' ? ((PROFILE && PROFILE.role === 'comms') || (S.user && S.user.comms) ? 'Communications expert' : 'Social listening expert') : S.role === 'partner' ? 'Programme partner' : S.tm === 'country' ? 'Country coordinator' : 'Programme coordinator'; }
 function feedOpen(){ return S.feed.filter(p => p.type === 'Ask for help' && !p.comments.length).length; }
 function vFeed(){
   const ro = S.role === 'partner', mod = S.role === 'team', f = S.feedF;
   const list = S.feed.filter(p => f === 'All' || p.type === f).sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   const tag = r => `<span class="tag">${esc(r)}</span>`;
   const R = [['cheer','Cheer'],['useful','Useful'],['join','Count me in']];
-  const composer = ro ? '<div class="card"><p class="meta">You can read the community space. Fellows, KOL friends, civil society organisations and the team do the posting.</p></div>' : `<div class="card"><h2>Share with the community</h2><form data-form="feed-post" class="stack"><div class="formgrid"><label class="f">What kind of post?<select id="fp-type">${FEED_TYPES.map(t => `<option>${t}</option>`).join('')}</select></label></div>
+  const composer = ro ? '<div class="card"><p class="meta">You can read The Social Club. Fellows, KOL friends, civil society organisations and the team do the posting.</p></div>' : `<div class="card"><h2>Share with the Social Club</h2><form data-form="feed-post" class="stack"><div class="formgrid"><label class="f">What kind of post?<select id="fp-type">${FEED_TYPES.map(t => `<option>${t}</option>`).join('')}</select></label></div>
     <label class="f">Your post<span class="hint">An update, a question, a thank you, an event or something useful. Please keep money, IDs and personal details out.</span><textarea id="fp-text" required></textarea></label><div><button class="btn" type="submit">Post</button></div></form></div>`;
   const filt = `<div class="sub-tabs" role="group" aria-label="Filter">${['All'].concat(FEED_TYPES).map(t => `<button type="button" data-act="feed-filter" data-v="${t}" aria-pressed="${f === t}">${t === 'Ask for help' ? 'Asks' : t}</button>`).join('')}</div>`;
   const posts = list.map(p => { const mine = p.by === S.user.label;
@@ -1564,7 +1692,7 @@ function vFeed(){
       ${p.comments.map(c => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${esc(c.by)}</b> ${tag(c.role)}</span><span class="meta">${c.date}</span></div><div>${esc(c.text)}</div></div>`).join('')}
       ${ro ? '' : `<form data-form="feed-comment" data-id="${p.id}" class="row" style="gap:8px;margin-top:8px"><input type="text" id="fc-${p.id}" placeholder="${p.type === 'Ask for help' ? 'Can you help? Reply here' : 'Reply'}" style="flex:1"><button class="btn ghost sm" type="submit">Reply</button></form>`}</div>`; }).join('') || '<div class="card"><p class="meta">Nothing here yet.</p></div>';
   const who = `<div class="card"><h2>Who is here</h2><div class="stack"><div><div class="meta">Fellows</div><div>${F.map(x => esc(x.n)).join(', ')}</div></div><div><div class="meta">Civil society organisations</div><div>${S.csos.map(o => esc(o.name) + ' (' + esc(o.focus) + ')').join('; ')}</div></div><div><div class="meta">KOL friends</div><div>${S.friends.map(x => esc(x.name)).join(', ')}, and others</div></div><div><div class="meta">The team</div><div>Country coordinators, programme coordinator, social listening expert</div></div></div></div>`;
-  return `<div class="card"><h2>Community</h2><p class="sub2">A place to share what you are learning, ask for help and cheer each other on, whether you are a fellow, KOL friend, organisation or team member. Everyone in the programme can see what is posted here.</p></div>${composer}<div class="card">${filt}</div>${posts}${who}`;
+  return `<div class="card"><h2>The Social Club</h2><p class="sub2">A place to share what you are learning, ask for help and cheer each other on, whether you are a fellow, KOL friend, organisation or team member. Everyone in the programme can see what is posted here.</p></div>${composer}<div class="card">${filt}</div>${posts}${who}`;
 }
 
 const lnk = (u, t) => /^https?:\/\//i.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t || u)}</a>` : (u ? esc(u) : '');
@@ -1586,7 +1714,8 @@ function evForm(e){
       <label class="f">KOL friends<span class="hint"> </span><span><input type="checkbox" id="ev-friends" ${e.friends ? 'checked' : ''}> Invited</span></label></div>
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="ev-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="ev-del" data-v="${e.id}">Remove</button>`}</div></form></div>`;
 }
-function vEvents(){
+const teamSplit = () => S.role === 'team' && S.tm !== 'ops';
+function vEvents(mode){
   const role = S.role, ro = role === 'partner', todayIso = iso(TODAY);
   const sees = e => role === 'cso' ? e.csos !== 'none' : role === 'friend' ? !!e.friends : true;
   const evs = S.pevents.filter(sees).sort((a,b) => (a.start || '9').localeCompare(b.start || '9'));
@@ -1615,8 +1744,12 @@ function vEvents(){
   const bo = S.boosts.slice().sort((a,b) => a.due.localeCompare(b.due)).map(b => { const me = S.user && b.done.includes(S.user.label), past = b.due < todayIso, own = b.by === (S.user && S.user.label);
     return `<div class="card"><div class="row spread"><div><b>${esc(b.by)}</b> <span class="tag">${b.ask}</span>${past ? ' <span class="pill p-none">Closed</span>' : ''}</div><span class="meta">by ${dd(b.due)}</span></div><div>${esc(b.text)}</div>
       <div class="row" style="gap:10px;margin-top:6px">${b.link ? lnk(b.link, 'Open') : ''}${ro || own ? '' : `<button type="button" class="btn ${me ? '' : 'ghost'} sm" data-act="bo-done" data-v="${b.id}" aria-pressed="${!!me}">${me ? 'Done, thank you' : 'I did it'}</button>`}<span class="meta">${b.done.length} helped</span>${own || role === 'team' ? `<button type="button" class="btn ghost sm" data-act="bo-del" data-v="${b.id}">Remove</button>` : ''}</div></div>`; }).join('');
-  return `${head}${progH}${evs.map(evCard).join('') || '<div class="card"><p class="meta">No programme events for you yet.</p></div>'}${addEv}
-    <h2 class="h sec" style="margin:18px 0 6px">What fellows are running</h2><p class="sub2">Events and civic actions from every campaign. Join, share, invite.</p>${cad}${board}
+  if (mode === 'prog') return `${progH}${evs.map(evCard).join('') || '<div class="card"><p class="meta">No programme events for you yet.</p></div>'}${addEv}`;
+  const split = teamSplit();
+  if (mode === 'comm') return `<h2 class="h sec" style="margin:18px 0 6px">Events fellows are running</h2><p class="sub2">Events and civic actions from every campaign. Join, share, invite.</p>${cad}${board}
+    <h2 class="h sec" style="margin:18px 0 6px">Ways to help</h2><p class="sub2">Quick asks from fellows. Tick it when you have done it.</p>${bad}${bo || '<div class="card"><p class="meta">No requests right now.</p></div>'}`;
+  return `${split ? '<div class="card"><h2>Fellow-led events</h2><p class="sub2">Events and civic actions that fellows run in their own communities, and quick asks for help. Programme events are on the Overview page.</p></div>' : head + progH + (evs.map(evCard).join('') || '<div class="card"><p class="meta">No programme events for you yet.</p></div>') + addEv}
+    ${split ? '' : '<h2 class="h sec" style="margin:18px 0 6px">What fellows are running</h2><p class="sub2">Events and civic actions from every campaign. Join, share, invite.</p>'}${cad}${board}
     <h2 class="h sec" style="margin:18px 0 6px">Ways to help</h2><p class="sub2">Quick asks from fellows. Tick it when you have done it.</p>${bad}${bo || '<div class="card"><p class="meta">No requests right now.</p></div>'}`;
 }
 
@@ -1626,6 +1759,11 @@ function meCard(){
   return `<div class="card"><h2>My profile</h2><p class="sub2">Change the name and photo other people see. Your login email stays the same.</p>
     <form data-form="me-save" class="stack"><div class="row" style="gap:14px">${avatar(PROFILE.photo, PROFILE.label)}<div class="grow"><label class="f">Name<input type="text" id="me-name" value="${esc(PROFILE.label)}" maxlength="80" required></label></div></div>
     <label class="f">Photo<span class="hint">A clear face photo works best. It is resized automatically.</span><input type="file" id="me-photo" accept="image/*"></label>
+    ${PROFILE.role === 'fellow' ? `<h3 style="margin:14px 0 4px">How the team can reach you</h3><p class="sub2" style="margin:0 0 8px">Only the programme team, ops and your country coordinator see this. The email is the Google account they will share your private folder with.</p><div class="formgrid">
+      <label class="f">Email<input type="email" id="me-email" value="${esc(fpr(PROFILE.fellow_id).email || '')}"></label>
+      <label class="f">Phone<input type="text" id="me-phone" value="${esc(fpr(PROFILE.fellow_id).phone || '')}"></label>
+      <label class="f">LINE<input type="text" id="me-line" value="${esc(fpr(PROFILE.fellow_id).line || '')}"></label>
+      <label class="f">WhatsApp<input type="text" id="me-wa" value="${esc(fpr(PROFILE.fellow_id).whatsapp || '')}"></label></div>` : ''}
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="me-cancel">Cancel</button></div></form></div>`;
 }
 async function meSave(){
@@ -1639,6 +1777,11 @@ async function meSave(){
       const up = await SB.storage.from('people').upload(path, blob, {contentType:'image/jpeg', upsert:true}); if (up.error) throw up.error;
     }
     const r = await SB.rpc('update_my_profile', {new_name:name, new_photo:path}); if (r.error) throw r.error;
+    if (PROFILE.role === 'fellow' && document.getElementById('me-email')) {
+      const gg = i => ((document.getElementById(i) || {}).value || '').trim(), c = {em:gg('me-email'), ph:gg('me-phone'), ln:gg('me-line'), wa:gg('me-wa')};
+      const r2 = await SB.rpc('update_my_contact', {em:c.em, ph:c.ph, ln:c.ln, wa:c.wa}); if (r2.error) throw r2.error;
+      FPRIV[PROFILE.fellow_id] = Object.assign({}, fpr(PROFILE.fellow_id), {email:c.em, phone:c.ph, line:c.ln, whatsapp:c.wa});
+    }
     PROFILE.label = name; if (path) PROFILE.photo = path; if (S.user) S.user.label = name;
     if (PROFILE.role === 'fellow') { const f = F.find(x => x.id === PROFILE.fellow_id); if (f) { f.n = name; if (path) f.photo = path; } }
     if (PROFILE.role === 'friend') { const x = fd(CUR).friends[0]; if (x) { x.name = name; if (path) x.photo = path; } }
@@ -1738,24 +1881,72 @@ function ppFields(o, handles){
   return `<div class="formgrid">${fld('pp-ig', 'Instagram', h.instagram, 'placeholder="@handle or link"')}${fld('pp-tt', 'TikTok', h.tiktok, 'placeholder="@handle or link"')}${fld('pp-fb', 'Facebook', h.facebook, 'placeholder="page name or link"')}${fld('pp-yt', 'YouTube', h.youtube, 'placeholder="@handle or link"')}${fld('pp-web', 'Website', h.website, 'placeholder="https://"')}</div>
     ${LIVE ? '<label class="f">Photo<span class="hint">A square photo works best. It is shrunk before upload.</span><input type="file" id="pp-photo" accept="image/*"></label>' : '<p class="note">Photos can be added in the live portal.</p>'}`;
 }
+/* Private contact details and the Drive folder link, one row per fellow. Team and the fellow themselves only. */
+let FPRIV = DEMO ? {nok:{email:'nok@example.org', phone:'+66 80 000 0000', line:'nok.sample', whatsapp:'', folder:'https://drive.google.com/drive/folders/sample-nok'}, mind:{email:'mind@example.org', phone:'', line:'', whatsapp:'+66 81 000 0000', folder:''}} : {};
+const fpr = id => FPRIV[id] || {};
+const canK = f => S.role === 'team' && (S.tm === 'program' || S.tm === 'ops' || f.c === S.scope);
+const telHref = v => 'tel:' + String(v).replace(/[^+\d]/g, '');
+function contactBlock(f){
+  const k = fpr(f.id), rows = [];
+  if (k.email) rows.push(['Email', `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>`]);
+  if (k.phone) rows.push(['Phone', `<a href="${esc(telHref(k.phone))}">${esc(k.phone)}</a>`]);
+  if (k.line) rows.push(['LINE', esc(k.line)]);
+  if (k.whatsapp) rows.push(['WhatsApp', `<a href="${esc(telHref(k.whatsapp))}">${esc(k.whatsapp)}</a>`]);
+  rows.push(['Private folder', k.folder ? lnk(k.folder, 'Open Drive folder') : '<span class="meta">not added yet</span>']);
+  return `<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="row spread"><span class="meta">Contact (team only)</span>${canK(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="k:${f.id}">Edit contact</button>` : ''}</div>${rows.map(r => `<div class="meta" style="margin-top:4px"><b>${r[0]}</b>: ${r[1]}</div>`).join('')}</div>`;
+}
+function contactForm(f){
+  const k = fpr(f.id);
+  return `<div class="card"><h2>Contact for ${esc(f.n)}</h2><p class="sub2">Only the programme team, ops, the country coordinator and ${esc(f.n)} can see this. Use it to invite them to their private Drive folder.</p>
+    <form data-form="pp-contact" data-id="${f.id}" class="stack"><div class="formgrid">
+      <label class="f">Email<input type="email" id="k-email" value="${esc(k.email || '')}" placeholder="The Google account to share the folder with"></label>
+      <label class="f">Phone<input type="text" id="k-phone" value="${esc(k.phone || '')}"></label>
+      <label class="f">LINE<input type="text" id="k-line" value="${esc(k.line || '')}"></label>
+      <label class="f">WhatsApp<input type="text" id="k-wa" value="${esc(k.whatsapp || '')}"></label></div>
+      <label class="f">Private Drive folder link<span class="hint">Share the folder only with their email (General access: Restricted). They need to be signed in to that Google account to open it.</span><input type="url" id="k-folder" value="${esc(k.folder || '')}" placeholder="https://drive.google.com/drive/folders/..."></label>
+      <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
+}
+async function saveContact(id){
+  const g = i => ((document.getElementById(i) || {}).value || '').trim();
+  const k = {email:g('k-email'), phone:g('k-phone'), line:g('k-line'), whatsapp:g('k-wa'), folder:g('k-folder')};
+  if (k.folder && !/^https?:\/\//i.test(k.folder)) { toast('The folder link should start with https://'); return; }
+  if (LIVE) {
+    const {error} = await SB.from('fellow_private').upsert({fellow_id:id, email:k.email, phone:k.phone, line:k.line, whatsapp:k.whatsapp, folder_url:k.folder, updated_at:new Date().toISOString()});
+    if (error) { toast('Could not save. You may not have permission.'); return; }
+  }
+  FPRIV[id] = k; S.pedit = null; render(); toast('Saved.');
+}
 function vPeople(){
+  if (S.role !== 'kol') return vPeople0();
+  const sub = S.ppSub || 'all';
+  const bar = `<div class="sub-tabs" role="group" aria-label="People" style="margin-bottom:14px">${[['all','makesense team and fellows'],['friends','My KOL friends'],['cso','My CSO partners']].map(x => `<button type="button" data-act="ppsub" data-v="${x[0]}" aria-pressed="${sub === x[0]}">${x[1]}</button>`).join('')}</div>`;
+  const team = `<div class="card"><h2>The makesense team</h2><p class="sub2">Who to ask for what.</p><div class="stack">
+    <div><b>Programme team</b> <span class="meta">Campaign proposals, spending, anything about the programme</span></div>
+    <div><b>Country coordinator</b> <span class="meta">Your day-to-day contact in Thailand or Indonesia</span></div>
+    <div><b>Operations</b> <span class="meta">Agreements, invoices and payments (your paperwork)</span></div>
+    <div><b>Social listening expert</b> <span class="meta">Benchmarks, insights and what is working</span></div>
+    <div><b>Communications expert</b> <span class="meta">Features, interviews and photos</span></div></div></div>`;
+  return bar + (sub === 'friends' ? vFriends() : sub === 'cso' ? vCsoPartners() : team + vPeople0());
+}
+function vPeople0(){
   const team = S.role === 'team', prog = team && S.tm === 'program';
   const canF = f => prog || (team && f.c === S.scope), canC = o => prog || (team && o.country === S.scope);
   const fellows = F.map(f => {
+    if (S.pedit === 'k:' + f.id && canK(f)) return contactForm(f);
     if (S.pedit === 'f:' + f.id && canF(f)) return `<div class="card"><h2>Edit ${esc(f.n)}</h2><form data-form="pp-fellow" data-id="${f.id}" class="stack"><label class="f">Name<input type="text" id="pp-name" value="${esc(f.n)}" required></label><label class="f">About<span class="hint">A line or two for the other fellows, CSOs and partners.</span><textarea id="pp-bio">${esc(f.bio || '')}</textarea></label>${ppFields(f, f.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
     return `<div class="card"><div class="pp-head">${avatar(f.photo, f.n)}<div class="grow"><b>${esc(f.n)}</b> <span class="tag">${f.c === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(f.handles) || ''}</div></div>${canF(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="f:${f.id}">Edit</button>` : ''}</div>
-      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}${vaBtn(f.id, f.n)}</div>`; }).join('');
+      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}${vaBtn(f.id, f.n)}${canMakeFT() ? `<div style="margin-top:10px"><button type="button" class="btn ghost sm" data-act="ft-ask" data-t="fellow" data-id="${f.id}" data-n="${esc(f.n)}">Ask for an interview or photo</button></div>` : ''}${canK(f) ? contactBlock(f) : ''}${remindScope(f) ? remindBlock(f) : ''}</div>`; }).join('');
   const csoForm = o => { const n = o.id === 'new'; return `<div class="card"><h2>${n ? 'Add an organisation' : 'Edit ' + esc(o.name)}</h2><form data-form="pp-cso" data-id="${o.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="pp-name" value="${esc(o.name || '')}" required></label>${n && prog ? '<label class="f">Country<select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label>' : ''}</div><label class="f">What they work on<input type="text" id="pp-focus" value="${esc(o.focus || '')}"></label><label class="f">About<textarea id="pp-about">${esc(o.about || '')}</textarea></label>${ppFields(o, o.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`; };
   const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
-      ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
+      ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}${canMakeFT() ? `<div style="margin-top:10px"><button type="button" class="btn ghost sm" data-act="ft-ask" data-t="cso" data-id="${esc(String(o.id))}" data-n="${esc(o.name)}">Ask for an interview or photo</button></div>` : ''}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
   const addC = team && S.tm !== 'ops' ? (S.pedit === 'c:new' ? csoForm({id:'new'}) : `<div class="card"><button type="button" class="btn" data-act="pp-edit" data-v="c:new">Add an organisation</button></div>`) : '';
-  const friendsCard = team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and the community board. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
+  const friendsCard = (prog || S.tm === 'country' || (PROFILE && PROFILE.role === 'comms')) && team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and The Social Club. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
       ${F.flatMap(f => fd(f.id).friends.map(x => ({f, x}))).filter(({f}) => vaAllowed(f.id)).map(({f, x}) => `<div class="item"><div class="row spread"><span><b>${esc(x.name)}</b> <span class="meta">for ${esc(f.n)}, ${esc(CAMPS[(x.camp || 1) - 1].n)}</span></span><button type="button" class="btn ghost sm" data-act="va-enter" data-k="friend" data-f="${f.id}" data-fr="${esc(String(x.id))}">View as ${esc(x.name)}</button></div></div>`).join('')}
       <form data-form="pp-friend" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Which KOL friend?<select id="pf-friend" required><option value="">Choose</option>${friendChoices()}</select></label><label class="f">Email<input type="email" id="pf-email" required></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, the social listening and communications experts, and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','comms','ops','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${({listener:'social listening expert', comms:'communications expert', ops:'operations'})[a.role] || a.role}${a.country ? ', ' + a.country : ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
       <form data-form="pp-team" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name shown<input type="text" id="pp-label" required></label><label class="f">Email<input type="email" id="pp-email" required></label><label class="f">Role<select id="pp-role"><option value="country">Country coordinator</option><option value="listener">Social listening expert</option><option value="comms">Communications expert</option><option value="ops">Operations</option><option value="partner">Programme partner</option><option value="program">Programme coordinator</option><option value="program">Programme director</option></select></label><label class="f">Country<span class="hint">Country coordinators only</span><select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
-  return `<div class="card"><h2>People</h2><p class="sub2">The people and organisations turning clean energy into an everyday conversation. ${team ? 'You can update profiles and photos' + (prog ? '.' : ' for your country.') : ''}</p></div>
-    <h2 class="h sec" style="margin:18px 0 6px">Fellows</h2>${fellows}<h2 class="h sec" style="margin:18px 0 6px">Civil society organisations</h2>${csos}${addC}${friendsCard}${teamAcc}`;
+  return `<div class="card"><h2>People</h2><p class="sub2">The fellows and organisations turning clean energy into an everyday conversation. ${team ? 'You can update profiles and photos' + (prog ? '.' : ' for your country.') : ''}</p></div>
+    ${remindScope({c:S.scope === 'ALL' ? 'TH' : S.scope}) ? remindAllCard() : ''}<h2 class="h sec" style="margin:18px 0 6px">Fellows</h2>${fellows}<h2 class="h sec" style="margin:18px 0 6px">Civil society organisations</h2>${csos}${addC}${friendsCard}${teamAcc}`;
 }
 
 function vOverviewBase(){
@@ -1767,16 +1958,6 @@ function vOverviewBase(){
       return `<b>${esc(i.name)}</b> <span class="tag">${i.type}${i.partners.length ? ' with ' + esc(names(i.partners)) : ''}</span> ${i.kpis ? '<span class="pill p-ok">KPIs set</span>' : '<span class="pill p-req">KPIs needed</span>'}`; };
     return `<tr><td><b>${f.n}</b></td><td>${f.c}</td><td class="num">${posts}</td><td class="num">${pend ? `<span class="pill p-req">${pend}</span>` : '0'}</td><td class="num">${open ? `<span class="pill p-fix">${open}</span>` : '0'}</td><td>${benchPill(f)}</td><td>${cell(1)}</td><td>${cell(2)}</td><td class="num">${total(f)}</td></tr>`;
   }).join('');
-  const v = [18,21,20,26,25,29,31,34], W = 520, H = 150, pad = 30;
-  const x = i => pad + i * (W - pad*2) / (v.length - 1), y = a => H - 24 - a / 40 * (H - 40);
-  const pts = v.map((a,i) => `${x(i)},${y(a)}`).join(' ');
-  const area = `${x(0)},${H-24} ${pts} ${x(v.length-1)},${H-24}`;
-  const chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Share of mentions from outside the climate community rose from 18 percent to 34 percent over eight weeks">
-    ${[0,20,40].map(g => `<line x1="${pad}" x2="${W-pad}" y1="${y(g)}" y2="${y(g)}" stroke="rgba(28,30,42,.12)"/><text x="${pad-6}" y="${y(g)+4}" text-anchor="end" font-size="11" fill="#5A5C6B">${g}%</text>`).join('')}
-    <polygon points="${area}" fill="#3843D0" opacity=".14"/><polyline points="${pts}" fill="none" stroke="#3843D0" stroke-width="2.5" stroke-linejoin="round"/>
-    <circle cx="${x(7)}" cy="${y(34)}" r="5" fill="#FFF30D" stroke="#14184B" stroke-width="2"/>
-    <text x="${x(7)}" y="${y(34)-10}" text-anchor="end" font-size="12" font-weight="700" fill="#14184B">34%</text>
-    <text x="${x(0)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 1</text><text x="${x(7)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5A5C6B">Week 8</text></svg>`;
   return `<div class="card"><h2>Fellows at a glance</h2><p class="sub2">Who needs a nudge on reflections, paperwork, or setting up a campaign and its KPIs.</p>
     <div class="tw"><table><thead><tr><th>Fellow</th><th>Country</th><th>Posts logged</th><th>Reflections due</th><th>Paperwork open</th><th>Benchmark</th><th>Campaign 1</th><th>Campaign 2</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>
     ${mainstreamCard()}`;
@@ -1793,8 +1974,8 @@ function fellowEng(f){
 function mainstreamCard(){
   const m = pMetrics();
   const scoped = F.filter(f => S.scope === 'ALL' || !S.scope || f.c === S.scope);
-  const per = LIVE ? `<div class="tw" style="margin-top:14px"><table><thead><tr><th>Fellow</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th></tr></thead><tbody>${scoped.map(f => { const x = fellowEng(f) || {posts:0, reach:0, eng:0, rate:'0%'}; return `<tr><td><b>${esc(f.n)}</b></td><td class="num">${fmt(x.posts)}</td><td class="num">${x.reach ? fmt(x.reach) : '—'}</td><td class="num">${x.eng ? fmt(x.eng) : '—'}</td><td class="num">${x.reach ? x.rate : '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '';
-  return `<div class="card"><h2>Mainstream integration</h2><p class="sub2">How far the campaigns reached and how people responded${LIVE ? '' : ' (sample numbers)'}. These are engagement numbers from each post's insights, not counts of keyword mentions.</p>
+  const per = LIVE ? `<div class="tw" style="margin-top:14px"><table><thead><tr><th>Fellow</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th><th>Civic actions</th></tr></thead><tbody>${scoped.map(f => { const x = fellowEng(f) || {posts:0, reach:0, eng:0, rate:'0%'}; return `<tr><td><b>${esc(f.n)}</b></td><td class="num">${fmt(x.posts)}</td><td class="num">${x.reach ? fmt(x.reach) : '—'}</td><td class="num">${x.eng ? fmt(x.eng) : '—'}</td><td class="num">${x.reach ? x.rate : '—'}</td><td class="num">${civicOf(f.id) ? fmt(civicOf(f.id)) : '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '';
+  return `<div class="card"><h2>Mainstream integration</h2><p class="sub2">How far the campaigns reached, how people responded and how many took action${LIVE ? '' : ' (sample numbers)'}. Engagement numbers come from each post's insights. Civic actions are counted by the fellows.</p>
     <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">${pTile(fmt(m.posts), 'Posts')}${pTile(fmt(m.reach), 'People reached')}${pTile(fmt(m.eng), 'Engagements', 'reactions, comments, shares, saves, reposts')}${pTile(m.rate, 'Engagement rate', 'engagements per person reached')}</div>
     <div class="tw" style="margin-top:14px"><table><thead><tr><th>Campaign</th><th>Posts</th><th>People reached</th><th>Engagements</th><th>Engagement rate</th></tr></thead><tbody>${m.byCamp.map(r => `<tr><td><b>${r.n}</b></td><td class="num">${fmt(r.posts)}</td><td class="num">${fmt(r.reach)}</td><td class="num">${fmt(r.eng)}</td><td class="num">${r.rate}</td></tr>`).join('')}</tbody></table></div>${per}</div>`;
 }
@@ -1805,50 +1986,65 @@ function syncCamps(){
     if (ok) { cm.start = new Date(d.start + 'T00:00:00'); cm.end = new Date(d.end + 'T00:00:00'); cm.w = dstr(cm.start) + ' to ' + dstr(cm.end) + ' ' + cm.end.getFullYear(); cm.set = true; }
     else { cm.start = new Date(2999, 0, 1); cm.end = new Date(2999, 0, 1); cm.w = 'Dates to be confirmed'; cm.set = false; } });
 }
+function tabsFit(reveal){
+  const t = document.getElementById('tabs'), w = document.getElementById('tabwrap'); if (!t || !w) return;
+  if (reveal) { const a = t.querySelector('[aria-selected="true"]'); if (a) { const l = a.offsetLeft - 40, r = a.offsetLeft + a.offsetWidth + 40; if (l < t.scrollLeft) t.scrollLeft = Math.max(0, l); else if (r > t.scrollLeft + t.clientWidth) t.scrollLeft = r - t.clientWidth; } }
+  const upd = () => { w.classList.toggle('more-l', t.scrollLeft > 4); w.classList.toggle('more-r', t.scrollLeft + t.clientWidth < t.scrollWidth - 4); };
+  upd(); if (!t._fit) { t._fit = true; t.addEventListener('scroll', upd, {passive:true}); window.addEventListener('resize', upd);
+    document.getElementById('tabL').addEventListener('click', () => { t.scrollBy({left:-(t.clientWidth * .7), behavior:'smooth'}); });
+    document.getElementById('tabR').addEventListener('click', () => { t.scrollBy({left:t.clientWidth * .7, behavior:'smooth'}); }); }
+}
 function render(){
   if (LIVE) syncCamps();
   document.body.dataset.prog = S.prog;
   if (!S.user) {
     document.body.dataset.prog = 'gc';
     $('#who').innerHTML = '<span>Not signed in</span>';
-    $('#tabs').innerHTML = '';
+    $('#tabs').innerHTML = ''; $('#tabwrap').className = 'tabwrap';
     $('#ttl').innerHTML = ED;
     $('#eyebrow').textContent = 'A programme by makesense Asia';
-    $('#sub').textContent = S.ops ? 'Welcome back, team.' : 'Big change begins when many of us start talking. Welcome.';
+    $('#sub').textContent = 'The future gets better when we talk about it.';
     $('#view').innerHTML = vLogin();
     return;
   }
   $('#who').innerHTML = LOGIN_ON
     ? `<span class="row" style="gap:8px">${LIVE && PROFILE && !VA ? avatar(PROFILE.photo, PROFILE.label, 28) : ''}<span>Signed in as <b>${esc(VA && PROFILE ? PROFILE.label : S.user.label)}</b></span></span><span class="row" style="gap:10px">${LIVE && !VA ? '<button type="button" class="btn ghost sm" data-act="me-open">My profile</button>' : ''}<a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
-    : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Programme coordinator</button></div>`;
+    : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener' && !(S.user && S.user.comms)}">Social listening expert</button><button type="button" data-act="role" data-v="comms" aria-pressed="${S.role === 'listener' && !!(S.user && S.user.comms)}">Communications expert</button><button type="button" data-act="role" data-v="ops" aria-pressed="${S.role === 'team' && S.tm === 'ops'}">Operations</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Programme coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
   const ops = S.role === 'team' && S.tm === 'ops';
-  const KD = ['kdates','Key dates'], FT = ['features','Features'], IM = ['pimpact','Impact'], LB = ['board','Leaderboard'], PE = ['people','People'], PA = ['paper','Paperwork'], MC = ['slides','Masterclasses'], EV = ['events','Events'], CM = ['feed','Community'];
-  const LK = ['links','Links'];
+  const KD = ['kdates','Key dates'], FT = ['features','Features'], IM = ['pimpact','Impact'], LB = ['board','Leaderboard'], PE = ['people','People'], PD = ['people','People'], PA = ['paper','Paperwork'], MC = ['slides','Masterclasses'], EV = ['events','Events'], CM = ['feed','The Social Club'];
+  const LK = ['links','Links'], G = (g, ...ts) => ts.map(t => [t[0], t[1], g]);
   const tabs = pt ? [PE, IM, ['pcollab','Collaboration'], ['pstories','Campaign stories'], ['preports','Reports'], KD, MC, EV, CM]
-    : ls ? [PE, ['lbench','Benchmarks'], ['lbrief','Before a campaign'], ['lpost','After a campaign'], ['ldata','KPIs and data'], ['ldeck','Slides'], FT, KD, IM, LB, EV, CM]
-    : cs ? [['chome','My partnerships'], ['clog','Log support'], PE, FT, KD, IM, EV, CM]
-    : fr ? [['fhome','My invitation'], ['flog','Log a post'], PE, FT, KD, IM, ...(LIVE ? [MC] : []), EV, CM]
-    : kol ? [['home','Home'], ['plan','Campaign plan'], ['insights','Listening insights'], ['friends','KOL friends'], ['cso','CSO partners'], ['log','Log'], PE, ...(LIVE ? [] : [['paper','My paperwork']]), FT, KD, IM, ...(LIVE ? [MC] : [LB]), EV, CM]
-    : ops ? [PE, PA, ['props','Campaign plans'], ['mine','Reminders'], KD, IM, EV, CM]
-    : S.tm === 'country' ? [PE, PA, ['mine','My fellows'], ['camps','Campaigns'], ['props','Campaign plans'], ['over','Programme'], FT, KD, IM, LB, MC, EV, CM]
-    : [PE, PA, ['over','Programme'], ['camps','Campaigns'], ['mine','Reminders'], ['props','Campaign plans'], FT, KD, IM, LB, MC, EV, CM];
-  if (isProgramTeam() || lkVisible().length) tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'kdates')), 0, LK);
-  if (LIVE && (ls || (!mine && !pt && !ops))) tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'features')), 0, ['tposts','Posts']);
+    : ls ? [PE, ['lbench','Benchmarks'], ['lbrief','Before a campaign'], ['lpost','After a campaign'], ['ldata','KPIs and data'], ['ldeck','Slides'], KD, IM, LB, EV, CM]
+    : cs ? [...G('My work', ['chome','My partnerships'], ['clog','Log support']), ...G('Programme', KD), ...G('Results', IM), ...G('Together', PD, CM)]
+    : fr ? [...G('My work', ['fhome','My invitation'], ['flog','Log a post']), ...G('Programme', KD, ...(LIVE ? [MC] : [])), ...G('Results', IM), ...G('Together', PD, CM)]
+    : kol ? [...G('My campaign', ['home','Home'], ['plan','Campaign proposal'], ['log','Log a post'], ...(LIVE ? [] : [['paper','My paperwork']])), ...G('Programme', KD, ...(LIVE ? [MC] : [])), ...G('Results', IM, ...(LIVE ? [] : [LB])), ...G('Together', PD, CM)]
+    : ops ? [...G('People and paperwork', PE, PA), ...G('Campaigns', ['props','Campaign proposals']), ...G('Programme', KD, EV), ...G('Results', IM), ...G('Together', CM)]
+    : [...G('People and paperwork', PE, PA), ...G('Programme', ['over','Overview'], KD, MC), ...G('Campaigns', ['props','Campaign proposals'], ['camps','Campaigns'], ['tposts','Posts'], ['events','Fellow-led events']), ...G('Results', IM, LB), ...G('Together', CM)];
+  /* Links sit at the top of the Programme group for the programme team, and before Key dates for everyone else */
+  if (isProgramTeam() || lkVisible().length) tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'over' || t[0] === 'kdates')), 0, G('Programme', LK)[0]);
+  if (ls) tabs.splice(Math.max(0, tabs.findIndex(t => t[0] === 'kdates')), 0, ['tposts','Posts']);
   const cur = mine ? S.tab : S.teamTab;
   const need = openItems(CUR).length;
-  $('#tabs').innerHTML = tabs.map(t => { const n = t[0] === 'features' ? ftOpen() : t[0] === 'events' ? boostOpen() : t[0] === 'feed' ? feedOpen() : (fr || cs) ? 0 : kol ? (t[0] === 'paper' ? need : t[0] === 'insights' ? insightCount() : 0) : (t[0] === 'props' ? propsNeeded() : t[0] === 'mine' ? chaseCount() : t[0] === 'camps' ? flagCount() : 0);
-    return `<button role="tab" type="button" data-act="${mine?'tab':'teamtab'}" data-v="${t[0]}" aria-selected="${cur===t[0]}">${t[1]}${n ? `<span class="dot">${n}</span>` : ''}</button>`; }).join('');
+  let lastG = null;
+  $('#tabs').innerHTML = tabs.map(t => { const n = ['home','fhome','chome'].includes(t[0]) ? ftOpen() : t[0] === 'people' && !mine ? chaseCount() : t[0] === 'events' ? boostOpen() : t[0] === 'feed' ? feedOpen() : (fr || cs) ? 0 : kol ? (t[0] === 'paper' ? need : t[0] === 'plan' ? insightCount() : 0) : (t[0] === 'props' ? propsNeeded() : t[0] === 'mine' ? chaseCount() : t[0] === 'camps' ? flagCount() : 0);
+    const gl = t[2] && t[2] !== lastG ? (lastG = t[2], `<span class="tabgrp" role="presentation">${t[2]}</span>`) : '';
+    return gl + `<button role="tab" type="button" data-act="${mine?'tab':'teamtab'}" data-v="${t[0]}" aria-selected="${cur===t[0]}">${t[1]}${n ? `<span class="dot">${n}</span>` : ''}</button>`; }).join('');
+  tabsFit(true);
   $('#ttl').innerHTML = ED;
   $('#eyebrow').textContent = 'A programme by makesense Asia';
-  $('#sub').textContent = cs ? 'Your work is where change takes root. Thank you for walking alongside our fellows.' : fr ? 'Thank you for adding your voice to the many that are changing the conversation.' : kol ? 'Small conversations at home, online and in your community add up to big change.' : pt ? 'See how everyday conversations are becoming real energy for change.' : ls ? 'Every good story begins with careful listening. Your insight helps it find the people who need it.' : S.tm === 'country' ? 'You are the heart of this programme in your country. Thank you for holding the space.' : S.tm === 'ops' ? 'The quiet work behind the scenes is what lets everyone else shine.' : 'The future gets better when we talk about it.';
+  $('#sub').textContent = 'The future gets better when we talk about it.';
   let html = '';
   if (cur === 'board') html = vBoard();
   else if (cs) html = {links:vLinks, features:vFeatures, kdates:vKeyDates, chome:vCsoHome, clog:vCsoLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else if (fr) html = {links:vLinks, features:vFeatures, kdates:vKeyDates, slides:vSlides, fhome:vFriendHome, flog:vFriendLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else if (kol) html = {links:vLinks, features:vFeatures, kdates:vKeyDates, slides:vSlides, home:vHome, plan:vPlan, insights:vInsights, friends:vFriends, cso:vCsoPartners, log:vLog, paper:vPaper, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
   else html = {links:vLinks, features:vFeatures, kdates:vKeyDates, events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, tposts:vTPosts, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
+  if (kol && cur === 'plan') html = vInsights() + html;
+  if ((kol || fr || cs) && cur === 'kdates') html += vEvents('prog') + (kol ? '' : vEvents('comm'));
+  if (kol && cur === 'home') html += vEvents('comm');
+  if ((kol || fr || cs) && ['home','fhome','chome'].includes(cur) && ftMine().length) html = vFeatures() + html;
   $('#view').innerHTML = (S.meEdit && LIVE && PROFILE && !VA ? meCard() : '') + (VA ? `<div class="va-banner" role="status"><span>Viewing as <b>${esc(VA.name)}</b> (${VA.k === 'friend' ? 'KOL friend' : 'fellow'}). Preview only, nothing you do here is saved.</span><button type="button" class="btn sun sm" data-act="va-exit">Exit preview</button></div>` : '') + html;
   if (LIVE) scheduleFlush();
 }
@@ -1879,7 +2075,18 @@ function insightUrl(path){
   SB.storage.from('insights').createSignedUrl(path, 3600).then(r => { IU[path] = {url:(r.data && r.data.signedUrl) || '', loading:false, exp:Date.now() + 3300000}; renderSoon(); });
   return IU[path].url;
 }
-const shotImg = x => { const u = x.url || (x.path ? insightUrl(x.path) : ''); return u ? `<img class="thumb" src="${esc(u)}" alt="${esc(x.name)}">` : `<span class="tag" style="margin:0">${esc(x.name)}</span>`; };
+const IUD = {};
+function insightDl(path, name){
+  if (!path || !SB) return '';
+  const c = IUD[path];
+  if (c && (c.loading || c.exp > Date.now())) return c.url;
+  IUD[path] = {url:c ? c.url : '', loading:true, exp:0};
+  SB.storage.from('insights').createSignedUrl(path, 3600, {download:name || true}).then(r => { IUD[path] = {url:(r.data && r.data.signedUrl) || '', loading:false, exp:Date.now() + 3300000}; renderSoon(); });
+  return IUD[path].url;
+}
+const shotImg = x => { const u = x.url || (x.path ? insightUrl(x.path) : ''); if (!u) return `<span class="tag" style="margin:0">${esc(x.name)}</span>`;
+  const d = x.path ? insightDl(x.path, x.name) : x.url;
+  return `<span class="shotlink"><a href="${esc(u)}" target="_blank" rel="noopener" title="Open full size"><img class="thumb" src="${esc(u)}" alt="${esc(x.name)}"></a>${d ? `<a class="meta" href="${esc(d)}" download="${esc(x.name)}" target="_blank" rel="noopener">Download</a>` : ''}</span>`; };
 async function shrink(file){
   try {
     const bm = await createImageBitmap(file), k = Math.min(1, 1600 / Math.max(bm.width, bm.height)), c = document.createElement('canvas');
@@ -1944,7 +2151,7 @@ async function vaExit(){
   const keep = S.live, p = v.prev;
   try { blankLive(); await loadAll(); } catch (e) { console.error('reload failed', e); }
   S.live = keep; Object.assign(S, {role:p.role, tm:p.tm, scope:p.scope, teamTab:p.teamTab, tab:p.tab, user:p.user, coord:p.coord, lf:p.lf, camp:p.camp, pedit:null}); CUR = p.cur;
-  if (PROFILE && ['program', 'country'].includes(PROFILE.role)) { try { await loadAccounts(); } catch (e) {} }
+  if (PROFILE && ['program', 'country', 'comms'].includes(PROFILE.role)) { try { await loadAccounts(); } catch (e) {} }
   render(); window.scrollTo(0, 0);
 }
 function reflectModal(id){
@@ -1979,7 +2186,7 @@ document.addEventListener('click', e => {
   if (a === 'forgot') { toast('In the real portal this emails a password reset link.'); return; }
   if (a === 'close-bg') { if (e.target === el) $('#modal').innerHTML = ''; return; }
   if (a === 'close') { $('#modal').innerHTML = ''; return; }
-  if (a === 'role') { S.role = v === 'country' ? 'team' : v; S.tm = v === 'country' ? 'country' : 'program'; S.user = v === 'kol' ? FELLOW : v === 'friend' ? FRIEND : v === 'cso' ? CSOUSER : v === 'listener' ? LISTENER : v === 'partner' ? PARTNER : v === 'country' ? ACCOUNTS[1] : ACCOUNTS[0]; S.tab = v === 'friend' ? 'fhome' : v === 'cso' ? 'chome' : 'home'; S.teamTab = v === 'country' ? 'mine' : v === 'listener' ? 'lbench' : v === 'partner' ? 'pimpact' : 'over'; S.shots = []; S.scope = v === 'country' ? 'TH' : 'ALL'; S.prog = 'gc'; S.coord = v === 'country' ? 'nok' : S.coord; render(); return; }
+  if (a === 'role') { S.role = v === 'country' || v === 'ops' ? 'team' : v === 'comms' ? 'listener' : v; S.tm = v === 'country' ? 'country' : v === 'ops' ? 'ops' : 'program'; S.user = v === 'kol' ? FELLOW : v === 'friend' ? FRIEND : v === 'cso' ? CSOUSER : v === 'listener' ? LISTENER : v === 'comms' ? COMMS : v === 'partner' ? PARTNER : v === 'country' ? ACCOUNTS[1] : v === 'ops' ? ACCOUNTS[0] : ACCOUNTS[0]; S.tab = v === 'friend' ? 'fhome' : v === 'cso' ? 'chome' : 'home'; S.teamTab = v === 'country' ? 'people' : v === 'listener' ? 'lbench' : v === 'comms' ? 'kdates' : v === 'ops' ? 'paper' : v === 'partner' ? 'pimpact' : 'over'; S.shots = []; S.scope = v === 'country' ? 'TH' : 'ALL'; S.prog = 'gc'; S.coord = v === 'country' ? 'nok' : S.coord; render(); return; }
   if (a === 'flag-note') { const f = F.find(x => x.id === el.dataset.f), fl = campFlags(f).find(x => x.key === v); if (fl) { remindSend(f, fl.msg); render(); toast('Note sent to ' + f.n + '.'); } return; }
   if (a === 'flag-follow') { S.followed[v] = dstr(TODAY); render(); toast('Marked as followed up.'); return; }
   if (a === 'deck-set') { return; }
@@ -1988,6 +2195,7 @@ document.addEventListener('click', e => {
   if (a === 'sl-del') { const x = S.slides.find(y => String(y.id) === String(v)); S.slides = S.slides.filter(y => String(y.id) !== String(v)); if (x && x.file && LIVE) SB.storage.from('slides').remove([x.file]); render(); return; }
   if (a === 'sl-up') { slMove(v, -1); return; }
   if (a === 'sl-down') { slMove(v, 1); return; }
+  if (a === 'ft-ask') { S.ftPre = {t:el.dataset.t, id:el.dataset.id, n:el.dataset.n}; S.fedit = 'new'; S.teamTab = 'tposts'; render(); window.scrollTo(0, 0); return; }
   if (a === 'ft-edit') { S.fedit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'ft-cancel') { S.fedit = null; render(); return; }
   if (a === 'ft-del') { S.features = S.features.filter(c => String(c.id) !== String(v)); S.fedit = null; render(); toast('Deleted.'); return; }
@@ -2001,9 +2209,10 @@ document.addEventListener('click', e => {
   if (a === 'kd-edit') { S.kdedit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'kd-cancel') { S.kdedit = null; render(); return; }
   if (a === 'kd-del') { S.dates = S.dates.filter(c => String(c.id) !== String(v)); S.kdedit = null; render(); toast('Deleted.'); return; }
-  if (a === 'kd-seed') { [['Fellowship application deadline','2026-11-22','','Deadline',''],['Announcement of TGC4 Fellows','2026-12-15','','Other',''],['Regional kickoff event in Bangkok','2027-01-12','2027-01-14','Event',''],['Campaign 1','2027-02-08','2027-03-26','Campaign',''],['Co-creation event in Bangkok','2027-04-21','2027-04-23','Event','TH'],['Co-creation event in Jakarta','2027-04-28','2027-04-30','Event','ID'],['Campaign 2','2027-06-07','2027-07-30','Campaign',''],['Closing events in Bangkok and Jakarta','2027-08-03','','Event','']].forEach((r, i) => S.dates.push({id:Date.now() + i, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:''})); render(); toast('Programme dates added. Edit any that change.'); return; }
+  if (a === 'kd-seed') { [['Fellowship application deadline','2026-11-22','','Deadline',''],['Announcement of TGC4 Fellows','2026-12-15','','Other',''],['Regional kickoff event in Bangkok','2027-01-12','2027-01-14','Event','','Organised in Bangkok. Fellows from Thailand and Indonesia join and design Campaign 1.'],['Campaign 1','2027-02-08','2027-03-26','Campaign',''],['Co-creation event in Bangkok','2027-04-21','2027-04-23','Event','TH','Fellows design Campaign 2 here.'],['Co-creation event in Jakarta','2027-04-28','2027-04-30','Event','ID','Fellows design Campaign 2 here.'],['Campaign 2','2027-06-07','2027-07-30','Campaign',''],['Closing events in Bangkok and Jakarta','2027-08-03','','Event','']].forEach((r, i) => S.dates.push({id:Date.now() + i, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:r[5] || ''})); render(); toast('Programme dates added. Edit any that change.'); return; }
   if (a === 'cl-edit') { S.cledit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'cl-cancel') { S.cledit = null; render(); return; }
+  if (a === 'cl-res-del') { const c = S.classes.find(x => String(x.id) === String(el.dataset.id)); if (c) { c.res = (c.res || []).filter(x => String(x.id) !== String(v)); render(); } return; }
   if (a === 'cl-del') { S.classes = S.classes.filter(c => String(c.id) !== String(v)); S.slides.forEach(x => { if (String(x.class) === String(v)) x.class = ''; }); S.cledit = null; render(); return; }
   if (a === 'cl-seed') { ['01','02','03','04','05','06','07'].forEach((m, i) => S.classes.push({id:Date.now() + i, name:'Masterclass ' + (i + 1), month:'2027-' + m, date:'', topic:'', link:''})); render(); toast('Seven masterclass slots added. Add a date and topic to each.'); return; }
   if (a === 'sl-vis-noop') return;
@@ -2036,12 +2245,15 @@ document.addEventListener('click', e => {
   if (a === 'remind') { const f = F.find(x => x.id === v), t = ($('#rm-' + v) || {}).value || remindText(f); remindSend(f, t); render(); toast('Reminder sent to ' + f.n + '.' + (f.id === 'nok' ? ' Thai Fellow 1 sees it on the paperwork page.' : '')); return; }
   if (a === 'remind-all') { const l = F.filter(f => (S.scope === 'ALL' || f.c === S.scope) && chaseItems(f).length); l.forEach(f => remindSend(f, remindText(f))); render(); toast(l.length + ' reminder' + (l.length === 1 ? '' : 's') + ' sent.'); return; }
   if (a === 'cso-accept') { const q = S.csos.find(x => x.id === 'c1').partners.find(x => x.fellow === el.dataset.f && String(x.camp) === el.dataset.c); if (q) { q.status = 'Accepted'; render(); toast('Invitation accepted. The fellow can see it now.'); } return; }
+  if (a === 'kd-filter') { S.kdFilter = v; render(); return; }
+  if (a === 'ppsub') { S.ppSub = v; render(); return; }
   if (a === 'tab') { S.tab = v; if (v !== 'board') S.prog = 'gc'; render(); window.scrollTo(0,0); return; }
   if (a === 'teamtab') { S.teamTab = v; if (v !== 'board') S.prog = 'gc'; render(); return; }
   if (a === 'prog') { S.prog = v; S.open = null; render(); return; }
   if (a === 'camp') { S.camp = Number(v); S.editSetup = false; render(); return; }
   if (a === 'edit-setup') { S.editSetup = true; render(); return; }
   if (a === 'cancel-setup') { S.editSetup = false; render(); return; }
+  if (a === 'act-del') { const pl = S.plan[S.camp]; if (pl.action) { pl.action.log = (pl.action.log || []).filter(x => String(x.id) !== String(v)); render(); } return; }
   if (a === 'logtab') { S.logTab = v; render(); return; }
   if (a === 'expand') { S.open = S.open === v ? null : v; render(); return; }
   if (a === 'reflect') { reflectModal(Number(v)); return; }
@@ -2050,7 +2262,7 @@ document.addEventListener('click', e => {
   if (a === 'fp-edit') { fpEditModal(el.dataset.f, el.dataset.fr, el.dataset.id); return; }
   if (a === 'coord-kol') { S.coord = v; render(); return; }
   if (a === 'copy-org') {
-    const o = S.org.TH, txt = ORG_FIELDS.map(f => f[1] + ': ' + o[f[0]]).join('\n');
+    const o = S.org.TH, txt = ORG_FIELDS.filter(f => o[f[0]]).map(f => f[1] + ': ' + o[f[0]]).join('\n');
     try { navigator.clipboard.writeText(txt).then(() => toast('Details copied.'), () => toast('Could not copy. Select the text and copy it instead.')); }
     catch (err) { toast('Could not copy. Select the text and copy it instead.'); }
     return;
@@ -2070,12 +2282,26 @@ document.addEventListener('click', e => {
   if (a === 'plan-edit') { S.plan[S.camp].status = 'Draft'; render(); toast('You can edit now. Share it again when you are ready.'); return; }
   if (a === 'plan-del') { S.plan[S.camp][el.dataset.t].splice(Number(el.dataset.i), 1); render(); return; }
   if (a === 'del-note') { S.notes[S.coord].splice(Number(v), 1); render(); return; }
+  if (a === 'ref-del') { const pl = S.plan[S.camp], x = (pl.refs || [])[Number(v)]; pl.refs.splice(Number(v), 1); if (x && x.path && LIVE && SB) SB.storage.from('insights').remove([x.path]).catch(() => {}); render(); return; }
   if (a === 'rm-shot') { S.shots.splice(Number(v), 1); shotPrev(); return; }
   if (a === 'upload') { toast('In the real portal this opens your private Drive upload folder.'); return; }
 });
 document.addEventListener('change', e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
   const a = el.dataset.act;
+  if (a === 'ref-file') {
+    const pl = S.plan[S.camp], note = ((document.getElementById('rf-note') || {}).value || '').trim(), files = [...el.files].slice(0, 5); el.value = '';
+    pl.refs = pl.refs || [];
+    (async () => { toast(LIVE ? 'Saving...' : 'Added.');
+      for (const file of files) {
+        try {
+          if (LIVE) { const path = CUR + '/' + Date.now() + '/' + Math.random().toString(36).slice(2, 8) + '.jpg'; const r = await SB.storage.from('insights').upload(path, await shrink(file), {contentType:'image/jpeg'}); if (r.error) throw r.error; pl.refs.push({name:file.name, note, path}); }
+          else { const url = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(file); }); pl.refs.push({name:file.name, note, url}); }
+        } catch (e) { toast('That file could not be uploaded. Try again.'); }
+      }
+      render(); })();
+    return;
+  }
   if (a === 'shots') {
     [...el.files].slice(0, Math.max(0, 5 - S.shots.length)).forEach(file => { const r = new FileReader(); r.onload = () => { S.shots.push({name:file.name, url:r.result, file:LIVE ? file : null}); shotPrev(); }; r.readAsDataURL(file); });
     el.value = '';
@@ -2095,7 +2321,7 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   const el = e.target.closest('[data-act="set-note"]'); if (el) S.paper[S.coord][el.dataset.i].note = el.value;
-  const og = e.target.closest('[data-act="org"]'); if (og) S.org[og.dataset.c][og.dataset.k] = og.value;
+  const og = e.target.closest('[data-act="org"]'); if (og) { S.org.TH[og.dataset.k] = og.value; S.org.ID[og.dataset.k] = og.value; }
   const pn = e.target.closest('[data-act="plan"]'); if (pn) S.plan[S.camp][pn.dataset.k] = pn.value;
   const pa = e.target.closest('[data-act="plan-action"]'); if (pa) S.plan[S.camp].action[pa.dataset.k] = pa.value;
 });
@@ -2187,15 +2413,21 @@ document.addEventListener('submit', e => {
     if (id === 'new') S.dates.push(Object.assign({id:Date.now()}, v)); else { const o = S.dates.find(c => String(c.id) === String(id)); if (o.date !== v.date || (o.end || '') !== (v.end || '') || (o.country || '') !== (v.country || '')) delete o.confirms; Object.assign(o, v); }
     S.kdedit = null; render(); toast('Saved.'); return;
   }
+  if (f === 'cl-res') {
+    const fm = e.target, c = S.classes.find(x => String(x.id) === String(fm.dataset.id)), val = n => (fm.elements[n] || {}).value || '';
+    if (!c || !val('rt').trim() || !/^https?:\/\//i.test(val('ru').trim())) { toast('Add a title and a link that starts with https://'); return; }
+    c.res = [...(c.res || []), {id:Date.now(), title:val('rt').trim(), url:val('ru').trim(), note:val('rn').trim()}]; render(); toast('Resource added.'); return;
+  }
   if (f === 'cl-save') {
     const id = e.target.dataset.id, name = g('cl-name'); if (!name) { toast('Add a name.'); return; }
-    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link')};
+    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link'), when:g('cl-when'), deck:g('cl-deck')};
     if (id === 'new') S.classes.push(Object.assign({id:Date.now()}, v)); else { const o = S.classes.find(c => String(c.id) === String(id)); if (o.date !== v.date) delete o.confirms; Object.assign(o, v); }
     S.cledit = null; render(); toast('Saved.'); return;
   }
   if (f === 'pp-friend') { const [fid, frid] = g('pf-friend').split('|'), fr = (fd(fid).friends || []).find(x => String(x.id) === frid); if (!fr) { toast('Choose which KOL friend this login is for.'); return; } ppSendInvite({email:g('pf-email'), label:fr.name, role:'friend', friend_id:frid}); return; }
   if (f === 'me-save') { meSave(); return; }
   if (f === 'pp-fellow') { ppSaveFellow(e.target.dataset.id); return; }
+  if (f === 'pp-contact') { saveContact(e.target.dataset.id); return; }
   if (f === 'pp-cso') { ppSaveCso(e.target.dataset.id); return; }
   if (f === 'pp-invite') { const d = e.target.dataset; ppSendInvite({email:g('pp-email'), label:d.name, role:d.role, country:d.country, fellow_id:d.role === 'fellow' ? d.ref : null, cso_id:d.role === 'cso' ? d.ref : null}); return; }
   if (f === 'pp-team') { ppSendInvite({email:g('pp-email'), label:g('pp-label'), role:g('pp-role'), country:g('pp-country')}); return; }
@@ -2243,7 +2475,7 @@ document.addEventListener('submit', e => {
   if (f === 'invite') {
     if (!g('fi-name')) { toast('Add their name.'); return; }
     const nid = 'f' + Date.now();
-    S.friends.push({id:nid, name:g('fi-name'), camp:S.camp, contact:g('fi-contact'), role:g('fi-role') || 'Not specified', expected:Number(g('fi-exp')) || 1, pay:g('fi-pay'), status:'Invited', token:Math.random().toString(36).slice(2,7), posts:LIVE ? fpList(CUR, nid) : []});
+    S.friends.push({id:nid, name:g('fi-name'), camp:S.camp, contact:g('fi-contact'), role:g('fi-role') || 'Not specified', expected:Number(g('fi-exp')) || 1, why:g('fi-why'), hope:g('fi-hope'), status:'Invited', token:Math.random().toString(36).slice(2,7), posts:LIVE ? fpList(CUR, nid) : []});
     render(); toast('Invite created. Copy the link and send it to them yourself.');
   }
   if (f === 'flog') {
@@ -2261,7 +2493,7 @@ document.addEventListener('submit', e => {
   }
   if (f === 'plan-event') {
     if (!g('pe-what')) { toast('Say what the event is.'); return; }
-    S.plan[S.camp].events.push({what:g('pe-what'), place:g('pe-place') || 'Place to be set', date:g('pe-date')}); render();
+    S.plan[S.camp].events.push({what:g('pe-what'), type:g('pe-type'), place:g('pe-place') || 'Place to be set', date:g('pe-date')}); render();
   }
   if (f === 'plan-line') {
     const rate = Number(g('ln-rate'));
@@ -2293,9 +2525,14 @@ document.addEventListener('submit', e => {
     S.setup[S.camp] = {name:g('s-name'), type:partners.length ? 'Collab' : 'Solo', partners, topic:g('s-topic')};
     S.editSetup = false; render(); toast('Campaign saved. Now set your KPIs for it.');
   }
+  if (f === 'action') {
+    const n = Number(g('a-n')); if (!(n > 0)) { toast('How many people took action?'); return; }
+    const pl = S.plan[S.camp]; pl.action = pl.action || {type:'', text:'', measure:''};
+    pl.action.log = [...(pl.action.log || []), {id:Date.now(), date:g('a-date') || iso(TODAY), count:n, note:g('a-note')}]; render(); toast('Thank you. That is real change.');
+  }
   if (f === 'event') {
     const d = g('e-date') ? new Date(g('e-date') + 'T00:00:00') : TODAY;
-    S.events.push({id:Date.now(), camp:S.camp, date:dstr(d), place:g('e-place'), attendance:Number(g('e-att')) || 0, echo:g('e-echo') || 'Not yet'}); render(); toast('Event saved.');
+    S.events.push({id:Date.now(), camp:S.camp, name:g('e-name').trim(), type:g('e-type'), date:dstr(d), place:g('e-place'), attendance:Number(g('e-att')) || 0, echo:g('e-echo') || 'Not yet'}); render(); toast('Event saved.');
   }
   if (f === 'collab') {
     S.collabs.push({id:Date.now(), n:g('c-n'), type:g('c-t'), role:g('c-r') || 'Not specified', pay:g('c-p')}); render(); toast('Added. Paid collaborators will get a paperwork checklist too.');
@@ -2360,7 +2597,7 @@ function blankLive(){
   IMP = null; IMP_T = 0;
   LISTS.forEach(n => { S[n] = []; });
   S.notes = {}; S.reminded = {}; S.followed = {}; S.paper = {}; S.camps = {};
-  S.org = {TH:{name:'', address:'', taxid:'', email:'', note:''}, ID:{name:'', address:'', taxid:'', email:'', note:''}};
+  S.org = {TH:{...ORG_DEFAULT}, ID:{...ORG_DEFAULT}};
   F.forEach(f => { S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); });
   S.listen = {pre:{}, post:{}, cmp:{}, bench:{}, data:{}, decks:{}, sec:{}};
   S.accounts = []; S.pedit = null; S.pinv = null; S.csoNotes = [];
@@ -2382,6 +2619,7 @@ async function loadAll(){
   if (error) throw error;
   (data || []).forEach(r => applyRec(r, false));
   const fr = await SB.from('fellows').select('*'); (fr.data || []).forEach(applyFellow);
+  try { const pv = await SB.from('fellow_private').select('*'); FPRIV = {}; (pv.data || []).forEach(x => { FPRIV[x.fellow_id] = {email:x.email || '', phone:x.phone || '', line:x.line || '', whatsapp:x.whatsapp || '', folder:x.folder_url || ''}; }); } catch (e) {}
   LAST = {}; const c = collect(); Object.keys(c).forEach(id => { LAST[id] = stable(c[id].data); });
 }
 function scheduleFlush(){ if (S.live.phase !== 'ready' || VA) return; clearTimeout(FLUSH_T); FLUSH_T = setTimeout(flush, 500); }
@@ -2418,7 +2656,7 @@ function subscribe(){
 function applyRole(p){
   S.live = {phase:'ready', msg:''}; S.scope = 'ALL'; S.tm = 'program'; S.prog = 'gc';
   if (p.role === 'program') { S.role = 'team'; S.teamTab = 'over'; }
-  else if (p.role === 'country') { S.role = 'team'; S.tm = 'country'; S.scope = p.country; S.teamTab = 'mine'; S.coord = (F.find(f => f.c === p.country) || F[0]).id; }
+  else if (p.role === 'country') { S.role = 'team'; S.tm = 'country'; S.scope = p.country; S.teamTab = 'people'; S.coord = (F.find(f => f.c === p.country) || F[0]).id; }
   else if (p.role === 'listener' || p.role === 'comms') { S.role = 'listener'; S.teamTab = 'lbench'; }
   else if (p.role === 'ops') { S.role = 'team'; S.tm = 'ops'; S.teamTab = 'paper'; }
   else if (p.role === 'partner') { S.role = 'partner'; S.teamTab = 'pimpact'; }
@@ -2458,7 +2696,7 @@ async function liveEnter(){
     if (['cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
     blankLive(); await loadAll();
     if (prof.role === 'friend' && !(await loadFriendCtx())) { S.user = null; S.live = {phase:'blocked', msg:'Your login is ready, but it is not linked to an invitation yet. Ask the programme team.'}; render(); return; }
-    applyRole(prof); if (['program','country'].includes(prof.role)) await loadAccounts(); subscribe(); render();
+    applyRole(prof); if (['program','country','comms'].includes(prof.role)) await loadAccounts(); subscribe(); render();
   } catch (e) { S.user = null; S.live = {phase:'error', msg:'Something went wrong while opening the portal. Refresh and try again.'}; render(); }
 }
 async function liveLogin(email, pw){
@@ -2505,7 +2743,7 @@ else if (LIVE) { const t = document.getElementById('protoText'); t.textContent =
 const DEMO_PW = 'makesenseasia';
 function demoUnlocked(){ try { return sessionStorage.getItem('gcDemo') === '1'; } catch (e) { return false; } }
 function demoGate(){
-  $('#tabs').innerHTML = '';
+  $('#tabs').innerHTML = ''; $('#tabwrap').className = 'tabwrap';
   $('#view').innerHTML = `<div class="card stack" style="max-width:440px;width:100%;margin:12px auto 0"><h2 class="h sec">Demo password</h2><p class="sub2">The demo is for people at makesense Asia. Enter the password to continue.</p>
     <form id="demoGate" class="stack"><label class="f">Password<input type="password" id="dg-pw" autocomplete="off" required></label><p class="alert need" id="dg-err" role="alert" style="padding:12px 16px;display:none">That is not the password. Try again.</p><div class="row"><button class="btn" type="submit">Open the demo</button></div></form></div>`;
   $('#demoGate').addEventListener('submit', e => {
