@@ -558,3 +558,12 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values ('fd
 drop policy if exists profiles_read_comms on public.profiles;
 create policy profiles_read_comms on public.profiles for select using (
   (select role from public.my_profile()) = 'comms' and role = 'friend');
+
+
+-- =====================================================================
+-- The TGC Club: inspiration (past events) and KOLs ready to collaborate. Coordinators write; everyone in the programme reads.
+-- =====================================================================
+insert into public.kind_access (kind, role, read_scope, write_scope)
+  select k, r, 'all', case when r = 'program' then 'all' when r = 'country' then 'country' else 'none' end
+  from unnest(array['list:inspo','list:ready']) k, unnest(array['program','country','listener','comms','fellow','friend','cso','ops','partner']) r
+on conflict (kind, role) do nothing;
