@@ -202,7 +202,7 @@ const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') 
 
 const STATUS = {none:'Not requested', req:'Requested', recv:'Received', fix:'Needs fix', ok:'Approved'};
 const DOCS = ['ID copy','Bank & tax details','Agreement','Quotation','Invoice'];
-const WEIGHTS = [['Consistency',20],['Reach & engagement vs own baseline',20],['Self-set KPI attainment',20],['Mainstream integration',25],['Reflection & learning',15]];
+const WEIGHTS = [['Consistency',20],['Reach & engagement vs own baseline',20],['Self-set KPI attainment',20],['Mainstream integration',null],['Reflection & learning',15]];
 const KPI_MENU = ['Reach','Saves','Comments from non-climate audiences','Press or media pickup','Partner sign-ups','Offline event attendance'];
 
 const F = [
@@ -239,7 +239,7 @@ const S = {
   plan:{
     1:{message:'Rooftop solar is something ordinary families can understand, ask about and act on.', audience:'Home owners and condo committees in Bangkok who do not follow climate accounts',
       posts:[{what:'Podcast episode 1: solar neighbours', fmt:'Podcast', date:'2027-02-15'},{what:'Reel: what we learned at the expo', fmt:'Reel / video', date:'2027-03-10'}],
-      events:[{what:'Solar Buddies expo', date:'2027-03-06', place:'Community hall, Bangkok'}],
+      events:[{what:'Solar Buddies expo', type:'Expo', date:'2027-03-06', place:'Community hall, Bangkok'}],
       action:{type:'Contact a decision-maker', text:'Ask building committees or the district office to allow shared rooftop solar.', measure:'People who sign the letter at the expo and share it online.'},
       cur:'THB', fx:35,
       lines:[
@@ -356,7 +356,7 @@ const S = {
       refl:{reach:9800, reactions:760, comments:420, saves:60, shares:34, repost:6, happened:'Lots of comments, a few people corrected each other politely.', surprise:'A local shop owner replied with her own bill.', change:'Pin one comment to steer the conversation.', shots:[{name:'tiktok-insights.png'}]}},
     {id:3, camp:1, date:new Date(2027,1,26), platform:'Facebook', format:'Carousel', url:'facebook.com/thaifellow1/posts/sample-3', topic:'What our building committee asked about solar', audience:'Condo committees and juristic persons', expect:'Small reach, but I want to follow up with people from the meetup.', kpis:[{n:'Partner sign-ups',t:5}], refl:null}
   ],
-  events:[{camp:1, date:'27 Feb', place:'Community meetup, Ratchada hall', attendance:42, echo:'1 reel and 2 stories the same day'}],
+  events:[{camp:1, name:'Community meetup', type:'Meetup', date:'27 Feb', place:'Ratchada hall, Bangkok', attendance:42, echo:'1 reel and 2 stories the same day'}],
   collabs:[
     {n:'Supplier 1', type:'Supplier', role:'Event photographer', pay:'Paid by makesense'}
   ],
@@ -389,6 +389,7 @@ const S = {
 /* ---------- per-fellow data: the same shapes as the demo, kept separately for each fellow ---------- */
 const FD = {};
 const FKEYS = ['posts','plan','setup','kpis','events','collabs','friends'];
+const EV_TYPES = ['Workshop','Expo','Fair','Class','Meetup','Talk or panel','Screening','Clean-up or action day','Other'];
 const epPlan = () => ({message:'', audience:'', posts:[], events:[], action:{type:'', text:'', measure:''}, cur:'USD', fx:0, lines:[], status:'Draft', comment:''});
 const fdBlank = () => ({posts:[], plan:{1:epPlan(), 2:epPlan()}, setup:{1:null, 2:null}, kpis:{1:[], 2:[]}, events:[], collabs:[], friends:[]});
 let CUR = 'nok'; // whose data the S.posts, S.plan, S.setup ... shortcuts point at
@@ -411,7 +412,7 @@ function comps(f){
     const posts = S.posts.length;
     const cons = Math.min(20, Math.round(20 * posts / 6));
     const learn = Math.round(15 * (posts ? reflDone() / posts : 0));
-    const main = Math.min(25, 10 + 2 * (S.collabs.length + S.friends.length + S.csos.filter(o => o.partners.some(q => q.fellow === f.id)).length) + 2 * S.events.length);
+    const main = 10 + 2 * (S.collabs.length + S.friends.length + S.csos.filter(o => o.partners.some(q => q.fellow === f.id)).length) + 2 * S.events.length;
     return [cons, 15, kpiScore(), main, learn];
   }
   return f.c5;
@@ -501,7 +502,7 @@ function board(list, meId){
       (f.id === bMain ? '<span class="badge">Collab catalyst</span>' : '') +
       (f.id === bLearn ? '<span class="badge">Sharpest reflection</span>' : '');
     const det = S.open === f.id ? `<div class="ldet">${WEIGHTS.map((w,j) =>
-      `<div class="mini"><span>${w[0]}</span>${bar(c[j], w[1])}<span>${c[j]}/${w[1]}</span></div>`).join('')}</div>` : '';
+      `<div class="mini"><span>${w[0]}</span>${w[1] == null ? '<span class="meta">no limit</span>' : bar(c[j], w[1])}<span>${w[1] == null ? c[j] : c[j] + '/' + w[1]}</span></div>`).join('')}</div>` : '';
     return `<div class="lrow ${me ? 'me' : ''}">
       <button class="lhead" type="button" data-act="expand" data-v="${f.id}" aria-expanded="${S.open === f.id}">
         <span class="rank">${i+1}</span>
@@ -543,8 +544,8 @@ function vHome(){
   out += `<div class="grid2" style="align-items:start">${vSetup()}${vDates()}</div>`;
   out += `<div class="grid2">
     <div class="card"><h2>Your score</h2><p class="sub2">Rank ${rk} of 8 fellows.</p>
-      <div class="row" style="gap:20px;align-items:flex-end"><div class="big">${total(me)}<span class="meta"> /100</span></div></div>
-      <div class="stack" style="margin-top:16px">${WEIGHTS.map((w,j) => `<div class="mini"><span>${w[0]}</span>${bar(c[j],w[1])}<span>${c[j]}/${w[1]}</span></div>`).join('')}</div>
+      <div class="row" style="gap:20px;align-items:flex-end"><div class="big">${total(me)}<span class="meta"> points</span></div></div>
+      <div class="stack" style="margin-top:16px">${WEIGHTS.map((w,j) => `<div class="mini"><span>${w[0]}</span>${w[1] == null ? '<span class="meta">no limit</span>' : bar(c[j],w[1])}<span>${w[1] == null ? c[j] : c[j] + '/' + w[1]}</span></div>`).join('')}</div>
       <p class="note" style="margin-top:12px">Reflections add to your learning score, so logging what you learned counts as much as the numbers. KPI attainment averages your progress across both campaigns.</p></div>
     <div class="card"><h2>My KPIs for ${cn}</h2><p class="sub2">${S.setup[S.camp] && S.setup[S.camp].type === 'Collab' ? 'Shared with ' + names(S.setup[S.camp].partners) + ' for this campaign.' : 'You set these for this campaign.'} Reach and attendance update from your logs.</p>
       <div class="stack">${kp}</div>
@@ -564,7 +565,7 @@ function vHome(){
 }
 
 function vLog(){
-  const tabs = `<div class="sub-tabs" role="group" aria-label="What are you logging?">${[['post','Post'],['event','Community meetup'],['collab','Supplier']].map(t =>
+  const tabs = `<div class="sub-tabs" role="group" aria-label="What are you logging?">${[['post','Post'],['event','Community event'],['collab','Supplier']].map(t =>
     `<button type="button" data-act="logtab" data-v="${t[0]}" aria-pressed="${S.logTab===t[0]}">${t[1]}</button>`).join('')}</div>`;
   let body = '';
   if (S.logTab === 'post') body = `<form data-form="post" class="stack">
@@ -582,12 +583,14 @@ function vLog(){
       ${S.kpis[S.camp].length ? S.kpis[S.camp].map((k,i) => `<div class="kpirow"><input type="checkbox" id="k${i}" aria-label="${esc(k.n)}"><label for="k${i}">${esc(k.n)}</label><span></span></div>`).join('') : `<p class="meta">No KPIs set for ${CAMPS[S.camp-1].n} yet. Add them on Home.</p>`}</div>
     <div class="row"><button class="btn" type="submit">Save post</button><span class="note">You will get a reminder at Day 7 to add reach, reactions, comments, saves, shares, reposts and your insights screenshots.</span></div></form>`;
   if (S.logTab === 'event') body = `<form data-form="event" class="stack"><div class="formgrid">
+      <label class="f">Name of the event<input type="text" id="e-name" placeholder="e.g. Rooftop solar workshop" required></label>
+      <label class="f">Type<select id="e-type">${opt(EV_TYPES, 'Workshop')}</select></label>
       <label class="f">Date<input type="date" id="e-date" value="${iso(TODAY)}"></label>
       <label class="f">Place<input type="text" id="e-place" placeholder="Venue and city" required></label>
       <label class="f">People who came<input type="number" id="e-att" min="0" placeholder="40"></label></div>
       <label class="f">How did it show up online afterwards?<input type="text" id="e-echo" placeholder="e.g. 2 stories and a reel"></label>
       <div><button class="btn" type="submit">Save event</button></div></form>
-      <div style="margin-top:18px">${S.events.map(e => `<div class="item"><b>${esc(e.date)}, ${esc(e.place)}</b><span class="tag">${CAMPS[e.camp-1].n}</span><div class="meta">${e.attendance} people, ${esc(e.echo)}</div></div>`).join('')}</div>`;
+      <div style="margin-top:18px">${S.events.map(e => `<div class="item"><b>${esc(e.name || e.place)}</b>${e.type ? ` <span class="tag">${esc(e.type)}</span>` : ''} <span class="tag">${CAMPS[e.camp-1].n}</span><div class="meta">${esc(e.date)}, ${esc(e.place)}</div><div class="meta">${e.attendance} people, ${esc(e.echo)}</div></div>`).join('')}</div>`;
   if (S.logTab === 'collab') body = `<form data-form="collab" class="stack"><div class="formgrid">
       <label class="f">Name<input type="text" id="c-n" required></label>
       <label class="f">They are a<select id="c-t"><option>Supplier</option><option>Other</option></select></label>
@@ -695,7 +698,7 @@ function spendTable(pl, ed){
   const rows = pl.lines.map((l,i) => `<tr><td>${esc(l.cat)}</td><td>${esc(l.what)}</td><td>${esc(l.where || '')}</td><td class="num">${fmt(l.rate)} ${cur}<br><span class="meta">${l.unit} × ${l.qty}</span></td>${loc ? `<td class="num">${fmt(lineTotal(l))}</td>` : ''}<td class="num"><b>${usdTxt(usdOf(pl, lineTotal(l)))}</b></td><td style="white-space:normal;min-width:170px">${esc(l.support || '')}</td>${ed ? `<td><button type="button" class="btn ghost sm" data-act="plan-del" data-t="lines" data-i="${i}">Remove</button></td>` : ''}</tr>`).join('');
   return `<div class="tw"><table><thead><tr><th>Category</th><th>What or who</th><th>Where</th><th>Rate</th>${loc ? `<th>Total (${cur}, estimate)</th>` : ''}<th>Total (USD)</th><th>Support needed</th>${ed ? '<th></th>' : ''}</tr></thead><tbody>${rows || `<tr><td colspan="${col}" class="meta">No spending lines yet.</td></tr>`}</tbody><tfoot><tr><td colspan="${loc ? 4 : 4}"><b>Proposed total</b></td>${loc ? `<td class="num">${fmt(planTotal(pl))} ${cur}</td>` : ''}<td class="num"><b>${usdTxt(usdOf(pl, planTotal(pl)))}</b></td><td></td>${ed ? '<td></td>' : ''}</tr></tfoot></table></div>`;
 }
-const planList = (arr, t, ed) => arr.map((x,i) => `<div class="item" style="padding:10px 0"><div class="row spread"><b>${esc(x.what)}</b>${ed ? `<button type="button" class="btn ghost sm" data-act="plan-del" data-t="${t}" data-i="${i}">Remove</button>` : ''}</div><div class="meta">${esc(t === 'posts' ? x.fmt : x.place)}, ${x.date ? dstr(new Date(x.date + 'T00:00:00')) : 'Date to be set'}</div></div>`).join('') || '<p class="meta">Nothing added yet.</p>';
+const planList = (arr, t, ed) => arr.map((x,i) => `<div class="item" style="padding:10px 0"><div class="row spread"><b>${esc(x.what)}</b>${ed ? `<button type="button" class="btn ghost sm" data-act="plan-del" data-t="${t}" data-i="${i}">Remove</button>` : ''}</div><div class="meta">${esc(t === 'posts' ? x.fmt : (x.type ? x.type + ', ' : '') + x.place)}, ${x.date ? dstr(new Date(x.date + 'T00:00:00')) : 'Date to be set'}</div></div>`).join('') || '<p class="meta">Nothing added yet.</p>';
 const opt = (list, sel) => list.map(x => `<option ${x === sel ? 'selected' : ''}>${x}</option>`).join('');
 
 const FPS = {};
@@ -885,7 +888,8 @@ function vPlan(){
       <label class="f">Format<select id="pp-fmt">${opt(['Reel / video','Carousel','Photo','Story','Live','Podcast','Text'])}</select></label>
       <label class="f">Planned date<input type="date" id="pp-date"></label><div><button class="btn sm" type="submit">Add post</button></div></form>` : ''}</div>`;
   const events = `<div class="card"><h2>Planned events</h2><p class="sub2">Meetups and offline moments.</p>${planList(pl.events, 'events', ed)}
-    ${ed ? `<form data-form="plan-event" class="formgrid" style="margin-top:12px;align-items:end"><label class="f">Event<input type="text" id="pe-what" placeholder="e.g. Community meetup"></label>
+    ${ed ? `<form data-form="plan-event" class="formgrid" style="margin-top:12px;align-items:end"><label class="f">Event name<input type="text" id="pe-what" placeholder="e.g. Rooftop solar workshop"></label>
+      <label class="f">Type<select id="pe-type">${opt(EV_TYPES, 'Workshop')}</select></label>
       <label class="f">Where<input type="text" id="pe-place" placeholder="Venue and city"></label>
       <label class="f">Planned date<input type="date" id="pe-date"></label><div><button class="btn sm" type="submit">Add event</button></div></form>` : ''}</div>`;
   const act = `<div class="card"><h2>Civic action</h2><p class="sub2">What do you want people to do after they see your posts or come to your event?</p><div class="stack">
@@ -2261,7 +2265,7 @@ document.addEventListener('submit', e => {
   }
   if (f === 'plan-event') {
     if (!g('pe-what')) { toast('Say what the event is.'); return; }
-    S.plan[S.camp].events.push({what:g('pe-what'), place:g('pe-place') || 'Place to be set', date:g('pe-date')}); render();
+    S.plan[S.camp].events.push({what:g('pe-what'), type:g('pe-type'), place:g('pe-place') || 'Place to be set', date:g('pe-date')}); render();
   }
   if (f === 'plan-line') {
     const rate = Number(g('ln-rate'));
@@ -2295,7 +2299,7 @@ document.addEventListener('submit', e => {
   }
   if (f === 'event') {
     const d = g('e-date') ? new Date(g('e-date') + 'T00:00:00') : TODAY;
-    S.events.push({id:Date.now(), camp:S.camp, date:dstr(d), place:g('e-place'), attendance:Number(g('e-att')) || 0, echo:g('e-echo') || 'Not yet'}); render(); toast('Event saved.');
+    S.events.push({id:Date.now(), camp:S.camp, name:g('e-name').trim(), type:g('e-type'), date:dstr(d), place:g('e-place'), attendance:Number(g('e-att')) || 0, echo:g('e-echo') || 'Not yet'}); render(); toast('Event saved.');
   }
   if (f === 'collab') {
     S.collabs.push({id:Date.now(), n:g('c-n'), type:g('c-t'), role:g('c-r') || 'Not specified', pay:g('c-p')}); render(); toast('Added. Paid collaborators will get a paperwork checklist too.');
