@@ -272,7 +272,7 @@ const S = {
   ],
   csoNotes:[{cso:'c1', fellow:'nok', camp:1, date:'28 Feb', text:'Consider handing out a one-page checklist of the permit steps at the expo.'}],
   friends:[
-    {id:'f1', name:'KOL friend 1', camp:1, contact:'LINE (sample)', role:'Podcast guest and one reel', expected:2, pay:'Paid by makesense', status:'Accepted', token:'k1x9a',
+    {id:'f1', name:'KOL friend 1', camp:1, contact:'LINE (sample)', role:'Podcast guest and one reel', why:'Her listeners already trust her on home life, and solar is the missing piece for many of them.', hope:'More households see rooftop solar as something their neighbours do.', expected:2, pay:'Paid by makesense', status:'Accepted', token:'k1x9a',
       posts:[{id:101, date:'2027-02-15', platform:'Podcast', fmt:'Podcast', caption:'Solar neighbours, episode 1 (guest)', url:'podcast.example/solar-neighbours-1', m:{reach:5200, reactions:310, comments:48, saves:75, shares:60, repost:9}, shots:[{name:'podcast-stats.png'}]}]},
     {id:'f2', name:'KOL friend 2', camp:1, contact:'Email (sample)', role:'One reel about the expo', expected:1, pay:'Unpaid', status:'Invited', token:'q7m2c', posts:[]},
     {id:'f3', name:'KOL friend 3', camp:1, contact:'WhatsApp (sample)', role:'Two stories at the expo', expected:2, pay:'Unpaid', status:'Accepted', token:'t5w8d',
@@ -622,12 +622,12 @@ function vPaper(){
   const nc = nn.length ? `<div class="card"><h2>Notes from the team</h2><p class="sub2">Messages from ops and your coordinator.</p>${[...nn].reverse().map(x => `<div class="item"><div class="row spread"><b>${esc(x.by)}</b><span class="meta">${x.date}</span></div><div>${esc(x.text)}</div></div>`).join('')}</div>` : '';
   const legal = `<div class="alert time"><h2>Use your legal address</h2><div>On your agreement, invoices and bank details, write the legal address that is on your ID copy. Do not use the address where you live now.</div></div>`;
   return legal + nc + `<div class="card"><h2>My paperwork</h2>
-    <p class="sub2">${n ? n + ' item' + (n>1?'s':'') + ' still needed.' : 'Nothing needed from you right now.'} Your coordinator updates this list. Exchange rates for any USD estimate: ${fxLink}. Documents are never stored here: upload to the secure folder link.</p>
+    <p class="sub2">${n ? n + ' item' + (n>1?'s':'') + ' still needed.' : 'Nothing needed from you right now.'} Your coordinator updates this list. Exchange rates for any USD estimate: ${fxLink}. Documents are never stored here: upload them to your private Drive folder${fpr(CUR).folder ? ' (' + lnk(fpr(CUR).folder, 'open it') + '), which opens only when you are signed in to the Google account we shared it with' : ''}.</p>
     ${rows.map(x => `<div class="item"><div class="row spread"><b>${x.doc}</b>${pill(x.s)}</div>
       ${DOC_HINT[x.doc] ? `<div class="meta">${DOC_HINT[x.doc]}</div>` : ''}
       ${x.note ? `<div>${esc(x.note)}</div>` : ''}
       ${x.due && (x.s==='req'||x.s==='fix') ? `<div class="meta">Due ${dstr(new Date(x.due))}</div>` : ''}
-      ${(x.s==='req'||x.s==='fix') ? `<div><button class="btn sm" data-act="upload">Open secure upload folder</button></div>` : ''}</div>`).join('')}
+      ${(x.s==='req'||x.s==='fix') ? (fpr(CUR).folder ? `<div><a class="btn sm" href="${esc(fpr(CUR).folder)}" target="_blank" rel="noopener noreferrer">Open my private folder</a></div>` : `<div class="meta">Your private folder link is coming. Your coordinator will add it.</div>`) : ''}</div>`).join('')}
     <p class="note" style="margin-top:12px">Payments: you will also see a reason here if a payment is on hold, for example "waiting for invoice".</p></div>` + vOrgFellow();
 }
 
@@ -822,17 +822,19 @@ function vFriends(){
     <div class="card"><div class="meta">Friends invited</div><div class="big">${list.length}</div></div>
     <div class="card"><div class="meta">Posts delivered</div><div class="big">${got}<span class="meta"> /${exp}</span></div></div>
     <div class="card"><div class="meta">Reach from friends</div><div class="big">${fmt(reach)}</div></div></div>`;
-  const cards = list.map(f => `<div class="card"><div class="row spread"><div><h2>${esc(f.name)}</h2><p class="sub2" style="margin:0">${esc(f.role)}, ${esc(f.pay)}</p></div>${frPill(f)}</div>
+  const cards = list.map(f => `<div class="card"><div class="row spread"><div><h2>${esc(f.name)}</h2><p class="sub2" style="margin:0">${esc(f.role)}</p></div>${frPill(f)}</div>
+    ${f.why ? `<div style="margin-top:10px"><div class="meta">Why we invited them</div><div>${esc(f.why)}</div></div>` : ''}${f.hope ? `<div style="margin-top:8px"><div class="meta">What we hope changes</div><div>${esc(f.hope)}</div></div>` : ''}
     <div style="margin:12px 0 4px"><div class="row spread" style="font-size:13px"><span>Posts delivered</span><span class="meta">${f.posts.length} of ${f.expected}</span></div>${bar(f.posts.length, f.expected)}</div>
     ${f.posts.length ? friendPostList(f, LIVE ? CUR : null) : `<p class="meta">Nothing posted yet.</p>`}
     ${LIVE ? (f.posts.length < f.expected ? `<p class="meta" style="margin-top:10px">${esc(f.name)} needs a login to log posts. Ask your country coordinator to create it on the People tab${f.contact ? ' (contact: ' + esc(f.contact) + ')' : ''}.</p>` : '') : f.posts.length < f.expected ? `<div class="row" style="margin-top:10px"><span class="meta">Invite link</span><code>https://portal.example/join/${f.token}</code><button type="button" class="btn ghost sm" data-act="copy-link" data-v="${f.token}">Copy link</button></div>` : ''}</div>`).join('') || '<div class="card"><p class="meta">No friends invited for this campaign yet.</p></div>';
-  const invite = `<div class="card"><h2>Invite a KOL friend</h2><p class="sub2">They get their own simple page to log posts and insights, so you do not have to chase the numbers. You see everything they post.</p>
+  const invite = `<div class="card"><h2>Invite a KOL friend</h2><p class="sub2">Tell them why you are inviting them and what you hope this can do. They see this on their own page, where they can also log posts and insights.</p>
     <form data-form="invite" class="stack"><div class="formgrid">
       <label class="f">Name<input type="text" id="fi-name" required></label>
-      <label class="f">How to reach them<input type="text" id="fi-contact" placeholder="Email, LINE or WhatsApp"></label>
-      <label class="f">What will they do?<input type="text" id="fi-role" placeholder="e.g. One reel about the expo"></label>
-      <label class="f">Posts expected<input type="number" id="fi-exp" min="1" value="1"></label>
-      <label class="f">Payment<select id="fi-pay">${opt(['Unpaid','Paid by makesense','Paid by me'])}</select></label></div>
+      <label class="f">How to reach them<input type="text" id="fi-contact" placeholder="Email, LINE or WhatsApp"></label></div>
+      <label class="f">Why are you inviting them?<textarea id="fi-why" placeholder="e.g. Her audience of young parents is exactly who needs to hear that solar is within reach"></textarea></label>
+      <label class="f">What would you love them to do?<input type="text" id="fi-role" placeholder="e.g. One reel about the expo, in their own voice"></label>
+      <label class="f">What do you hope changes because of it?<textarea id="fi-hope" placeholder="e.g. Neighbours start asking each other about rooftop solar"></textarea></label>
+      <div class="formgrid"><label class="f">Posts expected<input type="number" id="fi-exp" min="1" value="1"></label></div>
       <div><button class="btn sm" type="submit">Create invite</button></div></form></div>`;
   return `<div class="card"><h2>KOL friends</h2><p class="sub2">Friends helping with ${esc(S.setup[c] ? S.setup[c].name : CAMPS[c-1].n)}. Switch campaign to see the others.</p>${campSeg()}</div>${tiles}${cards}${invite}`;
 }
@@ -843,7 +845,7 @@ function vFriendHome(){
   const pl = S.plan[f.camp], su = S.setup[f.camp], cm = CAMPS[f.camp-1], fn = esc(FN());
   return `<div class="card"><h2 class="h sec">Hi ${esc(f.name)}</h2>
     <p class="sub2">${fn} invited you to help with <b>${esc(su ? su.name : cm.n)}</b> (${cm.w}).</p>
-    <div class="stack"><div><div class="meta">What we would like from you</div><div>${esc(f.role)}</div></div>
+    <div class="stack">${f.why ? `<div><div class="meta">Why we invited you</div><div>${esc(f.why)}</div></div>` : ''}<div><div class="meta">What we would love from you</div><div>${esc(f.role)}</div></div>${f.hope ? `<div><div class="meta">What we hope changes</div><div>${esc(f.hope)}</div></div>` : ''}
       <div><div class="meta">Posts expected</div><div class="row spread"><span>${f.posts.length} of ${f.expected} delivered</span>${frPill(f)}</div>${bar(f.posts.length, f.expected)}</div></div>
     <div style="margin-top:16px"><button class="btn" type="button" data-act="tab" data-v="flog">Log a post</button></div></div>
     <div class="card"><h2>What the campaign is about</h2>
@@ -952,6 +954,7 @@ function vTeamPaper(){
   const matrix = `<div class="tw"><table><thead><tr><th>Fellow</th><th>Country</th>${DOCS.map(d => `<th>${d}</th>`).join('')}</tr></thead><tbody>${
     list.map(f => `<tr data-act="coord-kol" data-v="${f.id}" class="${f.id===S.coord?'pick':''}"><td><b>${f.n}</b></td><td>${f.c}</td>${S.paper[f.id].map(x => `<td>${pill(x.s)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   const edit = `<div class="card"><h2>Update paperwork for ${esc(k.n)}</h2><p class="sub2">What you write in the note is shown to ${esc(k.n)} in plain language. Select a row above to switch fellow.</p>
+    <div class="meta" style="margin-bottom:8px">${fpr(k.id).email ? 'Email: <a href="mailto:' + esc(fpr(k.id).email) + '">' + esc(fpr(k.id).email) + '</a>. ' : 'No email added yet. '}Private folder: ${fpr(k.id).folder ? lnk(fpr(k.id).folder, 'Open Drive folder') : 'not added yet (add it on the People tab)'}</div>
     ${cur.map((x,i) => `<div class="item"><div class="formgrid">
       <label class="f">${x.doc}<select data-act="set-status" data-i="${i}">${Object.keys(STATUS).map(s => `<option value="${s}" ${x.s===s?'selected':''}>${STATUS[s]}</option>`).join('')}</select></label>
       <label class="f">Due date<input type="date" data-act="set-due" data-i="${i}" value="${x.due}"></label></div>
@@ -1630,6 +1633,11 @@ function meCard(){
   return `<div class="card"><h2>My profile</h2><p class="sub2">Change the name and photo other people see. Your login email stays the same.</p>
     <form data-form="me-save" class="stack"><div class="row" style="gap:14px">${avatar(PROFILE.photo, PROFILE.label)}<div class="grow"><label class="f">Name<input type="text" id="me-name" value="${esc(PROFILE.label)}" maxlength="80" required></label></div></div>
     <label class="f">Photo<span class="hint">A clear face photo works best. It is resized automatically.</span><input type="file" id="me-photo" accept="image/*"></label>
+    ${PROFILE.role === 'fellow' ? `<h3 style="margin:14px 0 4px">How the team can reach you</h3><p class="sub2" style="margin:0 0 8px">Only the programme team, ops and your country coordinator see this. The email is the Google account they will share your private folder with.</p><div class="formgrid">
+      <label class="f">Email<input type="email" id="me-email" value="${esc(fpr(PROFILE.fellow_id).email || '')}"></label>
+      <label class="f">Phone<input type="text" id="me-phone" value="${esc(fpr(PROFILE.fellow_id).phone || '')}"></label>
+      <label class="f">LINE<input type="text" id="me-line" value="${esc(fpr(PROFILE.fellow_id).line || '')}"></label>
+      <label class="f">WhatsApp<input type="text" id="me-wa" value="${esc(fpr(PROFILE.fellow_id).whatsapp || '')}"></label></div>` : ''}
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="me-cancel">Cancel</button></div></form></div>`;
 }
 async function meSave(){
@@ -1643,6 +1651,11 @@ async function meSave(){
       const up = await SB.storage.from('people').upload(path, blob, {contentType:'image/jpeg', upsert:true}); if (up.error) throw up.error;
     }
     const r = await SB.rpc('update_my_profile', {new_name:name, new_photo:path}); if (r.error) throw r.error;
+    if (PROFILE.role === 'fellow' && document.getElementById('me-email')) {
+      const gg = i => ((document.getElementById(i) || {}).value || '').trim(), c = {em:gg('me-email'), ph:gg('me-phone'), ln:gg('me-line'), wa:gg('me-wa')};
+      const r2 = await SB.rpc('update_my_contact', {em:c.em, ph:c.ph, ln:c.ln, wa:c.wa}); if (r2.error) throw r2.error;
+      FPRIV[PROFILE.fellow_id] = Object.assign({}, fpr(PROFILE.fellow_id), {email:c.em, phone:c.ph, line:c.ln, whatsapp:c.wa});
+    }
     PROFILE.label = name; if (path) PROFILE.photo = path; if (S.user) S.user.label = name;
     if (PROFILE.role === 'fellow') { const f = F.find(x => x.id === PROFILE.fellow_id); if (f) { f.n = name; if (path) f.photo = path; } }
     if (PROFILE.role === 'friend') { const x = fd(CUR).friends[0]; if (x) { x.name = name; if (path) x.photo = path; } }
@@ -1742,13 +1755,49 @@ function ppFields(o, handles){
   return `<div class="formgrid">${fld('pp-ig', 'Instagram', h.instagram, 'placeholder="@handle or link"')}${fld('pp-tt', 'TikTok', h.tiktok, 'placeholder="@handle or link"')}${fld('pp-fb', 'Facebook', h.facebook, 'placeholder="page name or link"')}${fld('pp-yt', 'YouTube', h.youtube, 'placeholder="@handle or link"')}${fld('pp-web', 'Website', h.website, 'placeholder="https://"')}</div>
     ${LIVE ? '<label class="f">Photo<span class="hint">A square photo works best. It is shrunk before upload.</span><input type="file" id="pp-photo" accept="image/*"></label>' : '<p class="note">Photos can be added in the live portal.</p>'}`;
 }
+/* Private contact details and the Drive folder link, one row per fellow. Team and the fellow themselves only. */
+let FPRIV = DEMO ? {nok:{email:'nok@example.org', phone:'+66 80 000 0000', line:'nok.sample', whatsapp:'', folder:'https://drive.google.com/drive/folders/sample-nok'}, mind:{email:'mind@example.org', phone:'', line:'', whatsapp:'+66 81 000 0000', folder:''}} : {};
+const fpr = id => FPRIV[id] || {};
+const canK = f => S.role === 'team' && (S.tm === 'program' || S.tm === 'ops' || f.c === S.scope);
+const telHref = v => 'tel:' + String(v).replace(/[^+\d]/g, '');
+function contactBlock(f){
+  const k = fpr(f.id), rows = [];
+  if (k.email) rows.push(['Email', `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>`]);
+  if (k.phone) rows.push(['Phone', `<a href="${esc(telHref(k.phone))}">${esc(k.phone)}</a>`]);
+  if (k.line) rows.push(['LINE', esc(k.line)]);
+  if (k.whatsapp) rows.push(['WhatsApp', `<a href="${esc(telHref(k.whatsapp))}">${esc(k.whatsapp)}</a>`]);
+  rows.push(['Private folder', k.folder ? lnk(k.folder, 'Open Drive folder') : '<span class="meta">not added yet</span>']);
+  return `<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="row spread"><span class="meta">Contact (team only)</span>${canK(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="k:${f.id}">Edit contact</button>` : ''}</div>${rows.map(r => `<div class="meta" style="margin-top:4px"><b>${r[0]}</b>: ${r[1]}</div>`).join('')}</div>`;
+}
+function contactForm(f){
+  const k = fpr(f.id);
+  return `<div class="card"><h2>Contact for ${esc(f.n)}</h2><p class="sub2">Only the programme team, ops, the country coordinator and ${esc(f.n)} can see this. Use it to invite them to their private Drive folder.</p>
+    <form data-form="pp-contact" data-id="${f.id}" class="stack"><div class="formgrid">
+      <label class="f">Email<input type="email" id="k-email" value="${esc(k.email || '')}" placeholder="The Google account to share the folder with"></label>
+      <label class="f">Phone<input type="text" id="k-phone" value="${esc(k.phone || '')}"></label>
+      <label class="f">LINE<input type="text" id="k-line" value="${esc(k.line || '')}"></label>
+      <label class="f">WhatsApp<input type="text" id="k-wa" value="${esc(k.whatsapp || '')}"></label></div>
+      <label class="f">Private Drive folder link<span class="hint">Share the folder only with their email (General access: Restricted). They need to be signed in to that Google account to open it.</span><input type="url" id="k-folder" value="${esc(k.folder || '')}" placeholder="https://drive.google.com/drive/folders/..."></label>
+      <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
+}
+async function saveContact(id){
+  const g = i => ((document.getElementById(i) || {}).value || '').trim();
+  const k = {email:g('k-email'), phone:g('k-phone'), line:g('k-line'), whatsapp:g('k-wa'), folder:g('k-folder')};
+  if (k.folder && !/^https?:\/\//i.test(k.folder)) { toast('The folder link should start with https://'); return; }
+  if (LIVE) {
+    const {error} = await SB.from('fellow_private').upsert({fellow_id:id, email:k.email, phone:k.phone, line:k.line, whatsapp:k.whatsapp, folder_url:k.folder, updated_at:new Date().toISOString()});
+    if (error) { toast('Could not save. You may not have permission.'); return; }
+  }
+  FPRIV[id] = k; S.pedit = null; render(); toast('Saved.');
+}
 function vPeople(){
   const team = S.role === 'team', prog = team && S.tm === 'program';
   const canF = f => prog || (team && f.c === S.scope), canC = o => prog || (team && o.country === S.scope);
   const fellows = F.map(f => {
+    if (S.pedit === 'k:' + f.id && canK(f)) return contactForm(f);
     if (S.pedit === 'f:' + f.id && canF(f)) return `<div class="card"><h2>Edit ${esc(f.n)}</h2><form data-form="pp-fellow" data-id="${f.id}" class="stack"><label class="f">Name<input type="text" id="pp-name" value="${esc(f.n)}" required></label><label class="f">About<span class="hint">A line or two for the other fellows, CSOs and partners.</span><textarea id="pp-bio">${esc(f.bio || '')}</textarea></label>${ppFields(f, f.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
     return `<div class="card"><div class="pp-head">${avatar(f.photo, f.n)}<div class="grow"><b>${esc(f.n)}</b> <span class="tag">${f.c === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(f.handles) || ''}</div></div>${canF(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="f:${f.id}">Edit</button>` : ''}</div>
-      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}${vaBtn(f.id, f.n)}</div>`; }).join('');
+      ${f.bio ? `<p style="margin:10px 0 0">${esc(f.bio)}</p>` : ''}${ppAccountLine('fellow', f.id, f.n, f.c, canF(f) && LIVE)}${vaBtn(f.id, f.n)}${canK(f) ? contactBlock(f) : ''}</div>`; }).join('');
   const csoForm = o => { const n = o.id === 'new'; return `<div class="card"><h2>${n ? 'Add an organisation' : 'Edit ' + esc(o.name)}</h2><form data-form="pp-cso" data-id="${o.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="pp-name" value="${esc(o.name || '')}" required></label>${n && prog ? '<label class="f">Country<select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option></select></label>' : ''}</div><label class="f">What they work on<input type="text" id="pp-focus" value="${esc(o.focus || '')}"></label><label class="f">About<textarea id="pp-about">${esc(o.about || '')}</textarea></label>${ppFields(o, o.handles)}<div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`; };
   const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
       ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
@@ -2200,6 +2249,7 @@ document.addEventListener('submit', e => {
   if (f === 'pp-friend') { const [fid, frid] = g('pf-friend').split('|'), fr = (fd(fid).friends || []).find(x => String(x.id) === frid); if (!fr) { toast('Choose which KOL friend this login is for.'); return; } ppSendInvite({email:g('pf-email'), label:fr.name, role:'friend', friend_id:frid}); return; }
   if (f === 'me-save') { meSave(); return; }
   if (f === 'pp-fellow') { ppSaveFellow(e.target.dataset.id); return; }
+  if (f === 'pp-contact') { saveContact(e.target.dataset.id); return; }
   if (f === 'pp-cso') { ppSaveCso(e.target.dataset.id); return; }
   if (f === 'pp-invite') { const d = e.target.dataset; ppSendInvite({email:g('pp-email'), label:d.name, role:d.role, country:d.country, fellow_id:d.role === 'fellow' ? d.ref : null, cso_id:d.role === 'cso' ? d.ref : null}); return; }
   if (f === 'pp-team') { ppSendInvite({email:g('pp-email'), label:g('pp-label'), role:g('pp-role'), country:g('pp-country')}); return; }
@@ -2247,7 +2297,7 @@ document.addEventListener('submit', e => {
   if (f === 'invite') {
     if (!g('fi-name')) { toast('Add their name.'); return; }
     const nid = 'f' + Date.now();
-    S.friends.push({id:nid, name:g('fi-name'), camp:S.camp, contact:g('fi-contact'), role:g('fi-role') || 'Not specified', expected:Number(g('fi-exp')) || 1, pay:g('fi-pay'), status:'Invited', token:Math.random().toString(36).slice(2,7), posts:LIVE ? fpList(CUR, nid) : []});
+    S.friends.push({id:nid, name:g('fi-name'), camp:S.camp, contact:g('fi-contact'), role:g('fi-role') || 'Not specified', expected:Number(g('fi-exp')) || 1, why:g('fi-why'), hope:g('fi-hope'), status:'Invited', token:Math.random().toString(36).slice(2,7), posts:LIVE ? fpList(CUR, nid) : []});
     render(); toast('Invite created. Copy the link and send it to them yourself.');
   }
   if (f === 'flog') {
@@ -2386,6 +2436,7 @@ async function loadAll(){
   if (error) throw error;
   (data || []).forEach(r => applyRec(r, false));
   const fr = await SB.from('fellows').select('*'); (fr.data || []).forEach(applyFellow);
+  try { const pv = await SB.from('fellow_private').select('*'); FPRIV = {}; (pv.data || []).forEach(x => { FPRIV[x.fellow_id] = {email:x.email || '', phone:x.phone || '', line:x.line || '', whatsapp:x.whatsapp || '', folder:x.folder_url || ''}; }); } catch (e) {}
   LAST = {}; const c = collect(); Object.keys(c).forEach(id => { LAST[id] = stable(c[id].data); });
 }
 function scheduleFlush(){ if (S.live.phase !== 'ready' || VA) return; clearTimeout(FLUSH_T); FLUSH_T = setTimeout(flush, 500); }

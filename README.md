@@ -130,3 +130,13 @@ Spending proposals are reviewed in **USD**. A fellow can price lines in THB or I
 - **Exchange rates:** paperwork pages and the spending proposal link to exchangerates.org.uk.
 - **Links tab:** the programme coordinator or director adds named links (budget page, coordination sheet, communication assets with photos, videos and social media assets, or anything else) and ticks which roles can see each one: country coordinators, communications expert, social listening expert, operations, fellows, KOL friends, CSOs, partners. Everyone else never sees it, and the database enforces that. Country coordinators also see their links as buttons at the top of Paperwork and Campaign plans.
 - **Operations** also gets the Campaign plans tab and read access to every plan, proposal, setup, supplier, event and support record, so it can see all spending. Re-run schema.sql once.
+
+## Fellow contact details and private Drive folders
+
+Each fellow has a contact card (email, phone, LINE, WhatsApp) and a link to their private Drive folder. The portal stores only the link, never the documents.
+
+- Who sees it: programme team, ops, the country coordinator for that fellow's country, and the fellow. Nobody else (not other fellows, KOL friends, CSOs, partners or experts).
+- Team edit it on the People tab (Edit contact). Fellows edit their own contact under My profile.
+- The folder opens only for people signed in to a Google account you shared it with. In Drive, set the folder's General access to Restricted and add the fellow's email.
+- Fellows see "Open my private folder" on their Paperwork tab when a document is still needed.
+- Setup: re-run `supabase/schema.sql` (adds the `fellow_private` table and `update_my_contact`), then upload `index.html`.
