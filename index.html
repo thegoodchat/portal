@@ -1693,14 +1693,18 @@ function clResources(c, team){
 function clAddDoc(c){
   return `<details style="margin-top:8px"><summary class="meta" style="cursor:pointer">+ Add a document</summary><form data-form="cl-doc" data-id="${c.id}" class="stack" style="margin-top:8px">${clDocFields('cd' + c.id + '-')}<div><button class="btn sm" type="submit">Add document</button></div></form></details>`;
 }
+/* empty "Masterclass 1, 2, 3..." placeholders from an earlier version are cleared, so only real masterclasses show */
+const clEmpty = c => /^masterclass\s*\d+$/i.test((c.name || '').trim()) && !c.topic && !c.lesson && !c.deck && !c.video && !c.link && !c.lead && !c.cat && !(c.res || []).length && !S.slides.some(x => String(x.class) === String(c.id));
 function vSlides(){
-  const team = S.role === 'team', cls = slClasses(), vis = S.slides.filter(slVisible);
+  const team = S.role === 'team';
+  if (team && !DEMO && S.classes.some(clEmpty)) S.classes = S.classes.filter(c => !clEmpty(c));
+  const cls = slClasses().filter(c => !clEmpty(c)), vis = S.slides.filter(slVisible);
   const inClass = c => slOrder(vis.filter(x => String(x.class) === String(c.id)));
   const known = new Set(cls.map(c => String(c.id)));
   const other = slOrder(vis.filter(x => !known.has(String(x.class))));
   const mode = team ? 'manage' : 'view-in-class';
   let lastCat = null;
-  const cats = [...new Set(cls.map(c => c.cat || ''))], grouped = cats.flatMap(k => cls.filter(c => (c.cat || '') === k)), anyCat = cats.some(Boolean);
+  const cats = [...new Set(cls.map(c => c.cat || ''))].sort((p, q) => (p === '') - (q === '')), grouped = cats.flatMap(k => cls.filter(c => (c.cat || '') === k)), anyCat = cats.some(Boolean);
   const cards = grouped.map(c => {
     if (team && S.cledit === c.id) return `<div class="card"><h2>Edit ${esc(c.name)}</h2>${clForm(c)}</div>`;
     const items = inClass(c);
