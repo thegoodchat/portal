@@ -158,3 +158,11 @@ The Impact page's Mainstream integration card also shows civic actions, per camp
 - The programme coordinator is also the Thailand country coordinator. You do not need a separate Thailand country login. In Key dates, the programme coordinator confirms dates for Thailand. Only create a country coordinator login for Indonesia.
 - Starting benchmarks start empty. The social listening expert does the analysis outside the portal and enters the averages on the Benchmarks tab, then presses Confirm. Fellows then see their starting point on Listening insights, with every post compared against it (for example "1.4x your usual reach").
 - The regional kickoff (12 to 14 Jan 2027, Bangkok, fellows from both countries) is in Key dates. Use "Add the programme dates" on a fresh portal, or add it by hand.
+
+## Who can invite KOL friends
+
+Programme coordinator (any country), country coordinators (friends of fellows in their own country) and the communications expert (any country). Fellows add the friend first on their KOL friends tab; then one of these people picks the friend on the People tab and sends the invite. Re-run `schema.sql` and redeploy the `invite-user` function after updating.
+
+## Invoice details
+
+One organisation for fellows in both countries: Sensecube LTD (for The Good Chat project), UEN 202324473C, 60 Paya Lebar Road #06-28 Paya Lebar Square, Singapore 409051. These are built in as the defaults, so fellows see them from day one. The programme coordinator can edit them on the Paperwork tab (changes apply to both countries). Add the "Send invoices to" email there when you have it.

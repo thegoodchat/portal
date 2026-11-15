@@ -240,11 +240,10 @@ const CAMPS = [
   {id:1,n:'Campaign 1',w:'8 Feb to 26 Mar 2027',start:new Date(2027,1,8),end:new Date(2027,2,26)},
   {id:2,n:'Campaign 2',w:'7 Jun to 30 Jul 2027',start:new Date(2027,5,7),end:new Date(2027,6,30)}
 ];
+/* the same organisation receives invoices from fellows in both countries */
+const ORG_DEFAULT = {name:'Sensecube LTD (for The Good Chat project)', address:'60 Paya Lebar Road #06-28 Paya Lebar Square,\nSingapore 409051', taxid:'202324473C', email:'', note:'Address the invoice to this organisation. Include your campaign name and links to the posts it covers.'};
 const S = {
-  org:{
-    TH:{name:'Sample Organisation (Thailand) Co., Ltd.', address:'123 Sample Road, Sample District, Bangkok 10000, Thailand', taxid:'0-0000-00000-00-0', email:'finance-th@example.org', note:'Address the invoice to this entity. Include your campaign name and links to the posts it covers.'},
-    ID:{name:'Sample Organisation Indonesia', address:'Jl. Contoh No. 1, Jakarta 10110, Indonesia', taxid:'00.000.000.0-000.000', email:'finance-id@example.org', note:'Address the invoice to this entity. Include your campaign name and links to the posts it covers.'}
-  },
+  org:{ TH:{...ORG_DEFAULT}, ID:{...ORG_DEFAULT} },
   plan:{
     1:{message:'Rooftop solar is something ordinary families can understand, ask about and act on.', audience:'Home owners and condo committees in Bangkok who do not follow climate accounts',
       posts:[{what:'Podcast episode 1: solar neighbours', fmt:'Podcast', date:'2027-02-15'},{what:'Reel: what we learned at the expo', fmt:'Reel / video', date:'2027-03-10'}],
@@ -628,18 +627,18 @@ function vLog(){
   return `<div class="card"><h2>Log</h2><p class="sub2">Posts, events, the people you bring in and the actions people take. Every one adds to your points.</p>${tabs}${S.logTab !== 'collab' ? `<div style="margin-top:12px"><span class="note">Logging for</span> ${campSeg()}</div>` : ''}<div style="margin-top:18px">${body}</div></div>`;
 }
 
-const ORG_FIELDS = [['name','Legal name of the organisation'],['address','Registered address'],['taxid','Tax ID or registration number'],['email','Send invoices to'],['note','Invoice instructions']];
+const ORG_FIELDS = [['name','Legal name of the organisation'],['address','Registered address'],['taxid','UEN (company registration number)'],['email','Send invoices to'],['note','Invoice instructions']];
 const DOC_HINT = {'ID copy':'The legal address on this ID is the one to use on all your paperwork.','Bank & tax details':'Use your legal address, the same as on your ID.','Agreement':'Use your legal address, the same as on your ID.','Invoice':'Use your legal address, the same as on your ID, and the organisation details below.'};
 function vOrg(){
-  const cs = ['TH','ID'].filter(c => S.scope === 'ALL' || S.scope === c);
-  const nm = {TH:'Thailand', ID:'Indonesia'};
-  return `<div class="card"><h2>Organisation details for invoices</h2><p class="sub2">Fellows see these on their paperwork page, so they can put them on their invoices. Changes show straight away.</p>
-    <div class="stack">${cs.map(c => `<div class="item"><h3>${nm[c]} fellows</h3><div class="formgrid">${ORG_FIELDS.map(f => `<label class="f">${f[1]}${f[0] === 'address' || f[0] === 'note' ? `<textarea data-act="org" data-c="${c}" data-k="${f[0]}">${esc(S.org[c][f[0]])}</textarea>` : `<input type="text" data-act="org" data-c="${c}" data-k="${f[0]}" value="${esc(S.org[c][f[0]])}">`}</label>`).join('')}</div></div>`).join('')}</div></div>`;
+  const ed = S.role === 'team' && S.tm === 'program', o = S.org.TH;
+  return `<div class="card"><h2>Organisation details for invoices</h2><p class="sub2">The same organisation for fellows in both countries. Fellows see these on their paperwork page, so they can put them on their invoices.${ed ? ' Changes show straight away.' : ''}</p>
+    ${ed ? `<div class="formgrid">${ORG_FIELDS.map(f => `<label class="f">${f[1]}${f[0] === 'address' || f[0] === 'note' ? `<textarea data-act="org" data-c="TH" data-k="${f[0]}">${esc(o[f[0]])}</textarea>` : `<input type="text" data-act="org" data-c="TH" data-k="${f[0]}" value="${esc(o[f[0]])}">`}</label>`).join('')}</div>`
+    : `<div class="stack">${ORG_FIELDS.filter(f => o[f[0]]).map(f => `<div><div class="meta">${f[1]}</div><div style="white-space:pre-line">${esc(o[f[0]])}</div></div>`).join('')}</div>`}</div>`;
 }
 function vOrgFellow(){
   const o = S.org.TH;
   return `<div class="card"><div class="row spread"><div><h2>Where to send your invoices</h2><p class="sub2" style="margin:0">Put these organisation details on your invoice.</p></div><button class="btn sm" type="button" data-act="copy-org">Copy details</button></div>
-    <div class="stack" style="margin-top:14px">${ORG_FIELDS.map(f => `<div><div class="meta">${f[1]}</div><div style="white-space:pre-line">${esc(o[f[0]])}</div></div>`).join('')}</div>
+    <div class="stack" style="margin-top:14px">${ORG_FIELDS.filter(f => o[f[0]]).map(f => `<div><div class="meta">${f[1]}</div><div style="white-space:pre-line">${esc(o[f[0]])}</div></div>`).join('')}</div>
     <p class="note" style="margin-top:12px">Your own name and address on the invoice must be your legal ones, the same as on your ID.</p></div>`;
 }
 function vPaper(){
@@ -1832,7 +1831,7 @@ function vPeople(){
   const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
       ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
   const addC = team && S.tm !== 'ops' ? (S.pedit === 'c:new' ? csoForm({id:'new'}) : `<div class="card"><button type="button" class="btn" data-act="pp-edit" data-v="c:new">Add an organisation</button></div>`) : '';
-  const friendsCard = team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and the community board. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
+  const friendsCard = (prog || S.tm === 'country' || (PROFILE && PROFILE.role === 'comms')) && team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and the community board. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
       ${F.flatMap(f => fd(f.id).friends.map(x => ({f, x}))).filter(({f}) => vaAllowed(f.id)).map(({f, x}) => `<div class="item"><div class="row spread"><span><b>${esc(x.name)}</b> <span class="meta">for ${esc(f.n)}, ${esc(CAMPS[(x.camp || 1) - 1].n)}</span></span><button type="button" class="btn ghost sm" data-act="va-enter" data-k="friend" data-f="${f.id}" data-fr="${esc(String(x.id))}">View as ${esc(x.name)}</button></div></div>`).join('')}
       <form data-form="pp-friend" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Which KOL friend?<select id="pf-friend" required><option value="">Choose</option>${friendChoices()}</select></label><label class="f">Email<input type="email" id="pf-email" required></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, the social listening and communications experts, and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','comms','ops','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${({listener:'social listening expert', comms:'communications expert', ops:'operations'})[a.role] || a.role}${a.country ? ', ' + a.country : ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
@@ -2026,7 +2025,7 @@ async function vaExit(){
   const keep = S.live, p = v.prev;
   try { blankLive(); await loadAll(); } catch (e) { console.error('reload failed', e); }
   S.live = keep; Object.assign(S, {role:p.role, tm:p.tm, scope:p.scope, teamTab:p.teamTab, tab:p.tab, user:p.user, coord:p.coord, lf:p.lf, camp:p.camp, pedit:null}); CUR = p.cur;
-  if (PROFILE && ['program', 'country'].includes(PROFILE.role)) { try { await loadAccounts(); } catch (e) {} }
+  if (PROFILE && ['program', 'country', 'comms'].includes(PROFILE.role)) { try { await loadAccounts(); } catch (e) {} }
   render(); window.scrollTo(0, 0);
 }
 function reflectModal(id){
@@ -2133,7 +2132,7 @@ document.addEventListener('click', e => {
   if (a === 'fp-edit') { fpEditModal(el.dataset.f, el.dataset.fr, el.dataset.id); return; }
   if (a === 'coord-kol') { S.coord = v; render(); return; }
   if (a === 'copy-org') {
-    const o = S.org.TH, txt = ORG_FIELDS.map(f => f[1] + ': ' + o[f[0]]).join('\n');
+    const o = S.org.TH, txt = ORG_FIELDS.filter(f => o[f[0]]).map(f => f[1] + ': ' + o[f[0]]).join('\n');
     try { navigator.clipboard.writeText(txt).then(() => toast('Details copied.'), () => toast('Could not copy. Select the text and copy it instead.')); }
     catch (err) { toast('Could not copy. Select the text and copy it instead.'); }
     return;
@@ -2178,7 +2177,7 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   const el = e.target.closest('[data-act="set-note"]'); if (el) S.paper[S.coord][el.dataset.i].note = el.value;
-  const og = e.target.closest('[data-act="org"]'); if (og) S.org[og.dataset.c][og.dataset.k] = og.value;
+  const og = e.target.closest('[data-act="org"]'); if (og) { S.org.TH[og.dataset.k] = og.value; S.org.ID[og.dataset.k] = og.value; }
   const pn = e.target.closest('[data-act="plan"]'); if (pn) S.plan[S.camp][pn.dataset.k] = pn.value;
   const pa = e.target.closest('[data-act="plan-action"]'); if (pa) S.plan[S.camp].action[pa.dataset.k] = pa.value;
 });
@@ -2449,7 +2448,7 @@ function blankLive(){
   IMP = null; IMP_T = 0;
   LISTS.forEach(n => { S[n] = []; });
   S.notes = {}; S.reminded = {}; S.followed = {}; S.paper = {}; S.camps = {};
-  S.org = {TH:{name:'', address:'', taxid:'', email:'', note:''}, ID:{name:'', address:'', taxid:'', email:'', note:''}};
+  S.org = {TH:{...ORG_DEFAULT}, ID:{...ORG_DEFAULT}};
   F.forEach(f => { S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); });
   S.listen = {pre:{}, post:{}, cmp:{}, bench:{}, data:{}, decks:{}, sec:{}};
   S.accounts = []; S.pedit = null; S.pinv = null; S.csoNotes = [];
@@ -2548,7 +2547,7 @@ async function liveEnter(){
     if (['cso'].includes(prof.role)) { S.user = null; S.live = {phase:'blocked', msg:'Your account is ready. Your page is still being built and will open here soon. Thank you for waiting.'}; render(); return; }
     blankLive(); await loadAll();
     if (prof.role === 'friend' && !(await loadFriendCtx())) { S.user = null; S.live = {phase:'blocked', msg:'Your login is ready, but it is not linked to an invitation yet. Ask the programme team.'}; render(); return; }
-    applyRole(prof); if (['program','country'].includes(prof.role)) await loadAccounts(); subscribe(); render();
+    applyRole(prof); if (['program','country','comms'].includes(prof.role)) await loadAccounts(); subscribe(); render();
   } catch (e) { S.user = null; S.live = {phase:'error', msg:'Something went wrong while opening the portal. Refresh and try again.'}; render(); }
 }
 async function liveLogin(email, pw){

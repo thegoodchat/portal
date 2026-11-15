@@ -548,3 +548,13 @@ begin
 end $$;
 revoke all on function public.update_my_contact(text, text, text, text) from public;
 grant execute on function public.update_my_contact(text, text, text, text) to authenticated;
+
+
+-- =====================================================================
+-- Communications expert can invite KOL friends (with country coordinators and the programme coordinator)
+-- Needs: see the KOL friends fellows have added, and see the friend login accounts.
+-- =====================================================================
+insert into public.kind_access (kind, role, read_scope, write_scope) values ('fd:friends','comms','all','none') on conflict do nothing;
+drop policy if exists profiles_read_comms on public.profiles;
+create policy profiles_read_comms on public.profiles for select using (
+  (select role from public.my_profile()) = 'comms' and role = 'friend');
