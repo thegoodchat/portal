@@ -151,6 +151,8 @@ textarea{min-height:84px;resize:vertical}
 .lk-aud span{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--p-ok-bg);color:var(--p-ok-fg)}
 .lk-aud span.off{background:var(--p-none-bg);color:var(--p-none-fg)}
 .lk > .btn{align-self:start}
+.btn.lk-add{background:var(--p-ok-bg);color:var(--p-ok-fg);border:2px dashed var(--mint-dark);box-shadow:none}
+.btn.lk-add:hover{background:var(--mint);color:var(--mint-dark)}
 @media (max-width:560px){.lk{grid-template-columns:1fr}}
 .tag{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;background:var(--track);color:var(--ink);margin-left:6px}
 .badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--hi);color:var(--hi-ink);margin-left:6px;white-space:nowrap}
@@ -700,7 +702,7 @@ function lkForm(c){
 function vLinks(){
   const ed = canEditLK(), v = lkVisible(), editing = ed && S.lkedit && S.lkedit !== 'new' ? (S.keylinks || []).find(x => String(x.id) === String(S.lkedit)) : null;
   const audTxt = l => (l.aud || []).map(a => (LK_AUD.find(x => x[0] === a) || [a, a])[1]).join(', ') || 'Programme team only';
-  const add = ed ? (S.lkedit === 'new' ? `<div class="card"><h2>Add a link</h2>${lkForm({id:'new', aud:['country']})}</div>` : `<div class="card"><button type="button" class="btn" data-act="lk-edit" data-v="new">Add a link</button></div>`) : '';
+  const add = ed ? (S.lkedit === 'new' ? `<div class="card"><h2>Add a link</h2>${lkForm({id:'new', aud:['country']})}</div>` : `<div class="card"><button type="button" class="btn lk-add" data-act="lk-edit" data-v="new">+ Add a link</button></div>`) : '';
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
   const aud = l => (l.aud || []).length ? (l.aud || []).map(a => `<span>${esc((LK_AUD.find(x => x[0] === a) || [a, a])[1])}</span>`).join('') : '<span class="off">Programme team only</span>';
   const rows = v.map(l => `<div class="lk"><div class="lk-main"><a class="lk-t" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)} &#8599;</a>${host(l.url) ? `<div class="lk-host">${esc(host(l.url))}</div>` : ''}${l.note ? `<div class="lk-note">${esc(l.note)}</div>` : ''}${ed ? `<div class="lk-aud"><small>Seen by</small>${aud(l)}</div>` : ''}</div>${ed ? `<button type="button" class="btn ghost sm" data-act="lk-edit" data-v="${l.id}">Edit</button>` : ''}</div>`).join('');
