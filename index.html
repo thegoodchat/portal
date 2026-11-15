@@ -154,6 +154,7 @@ textarea{min-height:84px;resize:vertical}
 .btn.lk-add{background:var(--p-ok-bg);color:var(--p-ok-fg);border:2px dashed var(--mint-dark);box-shadow:none}
 .btn.lk-add:hover{background:var(--mint);color:var(--mint-dark)}
 @media (max-width:560px){.lk{grid-template-columns:1fr}}
+.item.kd-led{border-left:3px solid var(--coral);padding-left:12px !important}
 .tag{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;background:var(--track);color:var(--ink);margin-left:6px}
 .badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--hi);color:var(--hi-ink);margin-left:6px;white-space:nowrap}
 .battle{display:grid;gap:12px}
@@ -238,6 +239,7 @@ const F = [
 ];
 const SHARED_PW = 'goodchat4';
 const LISTENER = {role:'listener', label:'Social listening expert'};
+const COMMS = {role:'listener', label:'Communications expert', comms:true};
 const PARTNER = {role:'partner', label:'Programme partner'};
 const CSOUSER = {role:'cso', label:'CSO 1'};
 const FRIEND = {role:'friend', label:'KOL friend 1'};
@@ -319,10 +321,10 @@ const S = {
   dates:[
     {id:1, title:'Fellowship application deadline', date:'2026-11-22', end:'', type:'Deadline', country:'', note:''},
     {id:2, title:'Announcement of TGC4 Fellows', date:'2026-12-15', end:'', type:'Other', country:'', note:''},
-    {id:3, title:'Regional kickoff event in Bangkok', date:'2027-01-12', end:'2027-01-14', type:'Event', country:'', note:'Organised in Bangkok. Fellows from Thailand and Indonesia join.'},
+    {id:3, title:'Regional kickoff event in Bangkok', date:'2027-01-12', end:'2027-01-14', type:'Event', country:'', note:'Organised in Bangkok. Fellows from Thailand and Indonesia join and design Campaign 1.'},
     {id:4, title:'Campaign 1', date:'2027-02-08', end:'2027-03-26', type:'Campaign', country:'', note:''},
-    {id:5, title:'Co-creation event in Bangkok', date:'2027-04-21', end:'2027-04-23', type:'Event', country:'TH', note:''},
-    {id:6, title:'Co-creation event in Jakarta', date:'2027-04-28', end:'2027-04-30', type:'Event', country:'ID', note:''},
+    {id:5, title:'Co-creation event in Bangkok', date:'2027-04-21', end:'2027-04-23', type:'Event', country:'TH', note:'Fellows design Campaign 2 here.'},
+    {id:6, title:'Co-creation event in Jakarta', date:'2027-04-28', end:'2027-04-30', type:'Event', country:'ID', note:'Fellows design Campaign 2 here.'},
     {id:7, title:'Campaign 2', date:'2027-06-07', end:'2027-07-30', type:'Campaign', country:'', note:''},
     {id:8, title:'Closing events in Bangkok and Jakarta', date:'2027-08-03', end:'', type:'Event', country:'', note:''}],
   features:[
@@ -478,11 +480,18 @@ function campInfo(id, c){
   return d ? {name:d.name, type:d.partners.length ? 'Collab' : 'Solo', partners:d.partners, kpis:d.kpis} : null;
 }
 const names = ids => ids.map(id => F.find(f => f.id === id).n).join(' and ');
+/* Campaign 1 is designed at the regional kickoff, Campaign 2 at the co-creation event */
+function designAt(c){
+  const kind = c === 1 ? 'Kickoff' : 'Co-creation', mine = myCountry();
+  const evs = (S.pevents || []).filter(e => e.kind === kind && e.start && (!mine || !e.country || e.country === 'All' || e.country === mine)).sort((a, b) => a.start.localeCompare(b.start));
+  if (!evs.length) return c === 1 ? 'You design Campaign 1 together at the regional kickoff.' : 'You design Campaign 2 together at the co-creation event.';
+  return 'You design ' + CAMPS[c-1].n + ' at ' + (c === 1 ? 'the regional kickoff' : 'the co-creation event') + ': ' + evs.map(e => (e.city ? e.city + ', ' : '') + dRange(e.start, e.end)).join(' or ') + '. Come with ideas, and leave with a plan.';
+}
 function vSetup(){
   const c = S.camp, cm = CAMPS[c-1], su = S.setup[c];
   const live = TODAY >= cm.start && TODAY <= cm.end;
   const st = cm.set === false ? 'Dates to be confirmed' : TODAY < cm.start ? 'Starts in ' + Math.ceil((cm.start - TODAY) / 864e5) + ' days' : (live ? 'Live now' : 'Finished');
-  const head = `<div class="row spread"><h2>My ${cm.n}</h2><span class="pill ${live ? 'p-ok' : 'p-req'}">${st}</span></div><p class="sub2">${cm.w}</p>`;
+  const head = `<div class="row spread"><h2>My ${cm.n}</h2><span class="pill ${live ? 'p-ok' : 'p-req'}">${st}</span></div><p class="sub2">${cm.w}</p><p class="note" style="margin:-4px 0 12px">${esc(designAt(c))}</p>`;
   if (su && !S.editSetup) return `<div class="card">${head}
     <h3>${esc(su.name)}<span class="tag">${su.type}${su.partners.length ? ' with ' + esc(names(su.partners)) : ''}</span></h3>
     <p class="meta" style="margin:8px 0 14px">Everyday conversation: ${esc(su.topic || 'Not set yet')}</p>
@@ -682,7 +691,7 @@ const LK_AUD = [['country','Country coordinators'],['comms','Communications expe
 function myRoleKey(){
   if (S.role === 'team') return S.tm === 'country' ? 'country' : S.tm === 'ops' ? 'ops' : 'program';
   if (S.role === 'kol') return 'fellow';
-  if (S.role === 'listener') return (PROFILE && PROFILE.role === 'comms') ? 'comms' : 'listener';
+  if (S.role === 'listener') return ((PROFILE && PROFILE.role === 'comms') || (S.user && S.user.comms)) ? 'comms' : 'listener';
   return S.role;
 }
 const isProgramTeam = () => S.role === 'team' && S.tm === 'program';
@@ -917,7 +926,7 @@ function vPlan(){
   const c = S.camp, cm = CAMPS[c-1], pl = S.plan[c], su = S.setup[c];
   const ed = pl.status === 'Draft', dis = ed ? '' : 'disabled';
   const lp = S.posts.filter(p => p.camp === c).length, le = S.events.filter(e => e.camp === c).length;
-  const head = `<div class="card"><div class="row spread"><div><h2>Campaign plan, ${esc(su ? su.name : cm.n)}</h2><p class="sub2" style="margin:0">${cm.w}. Describe the campaign, then propose what you want to spend.</p></div>${planPill(pl.status)}</div>
+  const head = `<div class="card"><div class="row spread"><div><h2>Campaign plan, ${esc(su ? su.name : cm.n)}</h2><p class="sub2" style="margin:0">${cm.w}. Describe the campaign, then propose what you want to spend.</p><p class="note" style="margin:6px 0 0">${esc(designAt(c))}</p></div>${planPill(pl.status)}</div>
     <div style="margin-top:14px">${campSeg()}</div>
     ${pl.comment ? `<div class="alert time" style="margin-top:14px"><h2>Feedback from the team</h2><div>${esc(pl.comment)}</div></div>` : ''}
     <div class="row" style="margin-top:14px">${ed ? '<button class="btn" type="button" data-act="plan-submit">Share with the team</button>' : `<button class="btn ghost" type="button" data-act="plan-edit">Edit again</button>`}
@@ -1065,7 +1074,9 @@ function campFlags(f){
   const accepted = st.csoP.filter(x => x.q.status === 'Accepted'), inv = st.csoP.filter(x => x.q.status === 'Invited');
   const pr = propRows().find(r => r.f.id === f.id && r.c === 1);
   if (!S.listen.bench[f.id] || S.listen.bench[f.id].st !== 'Confirmed') fl.push({key:f.id + '-bench', t:'Starting benchmark not confirmed yet (social listening expert)', who:'cso'});
-  if (!pr || pr.status === 'Draft') fl.push({key:f.id + '-prop', t:'Campaign proposal is still a draft', msg:'Hi ' + f.n + ', could you share your campaign plan and spending ideas when you can? We would like to give you suggestions before the campaign gets busy.', who:'fellow'});
+  const ko = (S.pevents || []).filter(e => e.kind === 'Kickoff' && e.end).map(e => e.end).sort().pop(), designed = !ko || iso(new Date()) > ko;
+  if (!designed) { /* Campaign 1 is designed at the kickoff, so no chasing before it */ }
+  else if (!pr || pr.status === 'Draft') fl.push({key:f.id + '-prop', t:'Campaign proposal is still a draft', msg:'Hi ' + f.n + ', could you share your campaign plan and spending ideas when you can? We would like to give you suggestions before the campaign gets busy.', who:'fellow'});
   else if (pr.status === 'Suggestions to consider') fl.push({key:f.id + '-sug', t:'Waiting for the fellow to respond to our suggestions', msg:'Hi ' + f.n + ', we left suggestions on your campaign plan. Have a look when you can and update the plan or tell us what you think.', who:'fellow'});
   if (st.logged < st.planned * 0.5 && st.planned) fl.push({key:f.id + '-post', t:'Posting is behind plan (' + st.logged + ' of ' + st.planned + ' logged)', msg:'Hi ' + f.n + ', we see ' + st.logged + ' of ' + st.planned + ' planned posts logged. Is there anything blocking you? We can help.', who:'fellow'});
   if (st.logged > st.insights) fl.push({key:f.id + '-ins', t:(st.logged - st.insights) + ' post' + (st.logged - st.insights === 1 ? ' has' : 's have') + ' no insights yet', msg:'Hi ' + f.n + ', please add the numbers, screenshots and your reflection to the posts you have logged.', who:'fellow'});
@@ -1240,7 +1251,29 @@ function dRange(a, b){
 function keyDates(){
   const own = (S.dates || []).filter(d => d.date).map(d => ({id:d.id, ref:'dates', conf:d.confirms || {}, own:true, title:d.title, date:d.date, end:d.end || '', type:d.type || 'Other', country:d.country || '', note:d.note || ''}));
   const mc = (S.classes || []).filter(c => c.date).map(c => ({id:'mc' + c.id, ref:'classes', rid:c.id, conf:c.confirms || {}, own:false, title:c.name + (c.topic ? ': ' + c.topic : ''), date:c.date, end:'', type:'Masterclass', country:'', lead:c.lead ? 'Led by ' + c.lead + (c.exp ? ' (' + c.exp + ')' : '') : '', note:c.link ? 'Join: ' + c.link : ''}));
-  return [...own, ...mc].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  /* events from the Events tab show here too, so nothing has to be typed twice */
+  const evs = (S.pevents || []).filter(e => e.start).map(e => ({id:'ev' + e.id, ref:'pevents', rid:e.id, conf:{}, own:false, nocheck:true, title:e.name + (e.city && !String(e.name).includes(e.city) ? ' in ' + e.city : ''), date:e.start, end:e.end || '', type:'Event', country:e.country === 'TH' || e.country === 'ID' ? e.country : '', note:e.kind === 'Kickoff' ? 'Fellows from both countries join and design Campaign 1.' : e.kind === 'Co-creation' ? 'Fellows design Campaign 2 here.' : ''}));
+  /* the fixed programme dates are always on the list, unless the team has already added the same one */
+  const base = [...own, ...evs];
+  const FIXED = [
+    ['Fellowship application deadline', '2026-11-22', '', 'Deadline', '', /application/i, ''],
+    ['Announcement of TGC4 Fellows', '2026-12-15', '', 'Other', '', /announce/i, ''],
+    ['Regional kickoff event in Bangkok', '2027-01-12', '2027-01-14', 'Event', '', /kick-?off/i, 'Organised in Bangkok. Fellows from Thailand and Indonesia join and design Campaign 1.'],
+    ['Campaign 1', '2027-02-08', '2027-03-26', 'Campaign', '', /campaign 1/i, ''],
+    ['Co-creation event in Bangkok', '2027-04-21', '2027-04-23', 'Event', 'TH', /co-?creation.*bangkok|bangkok.*co-?creation/i, 'Fellows design Campaign 2 here.'],
+    ['Co-creation event in Jakarta', '2027-04-28', '2027-04-30', 'Event', 'ID', /co-?creation.*jakarta|jakarta.*co-?creation/i, 'Fellows design Campaign 2 here.'],
+    ['Campaign 2', '2027-06-07', '2027-07-30', 'Campaign', '', /campaign 2/i, ''],
+    ['Closing events in Bangkok and Jakarta', '2027-08-03', '', 'Event', '', /closing/i, '']];
+  const fixed = FIXED.filter(r => !base.some(d => r[5].test(d.title) || d.date === r[1])).map((r, i) => ({id:'fx' + i, ref:'builtin', conf:{}, own:false, nocheck:true, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:r[6]}));
+  /* events led by fellows in their own communities: The Social Club and the events fellows plan */
+  const fnames = new Set(F.map(f => f.n));
+  const led = [];
+  (S.cevents || []).filter(e => e.date && fnames.has(e.by)).forEach(e => led.push({id:'ce' + e.id, ref:'cevents', conf:{}, own:false, nocheck:true, led:true, title:e.name, date:e.date, end:'', type:e.type || 'Event', country:e.country || '', note:'Led by ' + e.by + (e.place ? ', ' + e.place : '')}));
+  F.filter(f => hasData(f.id)).forEach(f => [1, 2].forEach(c => ((fd(f.id).plan[c] || {}).events || []).filter(e => e.date && e.what).forEach(e => {
+    if (led.some(x => x.title === e.what && x.date === e.date)) return;
+    led.push({id:'pe' + f.id + c + e.date + e.what, ref:'plan', conf:{}, own:false, nocheck:true, led:true, title:e.what, date:e.date, end:'', type:e.type || 'Event', country:f.c, note:'Led by ' + f.n + (e.place && e.place !== 'Place to be set' ? ', ' + e.place : '')});
+  })));
+  return [...own, ...evs, ...fixed, ...led, ...mc].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
 function kdWhen(d){
   const t = pIso(iso(new Date())), a = pIso(d.date), b = pIso(d.end || d.date), n = Math.round((a - t) / 864e5);
@@ -1268,6 +1301,7 @@ function kdConfState(d){
   return {rows, ok:rows.every(r => r.st === 'ok'), bad:rows.some(r => r.st === 'conflict')};
 }
 function kdConfRow(d){
+  if (d.nocheck) return '';
   const st = kdConfState(d), mine = myCC(), key = kdKey(d);
   const chips = st.rows.map(r => `<span class="pill ${r.st === 'ok' ? 'p-ok' : r.st === 'conflict' ? 'p-fix' : 'p-none'}">${KD_C[r.c]}: ${r.st === 'ok' ? 'confirmed' : r.st === 'conflict' ? 'conflict' : 'waiting'}</span>${r.st === 'conflict' && r.note ? ` <span class="meta">${esc(r.note)}</span>` : ''}${r.st === 'ok' && r.by ? ` <span class="meta">by ${esc(r.by)}</span>` : ''}`).join(' ');
   let act = '';
@@ -1287,18 +1321,22 @@ function kdForm(c){
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="kd-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="kd-del" data-v="${c.id}">Delete</button>`}</div></form>`;
 }
 function kdSummary(up){
+  up = up.filter(d => !d.nocheck);
   const st = up.map(kdConfState), ok = st.filter(x => x.ok).length, bad = st.filter(x => x.bad).length;
   return `<p class="note" style="margin-top:8px"><b>Country check.</b> Country coordinators confirm each coming date does not clash with a public holiday or anything else that would affect the programme in their country. ${ok} of ${up.length} dates confirmed by every country that needs to${bad ? ', ' + bad + ' with a conflict flagged' : ''}.${myCC() ? ' Use the buttons under each date.' : ''}</p>`;
 }
 function vKeyDates(){
   const ed = canEditKD(), all = keyDates(), today = iso(new Date());
-  const up = all.filter(d => (d.end || d.date) >= today), past = all.filter(d => (d.end || d.date) < today).reverse();
-  const mc = myCountry(), row = d => { const w = kdWhen(d), other = mc && d.country && d.country !== mc, tag = d.country ? ' <span class="meta">(' + KD_C[d.country] + ')</span>' : ''; return `<div class="item" style="padding:10px 0${other ? ';opacity:.6' : ''}"><div class="row spread" style="align-items:flex-start;gap:12px"><div>${other ? `<span style="font-weight:300">${esc(d.title)}</span>` : `<b>${esc(d.title)}</b>`}${tag}<div class="meta" style="${other ? 'font-weight:300' : 'font-weight:700'}">${dRange(d.date, d.end)}${d.lead ? ' | ' + esc(d.lead) : ''}${d.note ? ' | ' + (/^Join: https?:/.test(d.note) ? 'Join: ' + lnk(d.note.slice(6), 'link') : esc(d.note)) : ''}</div></div><div class="row" style="gap:8px;flex-shrink:0"><span class="chip">${esc(d.type)}</span>${w ? `<span class="meta">${w}</span>` : ''}${ed && d.own ? `<button type="button" class="btn ghost sm" data-act="kd-edit" data-v="${d.id}">Edit</button>` : ''}</div></div>${((d.end || d.date) >= today) ? kdConfRow(d) : ''}</div>`; };
+  const fl = S.kdFilter || 'all', shown = all.filter(d => fl === 'all' || (fl === 'led' ? d.led : !d.led));
+  const up = shown.filter(d => (d.end || d.date) >= today), past = shown.filter(d => (d.end || d.date) < today).reverse();
+  const nLed = all.filter(d => d.led).length;
+  const filt = `<div class="sub-tabs" role="group" aria-label="Which dates">${[['all','All dates (' + all.length + ')'],['prog','Programme dates (' + (all.length - nLed) + ')'],['led','Fellow-led events (' + nLed + ')']].map(t => `<button type="button" data-act="kd-filter" data-v="${t[0]}" aria-pressed="${fl === t[0]}">${t[1]}</button>`).join('')}</div>`;
+  const mc = myCountry(), row = d => { const w = kdWhen(d), other = mc && d.country && d.country !== mc, tag = d.country ? ' <span class="meta">(' + KD_C[d.country] + ')</span>' : ''; return `<div class="item${d.led ? ' kd-led' : ''}" style="padding:10px 0${other ? ';opacity:.6' : ''}"><div class="row spread" style="align-items:flex-start;gap:12px"><div>${other ? `<span style="font-weight:300">${esc(d.title)}</span>` : `<b>${esc(d.title)}</b>`}${tag}<div class="meta" style="${other ? 'font-weight:300' : 'font-weight:700'}">${dRange(d.date, d.end)}${d.lead ? ' | ' + esc(d.lead) : ''}${d.note ? ' | ' + (/^Join: https?:/.test(d.note) ? 'Join: ' + lnk(d.note.slice(6), 'link') : esc(d.note)) : ''}</div></div><div class="row" style="gap:8px;flex-shrink:0">${d.led ? '<span class="pill p-fix">Fellow-led</span>' : ''}<span class="chip">${esc(d.type)}</span>${w ? `<span class="meta">${w}</span>` : ''}${ed && d.own ? `<button type="button" class="btn ghost sm" data-act="kd-edit" data-v="${d.id}">Edit</button>` : ''}</div></div>${((d.end || d.date) >= today) ? kdConfRow(d) : ''}</div>`; };
   const add = ed ? (S.kdedit === 'new' ? `<div class="card"><h2>Add a date</h2>${kdForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn" data-act="kd-edit" data-v="new">Add a date</button>${(S.dates || []).length ? '' : ' <button type="button" class="btn ghost" data-act="kd-seed">Add the programme dates</button>'}</div>`) : '';
   const editing = ed && S.kdedit && S.kdedit !== 'new' ? (S.dates.find(x => String(x.id) === String(S.kdedit)) || null) : null;
-  return `<div class="card"><h2>Key dates</h2><p class="sub2">The moments we are building towards, together: campaigns, events, deadlines and masterclasses. ${ed ? 'You can add and change dates here. Masterclass dates come from the Masterclasses tab.' : 'The programme team keeps it up to date.'}${myCountry() ? ' Dates for your country are in bold, other countries in a lighter font.' : ''}</p><p class="meta">Check-in calls and masterclasses happen on Tuesdays, 60 to 90 minutes.</p>${kdSummary(up)}</div>
+  return `<div class="card"><h2>Key dates</h2><p class="sub2">The moments we are building towards, together: campaigns, events, deadlines and masterclasses. ${ed ? 'You can add and change dates here. Masterclass dates come from the Masterclasses tab.' : 'The programme team keeps it up to date.'}${myCountry() ? ' Dates for your country are in bold, other countries in a lighter font.' : ''}</p><p class="meta">Check-in calls and masterclasses happen on Tuesdays, 60 to 90 minutes.</p><p class="meta">Programme dates are set by the team. <span class="pill p-fix">Fellow-led</span> events are organised by fellows in their own communities, and you are welcome to join.</p><div style="margin-top:10px">${filt}</div>${kdSummary(up)}</div>
     ${add}${editing ? `<div class="card"><h2>Edit date</h2>${kdForm(editing)}</div>` : ''}
-    <div class="card"><h2>Coming up</h2>${up.map(row).join('') || '<p class="meta">No dates added yet.</p>'}</div>
+    <div class="card"><h2>Coming up</h2>${up.map(row).join('') || '<p class="meta">Nothing here yet.</p>'}</div>
     ${past.length ? `<div class="card"><h2>Past</h2>${past.map(row).join('')}</div>` : ''}`;
 }
 
@@ -1398,15 +1436,15 @@ function clForm(c){
   return `<form data-form="cl-save" data-id="${c.id}" class="stack"><div class="formgrid"><label class="f">Name<input type="text" id="cl-name" value="${esc(c.name || '')}" required></label><label class="f">Month<span class="hint">Optional</span><input type="month" id="cl-month" value="${esc(c.month || '')}"></label><label class="f">Date<span class="hint">Leave empty if not fixed yet</span><input type="date" id="cl-date" value="${esc(c.date || '')}"></label></div>
     <label class="f">Time or other details<span class="hint">Optional. For example: 19:00 to 20:30 Bangkok time, or "mid-March, date to be confirmed"</span><input type="text" id="cl-when" value="${esc(c.when || '')}"></label>
     <label class="f">Topic<input type="text" id="cl-topic" value="${esc(c.topic || '')}"></label><label class="f">Led by<span class="hint">Name of the expert</span><input type="text" id="cl-lead" value="${esc(c.lead || '')}"></label><label class="f">Expertise<select id="cl-exp">${opt(['', ...CL_EXP], c.exp || '')}</select></label><label class="f">Join link<span class="hint">Zoom, Meet or the room details</span><input type="text" id="cl-link" value="${esc(c.link || '')}"></label>
+    <label class="f">Main slides link<span class="hint">Optional. The deck the expert uses in class (Google Slides, Drive or any web link)</span><input type="url" id="cl-deck" value="${esc(c.deck || '')}" placeholder="https://"></label>
     <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="cl-cancel">Cancel</button>${n ? '' : `<button type="button" class="btn ghost" data-act="cl-del" data-v="${c.id}">Delete masterclass</button>`}</div></form>`;
 }
 /* links the expert mentions in class and wants to share: articles, videos, tools, reading */
 function clResources(c, team){
   const r = c.res || [];
   if (!r.length && !team) return '';
-  return `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px"><div class="meta">Resources shared with this masterclass</div>
-    ${r.map(x => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${lnk(x.url, x.title)}</b>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</span>${team ? `<button type="button" class="btn ghost sm" data-act="cl-res-del" data-id="${c.id}" data-v="${x.id}">Remove</button>` : ''}</div></div>`).join('') || '<p class="meta">None added yet.</p>'}
-    ${team ? `<form data-form="cl-res" data-id="${c.id}" class="stack" style="margin-top:8px"><div class="formgrid"><label class="f">Title<input type="text" name="rt" placeholder="e.g. The video Mai mentioned" required></label><label class="f">Link<input type="url" name="ru" placeholder="https://" required></label></div><label class="f">Why it helps<input type="text" name="rn" placeholder="Optional. One line on what to look for"></label><div><button class="btn sm" type="submit">Add resource</button></div></form>` : ''}</div>`;
+  const form = team ? `<details style="margin-top:8px"${r.length ? '' : ''}><summary class="meta" style="cursor:pointer">+ Add a relevant link</summary><form data-form="cl-res" data-id="${c.id}" class="stack" style="margin-top:8px"><div class="formgrid"><label class="f">Title<input type="text" name="rt" placeholder="e.g. The video Mai mentioned" required></label><label class="f">Link<input type="url" name="ru" placeholder="https://" required></label></div><label class="f">Why it helps<input type="text" name="rn" placeholder="Optional. One line on what to look for"></label><div><button class="btn sm" type="submit">Add link</button></div></form></details>` : '';
+  return `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">${r.length ? `<div class="meta">Relevant links</div>${r.map(x => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${lnk(x.url, x.title)}</b>${x.note ? `<div class="meta">${esc(x.note)}</div>` : ''}</span>${team ? `<button type="button" class="btn ghost sm" data-act="cl-res-del" data-id="${c.id}" data-v="${x.id}">Remove</button>` : ''}</div></div>`).join('')}` : ''}${form}</div>`;
 }
 function vSlides(){
   const team = S.role === 'team', cls = slClasses(), vis = S.slides.filter(slVisible);
@@ -1417,9 +1455,10 @@ function vSlides(){
   const cards = cls.map(c => {
     if (team && S.cledit === c.id) return `<div class="card"><h2>Edit ${esc(c.name)}</h2>${clForm(c)}</div>`;
     const items = inClass(c);
-    if (!team && !items.length && !c.date && !c.topic && !(c.res || []).length) return '';
+    if (!team && !items.length && !c.date && !c.topic && !c.deck && !(c.res || []).length) return '';
     return `<div class="card"><div class="row spread"><div><h2>${esc(c.name)}${c.topic ? ': ' + esc(c.topic) : ''}</h2><p class="sub2" style="margin:0">${[c.date ? dd(c.date) : '', monthName(c.month) ? esc(monthName(c.month)) : '', c.when ? esc(c.when) : ''].filter(Boolean).join(', ') || 'Date to be confirmed'}${c.lead ? ', led by ' + esc(c.lead) + (c.exp ? ' (' + esc(c.exp) + ')' : '') : ''}${c.link ? ', ' + lnk(c.link, 'Join link') : ''}</p></div>${team ? `<button type="button" class="btn ghost sm" data-act="cl-edit" data-v="${c.id}">Edit</button>` : ''}</div>
-      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || '<p class="meta">Slides will appear here.</p>'}</div>${clResources(c, team)}</div>`;
+      ${c.deck ? `<div style="margin-top:10px"><a class="btn sm" href="${esc(c.deck)}" target="_blank" rel="noopener noreferrer">Open the main slides &#8599;</a></div>` : ''}
+      <div style="margin-top:8px">${items.map(x => slItem(x, mode)).join('') || (c.deck ? '' : '<p class="meta">Slides will appear here.</p>')}</div>${clResources(c, team)}</div>`;
   }).join('');
   const seed = team && !cls.length ? `<div class="card"><p class="sub2">Add masterclasses in whatever pattern suits the programme, with a month, an exact date or just a topic. You can also start with one a month from January to July.</p><button type="button" class="btn ghost" data-act="cl-seed">Start with January to July</button></div>` : '';
   const addC = team ? (S.cledit === 'new' ? `<div class="card"><h2>Add a masterclass</h2>${clForm({id:'new'})}</div>` : `<div class="card"><button type="button" class="btn ghost" data-act="cl-edit" data-v="new">Add a masterclass</button></div>`) : '';
@@ -1609,14 +1648,14 @@ function vPReports(){
 }
 
 const FEED_TYPES = ['Update','Ask for help','Thanks','Event','Resource'];
-function feedRole(){ if (S.role === 'team' && S.tm === 'ops') return 'Operations'; return S.role === 'kol' ? 'Fellow' : S.role === 'friend' ? 'KOL friend' : S.role === 'cso' ? 'CSO' : S.role === 'listener' ? (PROFILE && PROFILE.role === 'comms' ? 'Communications expert' : 'Social listening expert') : S.role === 'partner' ? 'Programme partner' : S.tm === 'country' ? 'Country coordinator' : 'Programme coordinator'; }
+function feedRole(){ if (S.role === 'team' && S.tm === 'ops') return 'Operations'; return S.role === 'kol' ? 'Fellow' : S.role === 'friend' ? 'KOL friend' : S.role === 'cso' ? 'CSO' : S.role === 'listener' ? ((PROFILE && PROFILE.role === 'comms') || (S.user && S.user.comms) ? 'Communications expert' : 'Social listening expert') : S.role === 'partner' ? 'Programme partner' : S.tm === 'country' ? 'Country coordinator' : 'Programme coordinator'; }
 function feedOpen(){ return S.feed.filter(p => p.type === 'Ask for help' && !p.comments.length).length; }
 function vFeed(){
   const ro = S.role === 'partner', mod = S.role === 'team', f = S.feedF;
   const list = S.feed.filter(p => f === 'All' || p.type === f).sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   const tag = r => `<span class="tag">${esc(r)}</span>`;
   const R = [['cheer','Cheer'],['useful','Useful'],['join','Count me in']];
-  const composer = ro ? '<div class="card"><p class="meta">You can read the community space. Fellows, KOL friends, civil society organisations and the team do the posting.</p></div>' : `<div class="card"><h2>Share with the community</h2><form data-form="feed-post" class="stack"><div class="formgrid"><label class="f">What kind of post?<select id="fp-type">${FEED_TYPES.map(t => `<option>${t}</option>`).join('')}</select></label></div>
+  const composer = ro ? '<div class="card"><p class="meta">You can read The Social Club. Fellows, KOL friends, civil society organisations and the team do the posting.</p></div>' : `<div class="card"><h2>Share with the Social Club</h2><form data-form="feed-post" class="stack"><div class="formgrid"><label class="f">What kind of post?<select id="fp-type">${FEED_TYPES.map(t => `<option>${t}</option>`).join('')}</select></label></div>
     <label class="f">Your post<span class="hint">An update, a question, a thank you, an event or something useful. Please keep money, IDs and personal details out.</span><textarea id="fp-text" required></textarea></label><div><button class="btn" type="submit">Post</button></div></form></div>`;
   const filt = `<div class="sub-tabs" role="group" aria-label="Filter">${['All'].concat(FEED_TYPES).map(t => `<button type="button" data-act="feed-filter" data-v="${t}" aria-pressed="${f === t}">${t === 'Ask for help' ? 'Asks' : t}</button>`).join('')}</div>`;
   const posts = list.map(p => { const mine = p.by === S.user.label;
@@ -1627,7 +1666,7 @@ function vFeed(){
       ${p.comments.map(c => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${esc(c.by)}</b> ${tag(c.role)}</span><span class="meta">${c.date}</span></div><div>${esc(c.text)}</div></div>`).join('')}
       ${ro ? '' : `<form data-form="feed-comment" data-id="${p.id}" class="row" style="gap:8px;margin-top:8px"><input type="text" id="fc-${p.id}" placeholder="${p.type === 'Ask for help' ? 'Can you help? Reply here' : 'Reply'}" style="flex:1"><button class="btn ghost sm" type="submit">Reply</button></form>`}</div>`; }).join('') || '<div class="card"><p class="meta">Nothing here yet.</p></div>';
   const who = `<div class="card"><h2>Who is here</h2><div class="stack"><div><div class="meta">Fellows</div><div>${F.map(x => esc(x.n)).join(', ')}</div></div><div><div class="meta">Civil society organisations</div><div>${S.csos.map(o => esc(o.name) + ' (' + esc(o.focus) + ')').join('; ')}</div></div><div><div class="meta">KOL friends</div><div>${S.friends.map(x => esc(x.name)).join(', ')}, and others</div></div><div><div class="meta">The team</div><div>Country coordinators, programme coordinator, social listening expert</div></div></div></div>`;
-  return `<div class="card"><h2>Community</h2><p class="sub2">A place to share what you are learning, ask for help and cheer each other on, whether you are a fellow, KOL friend, organisation or team member. Everyone in the programme can see what is posted here.</p></div>${composer}<div class="card">${filt}</div>${posts}${who}`;
+  return `<div class="card"><h2>The Social Club</h2><p class="sub2">A place to share what you are learning, ask for help and cheer each other on, whether you are a fellow, KOL friend, organisation or team member. Everyone in the programme can see what is posted here.</p></div>${composer}<div class="card">${filt}</div>${posts}${who}`;
 }
 
 const lnk = (u, t) => /^https?:\/\//i.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t || u)}</a>` : (u ? esc(u) : '');
@@ -1858,7 +1897,7 @@ function vPeople(){
   const csos = S.csos.map(o => S.pedit === 'c:' + o.id && canC(o) ? csoForm(o) : `<div class="card"><div class="pp-head">${avatar(o.photo, o.name)}<div class="grow"><b>${esc(o.name)}</b> <span class="tag">${o.country === 'TH' ? 'Thailand' : 'Indonesia'}</span><div class="meta">${handleLinks(o.handles) || ''}</div></div>${canC(o) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="c:${o.id}">Edit</button>` : ''}</div>
       ${o.focus ? `<p style="margin:10px 0 0"><b>${esc(o.focus)}</b></p>` : ''}${o.about ? `<p style="margin:6px 0 0">${esc(o.about)}</p>` : ''}${ppAccountLine('cso', o.id, o.name, o.country, canC(o) && LIVE)}</div>`).join('') || '<div class="card"><p class="meta">No organisations yet.</p></div>';
   const addC = team && S.tm !== 'ops' ? (S.pedit === 'c:new' ? csoForm({id:'new'}) : `<div class="card"><button type="button" class="btn" data-act="pp-edit" data-v="c:new">Add an organisation</button></div>`) : '';
-  const friendsCard = (prog || S.tm === 'country' || (PROFILE && PROFILE.role === 'comms')) && team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and the community board. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
+  const friendsCard = (prog || S.tm === 'country' || (PROFILE && PROFILE.role === 'comms')) && team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and The Social Club. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
       ${F.flatMap(f => fd(f.id).friends.map(x => ({f, x}))).filter(({f}) => vaAllowed(f.id)).map(({f, x}) => `<div class="item"><div class="row spread"><span><b>${esc(x.name)}</b> <span class="meta">for ${esc(f.n)}, ${esc(CAMPS[(x.camp || 1) - 1].n)}</span></span><button type="button" class="btn ghost sm" data-act="va-enter" data-k="friend" data-f="${f.id}" data-fr="${esc(String(x.id))}">View as ${esc(x.name)}</button></div></div>`).join('')}
       <form data-form="pp-friend" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Which KOL friend?<select id="pf-friend" required><option value="">Choose</option>${friendChoices()}</select></label><label class="f">Email<input type="email" id="pf-email" required></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, the social listening and communications experts, and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','comms','ops','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${({listener:'social listening expert', comms:'communications expert', ops:'operations'})[a.role] || a.role}${a.country ? ', ' + a.country : ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
@@ -1927,11 +1966,11 @@ function render(){
   }
   $('#who').innerHTML = LOGIN_ON
     ? `<span class="row" style="gap:8px">${LIVE && PROFILE && !VA ? avatar(PROFILE.photo, PROFILE.label, 28) : ''}<span>Signed in as <b>${esc(VA && PROFILE ? PROFILE.label : S.user.label)}</b></span></span><span class="row" style="gap:10px">${LIVE && !VA ? '<button type="button" class="btn ghost sm" data-act="me-open">My profile</button>' : ''}<a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
-    : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener'}">Social listening expert</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Programme coordinator</button></div>`;
+    : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener' && !(S.user && S.user.comms)}">Social listening expert</button><button type="button" data-act="role" data-v="comms" aria-pressed="${S.role === 'listener' && !!(S.user && S.user.comms)}">Communications expert</button><button type="button" data-act="role" data-v="ops" aria-pressed="${S.role === 'team' && S.tm === 'ops'}">Operations</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Country coordinator</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Programme coordinator</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
   const ops = S.role === 'team' && S.tm === 'ops';
-  const KD = ['kdates','Key dates'], FT = ['features','Features'], IM = ['pimpact','Impact'], LB = ['board','Leaderboard'], PE = ['people','People'], PA = ['paper','Paperwork'], MC = ['slides','Masterclasses'], EV = ['events','Events'], CM = ['feed','Community'];
+  const KD = ['kdates','Key dates'], FT = ['features','Features'], IM = ['pimpact','Impact'], LB = ['board','Leaderboard'], PE = ['people','People'], PA = ['paper','Paperwork'], MC = ['slides','Masterclasses'], EV = ['events','Events'], CM = ['feed','The Social Club'];
   const LK = ['links','Links'];
   const tabs = pt ? [PE, IM, ['pcollab','Collaboration'], ['pstories','Campaign stories'], ['preports','Reports'], KD, MC, EV, CM]
     : ls ? [PE, ['lbench','Benchmarks'], ['lbrief','Before a campaign'], ['lpost','After a campaign'], ['ldata','KPIs and data'], ['ldeck','Slides'], FT, KD, IM, LB, EV, CM]
@@ -2087,7 +2126,7 @@ document.addEventListener('click', e => {
   if (a === 'forgot') { toast('In the real portal this emails a password reset link.'); return; }
   if (a === 'close-bg') { if (e.target === el) $('#modal').innerHTML = ''; return; }
   if (a === 'close') { $('#modal').innerHTML = ''; return; }
-  if (a === 'role') { S.role = v === 'country' ? 'team' : v; S.tm = v === 'country' ? 'country' : 'program'; S.user = v === 'kol' ? FELLOW : v === 'friend' ? FRIEND : v === 'cso' ? CSOUSER : v === 'listener' ? LISTENER : v === 'partner' ? PARTNER : v === 'country' ? ACCOUNTS[1] : ACCOUNTS[0]; S.tab = v === 'friend' ? 'fhome' : v === 'cso' ? 'chome' : 'home'; S.teamTab = v === 'country' ? 'mine' : v === 'listener' ? 'lbench' : v === 'partner' ? 'pimpact' : 'over'; S.shots = []; S.scope = v === 'country' ? 'TH' : 'ALL'; S.prog = 'gc'; S.coord = v === 'country' ? 'nok' : S.coord; render(); return; }
+  if (a === 'role') { S.role = v === 'country' || v === 'ops' ? 'team' : v === 'comms' ? 'listener' : v; S.tm = v === 'country' ? 'country' : v === 'ops' ? 'ops' : 'program'; S.user = v === 'kol' ? FELLOW : v === 'friend' ? FRIEND : v === 'cso' ? CSOUSER : v === 'listener' ? LISTENER : v === 'comms' ? COMMS : v === 'partner' ? PARTNER : v === 'country' ? ACCOUNTS[1] : v === 'ops' ? ACCOUNTS[0] : ACCOUNTS[0]; S.tab = v === 'friend' ? 'fhome' : v === 'cso' ? 'chome' : 'home'; S.teamTab = v === 'country' ? 'mine' : v === 'listener' ? 'lbench' : v === 'comms' ? 'kdates' : v === 'ops' ? 'paper' : v === 'partner' ? 'pimpact' : 'over'; S.shots = []; S.scope = v === 'country' ? 'TH' : 'ALL'; S.prog = 'gc'; S.coord = v === 'country' ? 'nok' : S.coord; render(); return; }
   if (a === 'flag-note') { const f = F.find(x => x.id === el.dataset.f), fl = campFlags(f).find(x => x.key === v); if (fl) { remindSend(f, fl.msg); render(); toast('Note sent to ' + f.n + '.'); } return; }
   if (a === 'flag-follow') { S.followed[v] = dstr(TODAY); render(); toast('Marked as followed up.'); return; }
   if (a === 'deck-set') { return; }
@@ -2109,7 +2148,7 @@ document.addEventListener('click', e => {
   if (a === 'kd-edit') { S.kdedit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'kd-cancel') { S.kdedit = null; render(); return; }
   if (a === 'kd-del') { S.dates = S.dates.filter(c => String(c.id) !== String(v)); S.kdedit = null; render(); toast('Deleted.'); return; }
-  if (a === 'kd-seed') { [['Fellowship application deadline','2026-11-22','','Deadline',''],['Announcement of TGC4 Fellows','2026-12-15','','Other',''],['Regional kickoff event in Bangkok','2027-01-12','2027-01-14','Event','','Organised in Bangkok. Fellows from Thailand and Indonesia join.'],['Campaign 1','2027-02-08','2027-03-26','Campaign',''],['Co-creation event in Bangkok','2027-04-21','2027-04-23','Event','TH'],['Co-creation event in Jakarta','2027-04-28','2027-04-30','Event','ID'],['Campaign 2','2027-06-07','2027-07-30','Campaign',''],['Closing events in Bangkok and Jakarta','2027-08-03','','Event','']].forEach((r, i) => S.dates.push({id:Date.now() + i, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:r[5] || ''})); render(); toast('Programme dates added. Edit any that change.'); return; }
+  if (a === 'kd-seed') { [['Fellowship application deadline','2026-11-22','','Deadline',''],['Announcement of TGC4 Fellows','2026-12-15','','Other',''],['Regional kickoff event in Bangkok','2027-01-12','2027-01-14','Event','','Organised in Bangkok. Fellows from Thailand and Indonesia join and design Campaign 1.'],['Campaign 1','2027-02-08','2027-03-26','Campaign',''],['Co-creation event in Bangkok','2027-04-21','2027-04-23','Event','TH','Fellows design Campaign 2 here.'],['Co-creation event in Jakarta','2027-04-28','2027-04-30','Event','ID','Fellows design Campaign 2 here.'],['Campaign 2','2027-06-07','2027-07-30','Campaign',''],['Closing events in Bangkok and Jakarta','2027-08-03','','Event','']].forEach((r, i) => S.dates.push({id:Date.now() + i, title:r[0], date:r[1], end:r[2], type:r[3], country:r[4], note:r[5] || ''})); render(); toast('Programme dates added. Edit any that change.'); return; }
   if (a === 'cl-edit') { S.cledit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'cl-cancel') { S.cledit = null; render(); return; }
   if (a === 'cl-res-del') { const c = S.classes.find(x => String(x.id) === String(el.dataset.id)); if (c) { c.res = (c.res || []).filter(x => String(x.id) !== String(v)); render(); } return; }
@@ -2145,6 +2184,7 @@ document.addEventListener('click', e => {
   if (a === 'remind') { const f = F.find(x => x.id === v), t = ($('#rm-' + v) || {}).value || remindText(f); remindSend(f, t); render(); toast('Reminder sent to ' + f.n + '.' + (f.id === 'nok' ? ' Thai Fellow 1 sees it on the paperwork page.' : '')); return; }
   if (a === 'remind-all') { const l = F.filter(f => (S.scope === 'ALL' || f.c === S.scope) && chaseItems(f).length); l.forEach(f => remindSend(f, remindText(f))); render(); toast(l.length + ' reminder' + (l.length === 1 ? '' : 's') + ' sent.'); return; }
   if (a === 'cso-accept') { const q = S.csos.find(x => x.id === 'c1').partners.find(x => x.fellow === el.dataset.f && String(x.camp) === el.dataset.c); if (q) { q.status = 'Accepted'; render(); toast('Invitation accepted. The fellow can see it now.'); } return; }
+  if (a === 'kd-filter') { S.kdFilter = v; render(); return; }
   if (a === 'tab') { S.tab = v; if (v !== 'board') S.prog = 'gc'; render(); window.scrollTo(0,0); return; }
   if (a === 'teamtab') { S.teamTab = v; if (v !== 'board') S.prog = 'gc'; render(); return; }
   if (a === 'prog') { S.prog = v; S.open = null; render(); return; }
@@ -2304,7 +2344,7 @@ document.addEventListener('submit', e => {
   }
   if (f === 'cl-save') {
     const id = e.target.dataset.id, name = g('cl-name'); if (!name) { toast('Add a name.'); return; }
-    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link'), when:g('cl-when')};
+    const v = {name, month:g('cl-month') || (g('cl-date') ? g('cl-date').slice(0, 7) : ''), date:g('cl-date'), topic:g('cl-topic'), lead:g('cl-lead'), exp:g('cl-exp'), link:g('cl-link'), when:g('cl-when'), deck:g('cl-deck')};
     if (id === 'new') S.classes.push(Object.assign({id:Date.now()}, v)); else { const o = S.classes.find(c => String(c.id) === String(id)); if (o.date !== v.date) delete o.confirms; Object.assign(o, v); }
     S.cledit = null; render(); toast('Saved.'); return;
   }
