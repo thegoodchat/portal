@@ -128,5 +128,5 @@ Spending proposals are reviewed in **USD**. A fellow can price lines in THB or I
 
 ## Budget pages, exchange rates, operations and spending
 - **Exchange rates:** paperwork pages and the spending proposal link to exchangerates.org.uk.
-- **Budget pages (Notion):** the programme coordinator pastes one Notion link per country under Paperwork or Campaign plans (Edit links). Country coordinators see an **Open the Thailand/Indonesia budget page** button for their own country. Operations sees both. Notion asks them to sign in.
+- **Budget pages (Notion):** the programme coordinator or director pastes one Notion link, shared by both countries, under Paperwork or Campaign plans (Edit link). Country coordinators, the programme coordinator and the director see an **Open the budget page** button. Nobody else can see it. Notion asks them to sign in.
 - **Operations** also gets the Campaign plans tab and read access to every plan, proposal, setup, supplier, event and support record, so it can see all spending. Re-run schema.sql once.

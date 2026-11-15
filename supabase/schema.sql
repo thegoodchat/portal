@@ -485,9 +485,9 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
 on conflict (kind, role) do nothing;
 
 
--- Budget pages (Notion links) per country: the programme coordinator sets them, coordinators and operations open them
+-- Budget page (one Notion link for both countries): the programme coordinator or director sets it, country coordinators open it. Nobody else can read it.
 insert into public.kind_access (kind, role, read_scope, write_scope) values
-  ('map:links','program','all','all'),('map:links','country','all','none'),('map:links','ops','all','none')
+  ('map:links','program','all','all'),('map:links','country','all','none')
 on conflict (kind, role) do nothing;
 
 -- Operations can see every plan, proposal and spending-related record

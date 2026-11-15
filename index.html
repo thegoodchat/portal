@@ -629,14 +629,14 @@ const CATS = ['Venue rental','KOL friend fee','Supplier or production','Promotio
 const UNITS = ['per day','per event','per post','per hour','flat'];
 const FX_URL = 'https://www.exchangerates.org.uk/';
 const fxLink = `<a href="${FX_URL}" target="_blank" rel="noopener noreferrer">exchangerates.org.uk</a>`;
-const budgetUrl = c => ((S.links && S.links.budget) || {})[c] || '';
+const budgetUrl = () => { const b = (S.links && S.links.budget) || {}; return b.url || b.TH || b.ID || ''; };
 function budgetBar(){
-  if (S.role !== 'team') return '';
-  const prog = S.tm === 'program', list = S.tm === 'country' ? [S.scope] : ['TH', 'ID'];
-  const btns = list.map(c => { const u = budgetUrl(c); return u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Open the ${KD_C[c]} budget page</a>` : `<span class="meta">${KD_C[c]} budget page: not added yet${prog ? '' : '. Ask the programme team.'}</span>`; }).join(' ');
-  const form = prog && !VA && S.blEdit ? `<form data-form="bl-save" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Thailand budget page<input type="url" id="bl-TH" value="${esc(budgetUrl('TH'))}" placeholder="https://www.notion.so/..."></label><label class="f">Indonesia budget page<input type="url" id="bl-ID" value="${esc(budgetUrl('ID'))}" placeholder="https://www.notion.so/..."></label></div><div class="row"><button class="btn sm" type="submit">Save links</button><button type="button" class="btn ghost sm" data-act="bl-cancel">Cancel</button></div></form>` : '';
-  const edit = prog && !VA && !S.blEdit ? '<button type="button" class="btn ghost sm" data-act="bl-edit">Edit links</button>' : '';
-  return `<div class="card"><h2>Budget pages</h2><p class="sub2">Each country's budget lives in Notion. You need to be signed in to Notion to open it. Budgets are in USD. Exchange rates: ${fxLink}.</p><div class="row" style="gap:10px;flex-wrap:wrap">${btns}${edit}</div>${form}</div>`;
+  if (S.role !== 'team' || !(S.tm === 'program' || S.tm === 'country')) return '';
+  const prog = S.tm === 'program', u = budgetUrl();
+  const btn = u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Open the budget page</a>` : `<span class="meta">The budget page link is not added yet${prog ? '' : '. Ask the programme team.'}</span>`;
+  const form = prog && !VA && S.blEdit ? `<form data-form="bl-save" class="stack" style="margin-top:12px"><label class="f">Budget page link<span class="hint">One page for both countries</span><input type="url" id="bl-url" value="${esc(u)}" placeholder="https://www.notion.so/..."></label><div class="row"><button class="btn sm" type="submit">Save link</button><button type="button" class="btn ghost sm" data-act="bl-cancel">Cancel</button></div></form>` : '';
+  const edit = prog && !VA && !S.blEdit ? '<button type="button" class="btn ghost sm" data-act="bl-edit">Edit link</button>' : '';
+  return `<div class="card"><h2>Budget page</h2><p class="sub2">One Notion page holds the budget for both countries. Only coordinators and the programme director see this button. You need to be signed in to Notion to open it. Budgets are in USD. Exchange rates: ${fxLink}.</p><div class="row" style="gap:10px;flex-wrap:wrap">${btn}${edit}</div>${form}</div>`;
 }
 const CURS = ['USD','THB','IDR'];
 const FX_EG = {THB:'for example 35', IDR:'for example 16000'};
@@ -1817,7 +1817,7 @@ function render(){
     return `<button role="tab" type="button" data-act="${mine?'tab':'teamtab'}" data-v="${t[0]}" aria-selected="${cur===t[0]}">${t[1]}${n ? `<span class="dot">${n}</span>` : ''}</button>`; }).join('');
   $('#ttl').innerHTML = ED;
   $('#eyebrow').textContent = 'A programme by makesense Asia';
-  $('#sub').textContent = cs ? 'Your work is where change takes root. Thank you for walking alongside our fellows.' : fr ? 'Thank you for adding your voice to the many that are changing the conversation.' : kol ? 'Small conversations at home, online and in your community add up to big change.' : pt ? 'See how everyday conversations are becoming real energy for change.' : ls ? 'Every good story begins with careful listening. Your insight helps it find the people who need it.' : S.tm === 'country' ? 'You are the heart of this programme in your country. Thank you for holding the space.' : S.tm === 'ops' ? 'The quiet work behind the scenes is what lets everyone else shine.' : 'Eight voices, two countries, one shared conversation about a cleaner future.';
+  $('#sub').textContent = cs ? 'Your work is where change takes root. Thank you for walking alongside our fellows.' : fr ? 'Thank you for adding your voice to the many that are changing the conversation.' : kol ? 'Small conversations at home, online and in your community add up to big change.' : pt ? 'See how everyday conversations are becoming real energy for change.' : ls ? 'Every good story begins with careful listening. Your insight helps it find the people who need it.' : S.tm === 'country' ? 'You are the heart of this programme in your country. Thank you for holding the space.' : S.tm === 'ops' ? 'The quiet work behind the scenes is what lets everyone else shine.' : 'The future gets better when we talk about it.';
   let html = '';
   if (cur === 'board') html = vBoard();
   else if (cs) html = {features:vFeatures, kdates:vKeyDates, chome:vCsoHome, clog:vCsoLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
@@ -2145,7 +2145,7 @@ document.addEventListener('submit', e => {
     S.fedit = null; render(); toast('Saved.'); return;
   }
   if (f === 'kd-flag') { const c = myCC(), x = c && kdFind(e.target.dataset.v), note = g('kd-flag-note'); if (!x || !note) return; x.confirms = x.confirms || {}; x.confirms[c] = {st:'conflict', by:S.user.label, at:iso(new Date()), note}; S.kdflag = null; render(); toast('Conflict flagged. The programme team can see it.'); return; }
-  if (f === 'bl-save') { if (S.tm !== 'program') return; const ok = u => !u || /^https:\/\//i.test(u); const th = g('bl-TH').trim(), id = g('bl-ID').trim(); if (!ok(th) || !ok(id)) { toast('Links must start with https://'); return; } S.links.budget = {TH:th, ID:id}; S.blEdit = false; render(); toast('Budget links saved.'); return; }
+  if (f === 'bl-save') { if (S.tm !== 'program') return; const u = g('bl-url').trim(); if (u && !/^https:\/\//i.test(u)) { toast('The link must start with https://'); return; } S.links.budget = {url:u}; S.blEdit = false; render(); toast('Budget link saved.'); return; }
   if (f === 'kd-save') {
     if (!canEditKD()) return;
     const id = e.target.dataset.id, title = g('kd-title'), date = g('kd-date'), end = g('kd-end'); if (!title || !date) { toast('Add what it is and the start date.'); return; }
