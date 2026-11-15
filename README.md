@@ -9,7 +9,7 @@ Money, ID copies and invoices stay in Google Sheets and a restricted Drive folde
 
 ## What works in this first version
 
-Live and shared in real time: programme coordinator, country coordinators, social listening expert, programme partners.
+Live and shared in real time: programme coordinator, country coordinators, Social Listening, programme partners.
 They can enter paperwork status and notes, organisation invoice details, benchmarks, listening briefs and analysis, deck status,
 programme events (agenda, hotel, check-in), the events board, ways to help, and the Good Chat Club.
 
@@ -45,14 +45,14 @@ Run the whole of `supabase/schema.sql` again (it is safe to re-run; it adds phot
 2. Edge Functions > Secrets: add `SITE_URL` = your site address (for example `https://thegoodchat.github.io/portal/`).
 
 After that nobody needs the Supabase dashboard. In the portal, open **People**:
-- Programme coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, the social listening expert and partners).
+- Programme coordinator: edit any fellow or organisation, upload photos, invite or switch off any login (including coordinators, Social Listening and partners).
 - Country coordinator: the same for fellows, organisations and logins in their own country.
 - Invited people get an email, click the link and choose their own password.
 Fellow logins now open a first page with Slides, Events, People and The Good Chat Club. Their own campaign pages are still being built. KOL friend and organisation logins can be created, but see a short "still being built" message.
 
 **Campaign dates:** the programme coordinator sets them on the Campaigns tab. Until then the portal shows "Dates to be confirmed".
 
-**Masterclasses and slides:** there is one masterclass a month, January to July. Programme and country coordinators set them up on the **Masterclasses** tab (one click creates the seven slots; add a date, topic and join link to each). The social listening expert, country coordinators and the programme coordinator can add slides, as a link or an uploaded PDF or PowerPoint (up to 45 MB). Coordinators can reorder the slides in each masterclass and tick whether fellows and/or KOL friends see each one. Fellows and KOL friends open the tab and see only what is meant for them, in that order. KOL friends get a login from **People > KOL friends**. Run `schema.sql` again after updating, and redeploy the `invite-user` function.
+**Masterclasses and slides:** there is one masterclass a month, January to July. Programme and country coordinators set them up on the **Masterclasses** tab (one click creates the seven slots; add a date, topic and join link to each). The Social Listening, country coordinators and the programme coordinator can add slides, as a link or an uploaded PDF or PowerPoint (up to 45 MB). Coordinators can reorder the slides in each masterclass and tick whether fellows and/or KOL friends see each one. Fellows and KOL friends open the tab and see only what is meant for them, in that order. KOL friends get a login from **People > KOL friends**. Run `schema.sql` again after updating, and redeploy the `invite-user` function.
 
 ### 3b. Adding people by hand (backup)
 For each person: Authentication > Users > Add user (email + temporary password, tick "Auto confirm"), then add a profile row.
@@ -74,23 +74,23 @@ Changing who can see what means editing the `kind_access` rows, not the app.
 
 ## Fellow pages and insight screenshots
 Each fellow's campaign setup, KPIs, plan, posts with reflections, events, collaborators and KOL friends are saved in Supabase under that fellow
-(kinds `fd:*`). Fellows see only their own. Their country coordinator and the programme coordinator can read them, the social listening expert can
+(kinds `fd:*`). Fellows see only their own. Their country coordinator and the programme coordinator can read them, Social Listening can
 read posts, plans, setup and KPIs, and partners see only totals. A **Posts** tab shows coordinators and the expert every post with its numbers, reflection and screenshots.
 
 Insight screenshots go to a private storage bucket called `insights`, resized to about 1600 px, at `<fellow id>/<post id>/`. The post record keeps only the file name.
-Who can open them: the fellow, the coordinator of that fellow's country, the programme coordinator and the social listening expert. Not partners or other fellows.
+Who can open them: the fellow, the coordinator of that fellow's country, the programme coordinator and Social Listening. Not partners or other fellows.
 Run the latest `supabase/schema.sql` once to create the bucket and its rules (safe to run again).
 
 ## KOL friends
 A fellow adds a KOL friend on their KOL friends tab (name, how to reach them, what they will do). The country coordinator or programme coordinator then opens
 **People**, picks that friend under KOL friends, and enters their email to send the login. The friend sees their invitation and the campaign message, logs posts with
 numbers and insight screenshots, and sees masterclasses, events, the Good Chat Club and Impact. Friend posts are saved under the friend's fellow
-(`fp:posts`), so the fellow, the country coordinator, the programme coordinator and the social listening expert can read them. The fellow cannot edit them.
-Country coordinators (their own country), the programme coordinator and the social listening expert can edit a friend's post. The database records who edited last
+(`fp:posts`), so the fellow, the country coordinator, the programme coordinator and Social Listening can read them. The fellow cannot edit them.
+Country coordinators (their own country), the programme coordinator and Social Listening can edit a friend's post. The database records who edited last
 and the post shows "Last edited by ...", unless the friend made the last edit themselves. Re-deploy the `invite-user` function after updating, because friend logins now link to a specific friend.
 
 ## View as (preview)
-The programme coordinator can preview any fellow's or KOL friend's pages, a country coordinator can preview those in their own country, and the social listening expert can preview fellows.
+The programme coordinator can preview any fellow's or KOL friend's pages, a country coordinator can preview those in their own country, and Social Listening can preview fellows.
 On the **People** tab, use **View as** on a fellow's card, or on a KOL friend under KOL friends. A yellow banner shows who you are viewing and has an **Exit preview** button.
 It is read only: forms are blocked, nothing is saved, and local changes are discarded when you exit. It uses your own access, so a draft the fellow cannot see yet may show.
 
@@ -110,9 +110,9 @@ It is read only: forms are blocked, nothing is saved, and local changes are disc
 ## My profile
 Everyone signed in sees a **My profile** button in the top bar. They can change their own name and photo. It runs through the `update_my_profile` function (schema.sql), so people can only change themselves. Photos go to the private `people` bucket under `me/<user id>/`. Re-run schema.sql once to switch it on.
 
-## Communications expert, features, masterclass leads
-- **Communications expert** is a login type with the same access as the social listening expert. Invite it from People, Team logins. Redeploy the `invite-user` function once so it accepts the new role.
-- **Features** tab: the programme coordinator, social listening expert and communications expert log content that features fellows, KOL friends and CSOs, and ask them for an interview, photo, quote or clip. Featured people see only their own features and mark requests done.
+## Communications, features, masterclass leads
+- **Communications** is a login type with the same access as Social Listening. Invite it from People, Team logins. Redeploy the `invite-user` function once so it accepts the new role.
+- **Features** tab: the programme coordinator, Social Listening and Communications log content that features fellows, KOL friends and CSOs, and ask them for an interview, photo, quote or clip. Featured people see only their own features and mark requests done.
 - **Masterclasses** have "Led by" and an expertise tag (social media, energy, community building, advocacy, communications, other). The leader does not need a login.
 - **Impact** now starts with "Who is involved": fellows, KOL friends and CSOs in total and per campaign, with each fellow's own campaign listed inside Campaign 1 and Campaign 2.
 
@@ -128,7 +128,7 @@ Spending proposals are reviewed in **USD**. A fellow can price lines in THB or I
 
 ## Budget pages, exchange rates, operations and spending
 - **Exchange rates:** paperwork pages and the spending proposal link to exchangerates.org.uk.
-- **Links tab:** the programme coordinator or director adds named links (budget page, coordination sheet, communication assets with photos, videos and social media assets, or anything else) and ticks which roles can see each one: country coordinators, communications expert, social listening expert, operations, fellows, KOL friends, CSOs, partners. Everyone else never sees it, and the database enforces that. Country coordinators also see their links as buttons at the top of Paperwork and Campaign plans.
+- **Links tab:** the programme coordinator or director adds named links (budget page, coordination sheet, communication assets with photos, videos and social media assets, or anything else) and ticks which roles can see each one: country coordinators, Communications, Social Listening, operations, fellows, KOL friends, CSOs, partners. Everyone else never sees it, and the database enforces that. Country coordinators also see their links as buttons at the top of Paperwork and Campaign plans.
 - **Operations** also gets the Campaign plans tab and read access to every plan, proposal, setup, supplier, event and support record, so it can see all spending. Re-run schema.sql once.
 
 ## Fellow contact details and private Drive folders
@@ -156,12 +156,12 @@ The Impact page's Mainstream integration card also shows civic actions, per camp
 ## Coordinators and benchmarks
 
 - The programme coordinator is also the Thailand country coordinator. You do not need a separate Thailand country login. In Key dates, the programme coordinator confirms dates for Thailand. Only create a country coordinator login for Indonesia.
-- Starting benchmarks start empty. The social listening expert does the analysis outside the portal and enters the averages on the Benchmarks tab, then presses Confirm. Fellows then see their starting point on Listening insights, with every post compared against it (for example "1.4x your usual reach").
+- Starting benchmarks start empty. The Social Listening does the analysis outside the portal and enters the averages on the Benchmarks tab, then presses Confirm. Fellows then see their starting point on Listening insights, with every post compared against it (for example "1.4x your usual reach").
 - The regional kickoff (12 to 14 Jan 2027, Bangkok, fellows from both countries) is in Key dates. Use "Add the programme dates" on a fresh portal, or add it by hand.
 
 ## Who can invite KOL friends
 
-Programme coordinator (any country), country coordinators (friends of fellows in their own country) and the communications expert (any country). Fellows add the friend first on their KOL friends tab; then one of these people picks the friend on the People tab and sends the invite. Re-run `schema.sql` and redeploy the `invite-user` function after updating.
+Programme coordinator (any country), country coordinators (friends of fellows in their own country) and Communications (any country). Fellows add the friend first on their KOL friends tab; then one of these people picks the friend on the People tab and sends the invite. Re-run `schema.sql` and redeploy the `invite-user` function after updating.
 
 ## Invoice details
 
@@ -169,7 +169,7 @@ One organisation for fellows in both countries: Sensecube LTD (for The Good Chat
 
 ## Masterclasses are open-ended
 
-Team members (programme and country coordinators, social listening and communications experts) add and edit masterclasses themselves. Month and date are optional, and a free-text "Time or other details" line covers things like "mid-March, date to be confirmed". Any number per month is fine. Each masterclass can also carry a main slides link and, optionally, relevant links the expert mentions in class (title, link, one-line note), shown to fellows and KOL friends. No database change is needed.
+Team members (programme and country coordinators, social listening and Communicationss) add and edit masterclasses themselves. Month and date are optional, and a free-text "Time or other details" line covers things like "mid-March, date to be confirmed". Any number per month is fine. Each masterclass can also carry a main slides link and, optionally, relevant links the expert mentions in class (title, link, one-line note), shown to fellows and KOL friends. No database change is needed.
 
 ## When campaigns are designed
 
@@ -213,3 +213,24 @@ Teams are a fellow plus their KOL friends. Podium, your place and the gap to the
 
 ## Planned versus done
 Each part of the Campaign page has a Planned section (the proposal) and a Done section (posts published, events held, people who took action, money spent). Spending lines no longer ask for support from makesense. Fellows record Spent so far per line; the team sees Done so far on Campaign proposals. No Supabase change.
+
+## Fellow platforms and community
+People cards hold up to 3 platforms with followers, niche, audience (who, personality, locations), community and events, link to energy, and hopes and dreams. Visible to makesense Asia team members only (programme team, coordinators, ops, social listening, communications). The programme team and country coordinators edit. Stored as map:fprofile: re-run supabase/schema.sql.
+
+## Paperwork and reimbursements
+
+- Fellows only owe an ID copy and a signed agreement. They do not send quotations or invoices.
+- KOL friends and suppliers working under a fellow owe an ID copy, a quotation, an invoice and a receipt. Status is tracked on the friend or supplier card and in the team's Paperwork tab.
+- Organisation details (name, address, UEN) have a Copy details button. Fellows pass them to their friends and suppliers.
+- Fellows log expenses with a receipt link or file name under Money spent on the Campaign tab. The team sets Submitted, Needs fix, Approved or Reimbursed and can leave a note. Receipts stay in Drive.
+- Re-run `supabase/schema.sql` for the new `fd:reimb` access rules.
+- Each KOL friend and supplier has a Drive folder link. Coordination and operations open every folder (fellow, friends, suppliers) from the Paperwork tab.
+- Coordination (programme and country) can add and edit key links. Until a TGC Playbook link exists, they see a prompt to add it. Re-run schema.sql for country write access.
+- Masterclasses are no longer numbered or pre-seeded. Each has a title, short description, optional category and an optional lesson link (Notion). Coordination can reorder them with Up and Down; masterclasses with the same category show together. The Playbook on Notion holds the full lesson.
+- The team's Paperwork table shows each fellow's Campaign 1 and Campaign 2 proposal status and budget. Fellows see the same on their paperwork page. Campaign 2 gets a chase flag once the Campaign 1 proposal is in and Campaign 2 is still a draft.
+- Fellows can download their campaign proposal (Word or PDF) from the proposal page, upload it to their Drive folder, then press Share with the team. File names follow YYYY_MM_Mon_DD_Name_CampaignN_Proposal.
+
+## Automatic proposal upload and the "changed after approval" rule
+
+- Pressing Share with the team also saves the proposal as a PDF in the fellow's Drive folder (`..._Campaign1_Proposal_v1.pdf`, then v2, v3 on each re-share). Setup: `drive-upload/SETUP.md`, plus the `upload-proposal` Edge Function. If the upload fails, the proposal is still shared and the fellow is asked to upload it by hand.
+- If a proposal marked Ready to go is edited and shared again, it returns to the team as "Changed after approval", with the old and new totals. Approving it again clears the flag.

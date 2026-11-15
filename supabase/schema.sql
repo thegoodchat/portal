@@ -315,7 +315,7 @@ create policy slide_files_delete on storage.objects for delete using (bucket_id 
 
 
 -- Insight screenshots from posts. Private bucket; files sit under <fellow id>/<post id>/.
--- Read: the fellow, the coordinator of that fellow's country, the programme coordinator and the social listening expert.
+-- Read: the fellow, the coordinator of that fellow's country, the programme coordinator and Social Listening.
 -- Not partners, not other fellows. Write and delete: the fellow and the programme coordinator.
 insert into storage.buckets (id, name, public) values ('insights', 'insights', false) on conflict (id) do nothing;
 create or replace function public.can_insight(path text, want_write boolean) returns boolean
@@ -420,7 +420,7 @@ grant execute on function public.update_my_profile(text, text) to authenticated;
 
 
 -- =====================================================================
--- Communications expert (same access as the social listening expert) and content features
+-- Communications (same access as Social Listening) and content features
 -- =====================================================================
 alter table public.profiles drop constraint if exists profiles_role_check;
 alter table public.profiles add constraint profiles_role_check
@@ -433,7 +433,7 @@ insert into public.kind_access (kind, role, read_scope, write_scope) values
   ('list:csos','listener','all','none')
 on conflict (kind, role) do nothing;
 
--- The communications expert has the same access as the social listening expert
+-- The Communications has the same access as Social Listening
 insert into public.kind_access (kind, role, read_scope, write_scope)
   select kind, 'comms', read_scope, write_scope from public.kind_access where role = 'listener'
 on conflict (kind, role) do nothing;
@@ -554,7 +554,7 @@ grant execute on function public.update_my_contact(text, text, text, text) to au
 
 
 -- =====================================================================
--- Communications expert can invite KOL friends (with country coordinators and the programme coordinator)
+-- Communications can invite KOL friends (with country coordinators and the programme coordinator)
 -- Needs: see the KOL friends fellows have added, and see the friend login accounts.
 -- =====================================================================
 insert into public.kind_access (kind, role, read_scope, write_scope) values ('fd:friends','comms','all','none') on conflict do nothing;
@@ -570,3 +570,26 @@ insert into public.kind_access (kind, role, read_scope, write_scope)
   select k, r, 'all', case when r = 'program' then 'all' when r = 'country' then 'country' else 'none' end
   from unnest(array['list:inspo','list:ready']) k, unnest(array['program','country','listener','comms','fellow','friend','cso','ops','partner']) r
 on conflict (kind, role) do nothing;
+
+
+-- =====================================================================
+-- Fellow platforms, audience, community and hopes (People tab). Key = fellow id.
+-- Visible to makesense Asia team members only. Written by the programme team and the country coordinator (own country).
+-- =====================================================================
+delete from public.kind_access where kind = 'map:fprofile';
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('map:fprofile','program','all','all'),('map:fprofile','country','all','country'),
+  ('map:fprofile','listener','all','none'),('map:fprofile','comms','all','none'),('map:fprofile','ops','all','none');
+
+-- Reimbursement claims: each fellow's expenses with receipt references (the receipts themselves stay in Drive)
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('fd:reimb','fellow','own','own'),('fd:reimb','country','country','country'),('fd:reimb','program','all','all'),('fd:reimb','ops','all','all')
+on conflict (kind, role) do update set read_scope = excluded.read_scope, write_scope = excluded.write_scope;
+-- Operations and the programme team keep the paperwork status of KOL friends and suppliers
+insert into public.kind_access (kind, role, read_scope, write_scope) values
+  ('fd:friends','ops','all','all'),('fd:collabs','ops','all','all'),('fd:collabs','country','country','country'),('fd:friends','country','country','country')
+on conflict (kind, role) do update set read_scope = excluded.read_scope, write_scope = excluded.write_scope;
+
+-- Coordination (programme and country) can add and edit key links
+insert into public.kind_access (kind, role, read_scope, write_scope) values ('list:keylinks','country','all','all')
+on conflict (kind, role) do update set read_scope = excluded.read_scope, write_scope = excluded.write_scope;
