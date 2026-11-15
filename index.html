@@ -1791,7 +1791,7 @@ function render(){
     $('#tabs').innerHTML = '';
     $('#ttl').innerHTML = ED;
     $('#eyebrow').textContent = 'A programme by makesense Asia';
-    $('#sub').textContent = S.ops ? 'Welcome back, team.' : 'Every big change starts with one good conversation. Welcome.';
+    $('#sub').textContent = S.ops ? 'Welcome back, team.' : 'Big change begins when many of us start talking. Welcome.';
     $('#view').innerHTML = vLogin();
     return;
   }
@@ -1817,7 +1817,7 @@ function render(){
     return `<button role="tab" type="button" data-act="${mine?'tab':'teamtab'}" data-v="${t[0]}" aria-selected="${cur===t[0]}">${t[1]}${n ? `<span class="dot">${n}</span>` : ''}</button>`; }).join('');
   $('#ttl').innerHTML = ED;
   $('#eyebrow').textContent = 'A programme by makesense Asia';
-  $('#sub').textContent = cs ? 'Your work is where change takes root. Thank you for walking alongside our fellows.' : fr ? 'Thank you for lending your voice to a conversation that matters.' : kol ? 'Small conversations at home, online and in your community add up to big change.' : pt ? 'See how everyday conversations are becoming real energy for change.' : ls ? 'Every good story begins with careful listening. Your insight helps it find the people who need it.' : S.tm === 'country' ? 'You are the heart of this programme in your country. Thank you for holding the space.' : S.tm === 'ops' ? 'The quiet work behind the scenes is what lets everyone else shine.' : 'Eight voices, two countries, one shared conversation about a cleaner future.';
+  $('#sub').textContent = cs ? 'Your work is where change takes root. Thank you for walking alongside our fellows.' : fr ? 'Thank you for adding your voice to the many that are changing the conversation.' : kol ? 'Small conversations at home, online and in your community add up to big change.' : pt ? 'See how everyday conversations are becoming real energy for change.' : ls ? 'Every good story begins with careful listening. Your insight helps it find the people who need it.' : S.tm === 'country' ? 'You are the heart of this programme in your country. Thank you for holding the space.' : S.tm === 'ops' ? 'The quiet work behind the scenes is what lets everyone else shine.' : 'Eight voices, two countries, one shared conversation about a cleaner future.';
   let html = '';
   if (cur === 'board') html = vBoard();
   else if (cs) html = {features:vFeatures, kdates:vKeyDates, chome:vCsoHome, clog:vCsoLog, pimpact:vPImpact, events:vEvents, people:vPeople, feed:vFeed}[cur]();
