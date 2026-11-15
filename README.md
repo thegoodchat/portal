@@ -140,3 +140,21 @@ Each fellow has a contact card (email, phone, LINE, WhatsApp) and a link to thei
 - The folder opens only for people signed in to a Google account you shared it with. In Drive, set the folder's General access to Restricted and add the fellow's email.
 - Fellows see "Open my private folder" on their Paperwork tab when a document is still needed.
 - Setup: re-run `supabase/schema.sql` (adds the `fellow_private` table and `update_my_contact`), then upload `index.html`.
+
+## Points (no cap)
+
+Points are open-ended. Nothing is capped at 20, 25 or 100.
+
+- **Reach**: people reached by posts (own and KOL friends'). With a confirmed benchmark: 5 points for every "usual post's worth" of reach. Without one: 1 point per 1,000 people.
+- **Engagement**: reactions, comments, saves, shares and reposts, the same way (5 points per usual post's worth, or 1 per 50).
+- **Civic action**: 1 point per 5 people who took the action the fellow asked for. Fellows count these on the Log tab, Civic action. The numbers are stored with the campaign plan, so no database change is needed.
+- **Self-designed KPIs**: 20 points when all of a fellow's KPIs are met, more when they go beyond them.
+- **Mainstream integration**: 2 points for each collaborator, KOL friend, CSO partner and community event.
+
+The Impact page's Mainstream integration card also shows civic actions, per campaign and per fellow.
+
+## Coordinators and benchmarks
+
+- The programme coordinator is also the Thailand country coordinator. You do not need a separate Thailand country login. In Key dates, the programme coordinator confirms dates for Thailand. Only create a country coordinator login for Indonesia.
+- Starting benchmarks start empty. The social listening expert does the analysis outside the portal and enters the averages on the Benchmarks tab, then presses Confirm. Fellows then see their starting point on Listening insights, with every post compared against it (for example "1.4x your usual reach").
+- The regional kickoff (12 to 14 Jan 2027, Bangkok, fellows from both countries) is in Key dates. Use "Add the programme dates" on a fresh portal, or add it by hand.
