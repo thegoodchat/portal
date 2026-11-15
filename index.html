@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<title>Good Chat KOL Portal</title>
+<title>The Good Chat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Boldonse&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -176,7 +176,7 @@ tfoot td{border-bottom:0;padding-top:12px}
   <div class="shape sh-cl b1" aria-hidden="true"></div>
   <div class="shape sh-tr b2" aria-hidden="true"></div>
   <div class="in">
-    <p class="eyebrow" id="eyebrow">makesense Asia, Edition 4</p>
+    <p class="eyebrow" id="eyebrow">A programme by makesense Asia</p>
     <h1 class="h" id="ttl">The Good Chat</h1>
     <p class="sub" id="sub"></p>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav>
@@ -225,7 +225,7 @@ const CFG = window.GC_CONFIG || {};
 const DEMO = /[?&]demo(=|&|$)/.test(location.search); // ?demo shows the sample-data version with no login, even on the live site
 const LIVE = !DEMO && !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY); // live mode: real logins and shared data. Without config the app runs as a local demo.
 const LOGIN_ON = LIVE;
-const ED = '<span data-act="tap-ed">Edition 4</span>';
+const ED = '<span data-act="tap-ed">The Good Chat</span>';
 const CAMPS = [
   {id:1,n:'Campaign 1',w:'8 Feb to 26 Mar 2027',start:new Date(2027,1,8),end:new Date(2027,2,26)},
   {id:2,n:'Campaign 2',w:'7 Jun to 30 Jul 2027',start:new Date(2027,5,7),end:new Date(2027,6,30)}
@@ -1521,8 +1521,8 @@ function render(){
     document.body.dataset.prog = 'gc';
     $('#who').innerHTML = '<span>Not signed in</span>';
     $('#tabs').innerHTML = '';
-    $('#ttl').textContent = 'The Good Chat';
-    $('#eyebrow').innerHTML = 'makesense Asia, ' + ED;
+    $('#ttl').innerHTML = ED;
+    $('#eyebrow').textContent = 'A programme by makesense Asia';
     $('#sub').textContent = S.ops ? 'Team sign-in.' : 'Sign in to log your campaigns and see what paperwork we still need.';
     $('#view').innerHTML = vLogin();
     return;
@@ -1538,8 +1538,8 @@ function render(){
   const need = openItems(CUR).length;
   $('#tabs').innerHTML = tabs.map(t => { const n = t[0] === 'events' ? boostOpen() : t[0] === 'feed' ? feedOpen() : (fr || cs) ? 0 : kol ? (t[0] === 'paper' ? need : t[0] === 'insights' ? insightCount() : 0) : (t[0] === 'props' ? propsNeeded() : t[0] === 'mine' ? chaseCount() : t[0] === 'camps' ? flagCount() : 0);
     return `<button role="tab" type="button" data-act="${mine?'tab':'teamtab'}" data-v="${t[0]}" aria-selected="${cur===t[0]}">${t[1]}${n ? `<span class="dot">${n}</span>` : ''}</button>`; }).join('');
-  $('#ttl').textContent = 'The Good Chat';
-  $('#eyebrow').innerHTML = 'makesense Asia, ' + ED;
+  $('#ttl').innerHTML = ED;
+  $('#eyebrow').textContent = 'A programme by makesense Asia';
   $('#sub').textContent = cs ? 'See the campaigns you support and log the help you give.' : fr ? (LIVE ? 'Masterclass slides, events and the community space.' : 'Log the posts you made for this campaign and their numbers.') : kol ? (LIVE ? 'Slides, events and the community space. Your own campaign pages are coming.' : 'Log what you post, what you expected, and what you learned.') : pt ? 'What the programme is changing, and who is working together to do it.' : ls ? 'Brief fellows before each campaign, then read the numbers and give feedback afterwards. Track the slides.' : S.tm === 'country' ? 'Remind your fellows, check their paperwork and see how your country is doing.' : 'Everything across both countries: reminders, paperwork, plans and the leaderboards.';
   let html = '';
   if (cur === 'board') html = vBoard();
@@ -1564,7 +1564,7 @@ function vLogin(){
     </form>
     <details style="border-top:1px solid var(--line);padding-top:14px"><summary class="note" style="cursor:pointer"><b>Prototype notes</b> (remove in the real build)</summary>
       <p class="note">Fellows: any username with the password <b>goodchat4</b>. It opens Thai Fellow 1's sample data.</p>
-      <p class="note">Team access is hidden. Tap the words "Edition 4" in the header three times, then sign in with ops@demo.test, th.coord@demo.test or id.coord@demo.test and the password <b>ops-edition4</b>.</p>
+      <p class="note">Team access is hidden. Tap the title "The Good Chat" in the header three times, then sign in with ops@demo.test, th.coord@demo.test or id.coord@demo.test and the password <b>ops-edition4</b>.</p>
       <p class="note">This check runs in your browser and is not secure. A real sign-in is checked on a server.</p>
     </details></div>`;
 }
@@ -2070,7 +2070,7 @@ function stripSample(){
 if (LIVE) stripSample();
 document.addEventListener('input', () => { if (LIVE) scheduleFlush(); });
 document.addEventListener('change', () => { if (LIVE) scheduleFlush(); });
-if (DEMO) { const t = document.getElementById('protoText'); t.innerHTML = '<b>DEMO PAGE</b>: This is a demo with made-up names and numbers, not the real portal. Nothing here is saved, and changes reset when you reload. Use the role menu to see each view.'; document.title = 'DEMO, ' + document.title; }
+if (DEMO) { const t = document.getElementById('protoText'); t.innerHTML = '<b>DEMO PAGE</b>: This is a demo with made-up names and numbers, not the real portal. Nothing here is saved, and changes reset when you reload. Use the role menu to see each view. <a href="' + location.pathname + '" style="display:inline-block;margin-left:8px;padding:3px 12px;border-radius:999px;background:#fff;color:#3B1E3A;font-weight:700;text-decoration:none">Back to sign in</a>'; document.title = 'DEMO, ' + document.title; }
 else if (LIVE) { const t = document.getElementById('protoText'); t.textContent = 'The Good Chat portal, makesense Asia'; }
 if (LIVE) liveBoot(); else { if (!LOGIN_ON) S.user = FELLOW; render(); }
 </script>
