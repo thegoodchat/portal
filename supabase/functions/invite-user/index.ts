@@ -2,7 +2,7 @@
 // Programme coordinator: any role. Country coordinator: fellows, CSOs and KOL friends in their own country.
 // Communications: KOL friends (any country).
 // Deploy: Supabase dashboard > Edge Functions > Deploy a new function > paste this file, name it "invite-user".
-// Set one secret: SITE_URL = your site address, e.g. https://thegoodchat.github.io/portal/
+// Set one secret: SITE_URL = your site address, e.g. https://thegoodchat.github.io/tgc4/
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const cors = {
@@ -71,8 +71,21 @@ Deno.serve(async (req) => {
       const deny = allowed(me, t);
       if (deny) return json(403, { error: deny });
       const redirectTo = typeof b.redirectTo === 'string' && site && b.redirectTo.startsWith(site) ? b.redirectTo : site || undefined;
-      const { data: inv, error: ie } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
-      if (ie || !inv?.user) return json(400, { error: ie?.message?.includes('already') ? 'That email already has an account.' : 'Could not send the invite.' });
+      const { data: inv, error: ie } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo, data: { needs_password: true } });
+      if (ie || !inv?.user) {
+        const why = String(ie?.message || '');
+        if (/already|registered|exists/i.test(why)) {
+          // The person was invited before: send them a fresh link to choose a password instead of failing.
+          const { data: old } = await admin.from('profiles').select('id,active').eq('email', email).maybeSingle();
+          if (old) {
+            const { error: re } = await admin.auth.resetPasswordForEmail(email, { redirectTo });
+            if (re) return json(400, { error: 'Could not send the email: ' + re.message });
+            return json(200, { ok: true, resent: true });
+          }
+          return json(400, { error: 'That email already has an account that is not set up in the portal. Delete that user in Supabase (Authentication > Users) and invite again.' });
+        }
+        return json(400, { error: 'Could not send the invite: ' + (why || 'unknown error') + (/rate|limit|too many/i.test(why) ? ' Supabase limits how many emails it sends each hour. Wait a while, or set up your own email sender in Supabase (Authentication > SMTP).' : '') });
+      }
       const label = String(b.label || email).slice(0, 80);
       const { error: pe } = await admin.from('profiles').upsert({ id: inv.user.id, email, label, role: t.role, country: t.country, fellow_id: t.fellow_id, cso_id: t.cso_id, friend_id: t.friend_id, active: true });
       if (pe) { await admin.auth.admin.deleteUser(inv.user.id); return json(400, { error: 'Could not save the profile.' }); }

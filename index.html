@@ -100,6 +100,15 @@ main>*,.card,.item,.row>*{min-width:0}
 .p-ok{background:var(--p-ok-bg);color:var(--p-ok-fg)}
 
 .alert{border-radius:18px;padding:18px 20px;display:grid;gap:8px}
+.va-pick{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.va-pick select{font:inherit;padding:4px 8px;border-radius:10px;max-width:220px}
+.pnavbar{display:flex;flex-wrap:wrap;gap:8px 14px}
+.pnav{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pnn{font-size:13.5px;font-weight:600}
+.welcome{border-radius:20px;padding:20px 22px;background:var(--p-req-bg);color:var(--p-req-fg);display:grid;gap:6px;margin-bottom:14px}
+.welcome h2{margin:0}
+.welcome p{margin:0;font-size:15px;line-height:1.55}
+.welcome.login{max-width:440px;width:100%;margin:12px auto 0}
 .alert.need{background:var(--p-fix-bg);color:var(--p-fix-fg)}
 .alert.time{background:var(--p-req-bg);color:var(--p-req-fg)}
 .alert h2{margin:0;font-size:16px}
@@ -275,6 +284,9 @@ const LISTENER = {role:'listener', label:'Social Listening'};
 const COMMS = {role:'listener', label:'Communications', comms:true};
 const PARTNER = {role:'partner', label:'Programme partner'};
 const CSOUSER = {role:'cso', label:'CSO 1'};
+const myCsoId = () => (VA && VA.cso) || (PROFILE && PROFILE.cso_id) || (S.user && S.user.cso) || 'c1';
+const myCso = () => S.csos.find(x => x.id === myCsoId()) || null;
+const noCso = () => `<div class="card"><h2 class="h sec">No organisation linked</h2><p class="sub2">This login is not linked to an organisation yet. Ask the programme team.</p></div>`;
 const FRIEND = {role:'friend', label:'KOL friend 1'};
 const FELLOW = {role:'kol', label:'Thai Fellow 1'};
 const ACCOUNTS = [
@@ -643,6 +655,26 @@ function board(list, meId){
   return {rows, battle, r, mx};
 }
 
+/* ---------- welcome messages ---------- */
+const WELCOME_LOGIN = ['Welcome to The Good Chat', 'Every good change starts as a conversation. Here, fellows, friends, civil society organisations and the makesense Asia team share what they learn, lend a hand and build what none of them could build alone.'];
+function welcomeText(kind, name){
+  const W = {
+    kol:['Welcome' + (name ? ', ' + name : ''), 'Your voice opens conversations that can move a whole community toward cleaner energy. You are never doing it alone: a team, fellow creators, KOL friends and civil society partners are all here to lend a hand, a skill or an idea. Thank you for showing up.'],
+    friend:['Welcome, friend of the programme', 'By saying yes to this conversation, you make it easier for others to join in. Your voice and your community help a good idea travel further than one person could carry it. Thank you.'],
+    cso:['Welcome', 'Your organisation brings experience that creators can build on, and their reach carries your work to people who may never have heard of it. When both sides open the door, ideas turn into action. Thank you for opening yours.'],
+    team:['Welcome', 'Behind every post, event and campaign is a network of people who trust each other enough to try something new. What you set up here makes that trust easier to give, and the results show up in real communities.'],
+    ops:['Welcome', 'Clear paperwork and quick replies let creators spend their energy on the work that matters. Thank you for keeping things running smoothly, so that good ideas can reach people sooner.'],
+    listener:['Welcome', 'What you notice in the conversation tells everyone where to listen next and what to say. Your insights shape better campaigns, and better campaigns shape a better future. Thank you for sharing them.'],
+    partner:['Welcome', 'Your support helps people across Southeast Asia talk about the future they want, and then act on it. Here is a view of what that generosity is growing into.']
+  };
+  return W[kind];
+}
+function welcomeCard(kind, name){
+  if (S.welcomeOff) return '';
+  const w = welcomeText(kind, name);
+  return `<div class="welcome" role="region" aria-label="Welcome"><h2 class="h sec">${esc(w[0])}</h2><p>${esc(w[1])}</p><div><button type="button" class="btn ghost sm" data-act="welcome-off">Thank you</button></div></div>`;
+}
+
 /* ---------- views ---------- */
 function vHome(){
   const me = F.find(x => x.id === CUR), need = openItems(CUR), pend = S.posts.filter(p => !p.refl);
@@ -930,6 +962,7 @@ const fpList = (fid, frid) => FPS[fid + '/' + frid] || (FPS[fid + '/' + frid] = 
 const myFriend = () => LIVE ? ((VA && VA.frid ? fd(CUR).friends.find(x => String(x.id) === String(VA.frid)) : fd(CUR).friends[0]) || null) : S.friends.find(x => x.id === 'f1');
 const FN = () => LIVE ? ((F.find(x => x.id === CUR) || {}).n || 'your fellow') : 'Thai Fellow 1';
 let VA = null; // "view as": a read-only preview of a fellow's or KOL friend's pages
+const vaAdmin = () => LIVE && !!PROFILE && !!PROFILE.is_admin;
 const vaAllowed = fid => LIVE && !VA && !!PROFILE && (PROFILE.role === 'program' || PROFILE.role === 'listener' || PROFILE.role === 'comms' || (PROFILE.role === 'country' && (F.find(x => x.id === fid) || {}).c === PROFILE.country));
 const vaBtn = (fid, label, k, frid) => vaAllowed(fid) ? `<div style="margin-top:10px"><button type="button" class="btn ghost sm" data-act="va-enter" data-k="${k || 'fellow'}" data-f="${fid}" ${frid ? `data-fr="${esc(String(frid))}"` : ''}>View as ${esc(label)}</button></div>` : '';
 const canEditFP = () => !VA && LIVE && !!PROFILE && ['friend','program','country','listener','comms'].includes(PROFILE.role);
@@ -986,7 +1019,7 @@ function csoCard(c){
 }
 
 function vCsoHome(){
-  const o = S.csos.find(x => x.id === 'c1');
+  const o = myCso(); if (!o) return noCso();
   const fellows = new Set(o.partners.map(q => q.fellow)).size;
   const head = `<div class="card"><h2 class="h sec">${esc(o.name)}</h2><p class="sub2">${esc(o.focus)}, ${o.country}. You support ${fellows} fellow${fellows === 1 ? '' : 's'}. You see the campaign story and plan, not spending, paperwork or personal details.</p>
     <button type="button" class="btn" data-act="tab" data-v="clog">Log support</button></div>`;
@@ -1013,7 +1046,7 @@ function vCsoHome(){
 }
 
 function vCsoLog(){
-  const o = S.csos.find(x => x.id === 'c1');
+  const o = myCso(); if (!o) return noCso();
   const mine = S.support.filter(x => x.cso === o.id);
   const acc = o.partners.filter(q => q.status === 'Accepted');
   if (!acc.length) return `<div class="card"><h2>Log support</h2><p class="sub2">Accept an invitation first. Then you can log the support you give.</p><div><button type="button" class="btn" data-act="tab" data-v="chome">Back to invitations</button></div></div>`;
@@ -1176,17 +1209,23 @@ function vProposals(){
   const who = LIVE ? S.coord : 'nok';
   return linksBar() + as(who, vProposals0);
 }
+function propNav(who, rows){
+  const by = {}; rows.forEach(r => { (by[r.f.id] = by[r.f.id] || {f:r.f, cs:[]}).cs.push(r); });
+  const chips = Object.values(by).map(g => `<span class="pnav"><span class="pnn">${esc(g.f.n)}</span>${g.cs.map(r => `<button type="button" class="btn sm ${r.f.id === who && r.c === S.camp ? '' : 'ghost'}" ${hasData(r.f.id) ? `data-act="prop-open" data-f="${r.f.id}" data-c="${r.c}" data-go="1"` : 'disabled'} aria-pressed="${r.f.id === who && r.c === S.camp}" title="${esc(r.name)}">Campaign ${r.c}</button>`).join('')}</span>`).join('');
+  return `<div class="pnavbar" role="group" aria-label="Jump to a fellow's campaign">${chips || '<span class="meta">No proposals yet.</span>'}</div>`;
+}
 function vProposals0(){
   const who = LIVE ? S.coord : 'nok', rows = propRows();
   const table = `<div class="card"><h2>Campaign proposals</h2><p class="sub2">Proposals and spending ideas from fellows. Lines marked ready to go are copied to the finance sheet.${LIVE ? '' : " Only Thai Fellow 1's plan opens in this prototype."}</p>
-    <div class="tw"><table><thead><tr><th>Fellow</th><th>Campaign</th><th>Name</th><th>Proposed total (USD)</th><th>In local currency (estimate)</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr data-act="${hasData(r.f.id) ? 'prop-open' : ''}" data-f="${r.f.id}" data-c="${r.c}" class="${r.f.id === who && r.c === S.camp ? 'pick' : ''}"><td><b>${r.f.n}</b></td><td>${CAMPS[r.c-1].n}</td><td>${esc(r.name)}</td><td class="num"><b>${usdTxt(r.usd)}</b></td><td class="num">${r.cur === 'USD' ? '—' : fmt(r.total) + ' ' + r.cur}</td><td>${planPill(r.status)}${r.changed ? '<div><span class="pill p-fix">Changed after approval</span></div>' : ''}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="3"><b>All plans in view</b></td><td class="num"><b>${usdTxt(rows.reduce((a, r) => a + (r.usd || 0), 0))}</b></td><td colspan="2" class="meta">${rows.some(r => r.usd == null && r.total) ? 'Some plans have no exchange rate yet' : ''}</td></tr></tfoot></table></div></div>`;
+    <div class="meta" style="margin-bottom:6px">Jump to a fellow's campaign</div>${propNav(who, rows)}
+    <div class="tw" style="margin-top:12px"><table><thead><tr><th>Fellow</th><th>Campaign</th><th>Name</th><th>Proposed total (USD)</th><th>In local currency (estimate)</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr data-act="${hasData(r.f.id) ? 'prop-open' : ''}" data-f="${r.f.id}" data-c="${r.c}" class="${r.f.id === who && r.c === S.camp ? 'pick' : ''}"><td><b>${r.f.n}</b></td><td>${CAMPS[r.c-1].n}</td><td>${esc(r.name)}</td><td class="num"><b>${usdTxt(r.usd)}</b></td><td class="num">${r.cur === 'USD' ? '—' : fmt(r.total) + ' ' + r.cur}</td><td>${planPill(r.status)}${r.changed ? '<div><span class="pill p-fix">Changed after approval</span></div>' : ''}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="3"><b>All plans in view</b></td><td class="num"><b>${usdTxt(rows.reduce((a, r) => a + (r.usd || 0), 0))}</b></td><td colspan="2" class="meta">${rows.some(r => r.usd == null && r.total) ? 'Some plans have no exchange rate yet' : ''}</td></tr></tfoot></table></div></div>`;
   if (!LIVE && S.scope !== 'ALL' && S.scope !== 'TH') return table;
   const c = S.camp, pl = S.plan[c], i = campInfo(who, c);
   const rev = pl.status === 'Draft'
     ? `<p class="meta">Not shared yet.</p>${remindScope(F.find(x => x.id === who)) ? remindBlock(F.find(x => x.id === who), false, 'Hi ' + F.find(x => x.id === who).n + ', could you share your campaign proposal and spending ideas when you can? We would like to give you suggestions before the campaign gets busy.') : ''}`
     : `<form data-form="review" class="stack"><div class="formgrid"><label class="f">Our take<select id="rv-status">${opt(['Ready to go','Suggestions to consider'], pl.status === 'Shared with team' ? '' : pl.status)}</select></label></div>
        <label class="f">Note to the fellow<textarea id="rv-comment" placeholder="What looks good, and what would you suggest?">${esc(pl.comment)}</textarea></label><div><button class="btn" type="submit">Send feedback</button></div></form>`;
-  const detail = `<div class="card"><div class="row spread"><div><h2>${esc(F.find(x => x.id === who).n)}, ${esc(i ? i.name : CAMPS[c-1].n)}</h2><p class="sub2" style="margin:0">${CAMPS[c-1].w}</p></div>${planPill(pl.status)}</div>
+  const detail = `<div class="card" id="prop-detail"><div class="meta" style="margin-bottom:6px">Jump to a fellow's campaign</div>${propNav(who, rows)}<div class="row spread" style="margin-top:14px"><div><h2>${esc(F.find(x => x.id === who).n)}, ${esc(i ? i.name : CAMPS[c-1].n)}</h2><p class="sub2" style="margin:0">${CAMPS[c-1].w}</p></div>${planPill(pl.status)}</div>
     <div style="margin-top:14px">${campSeg()}</div>
     ${pl.changed ? `<div class="alert need" style="margin-top:14px"><h2>Changed after approval</h2><div>This proposal was ready to go, then the fellow changed it on ${esc(dd(pl.changed.at))}. The total went from <b>${usdTxt(pl.changed.oldUsd)}</b> to <b>${usdTxt(pl.changed.newUsd)}</b>${pl.changed.cur !== 'USD' ? ' (' + fmt(pl.changed.oldTotal) + ' to ' + fmt(pl.changed.newTotal) + ' ' + pl.changed.cur + ')' : ''}. Please review it again.</div></div>` : ''}
     <div class="stack" style="margin-top:16px">
@@ -1605,7 +1644,7 @@ const canEditFT = x => canMakeFT() && (S.role === 'team' || x.byId === meId());
 function ftMe(){
   if (S.role === 'kol') return {t:'fellow', id:CUR};
   if (S.role === 'friend') { const f = myFriend(); return f ? {t:'friend', id:String(f.id)} : null; }
-  if (S.role === 'cso') { const id = (PROFILE && PROFILE.cso_id) || (S.user && S.user.cso); return id ? {t:'cso', id:String(id)} : null; }
+  if (S.role === 'cso') { const id = myCsoId(); return id ? {t:'cso', id:String(id)} : null; }
   return null;
 }
 const isMeT = (w, me) => me && w.t === me.t && String(w.id) === String(me.id);
@@ -2130,7 +2169,7 @@ async function ppSendInvite(body){
   if (!LIVE) { toast('Logins are created in the live portal.'); return; }
   const {data, error} = await SB.functions.invoke('invite-user', {body:Object.assign({action:'invite', redirectTo:location.origin + location.pathname}, body)});
   if (error || (data && data.error)) { toast(await fnError(error, data)); return; }
-  await loadAccounts(); S.pinv = null; render(); toast('Invite sent to ' + body.email.trim() + '. They choose a password from the email.');
+  await loadAccounts(); S.pinv = null; render(); toast(data && data.resent ? 'They already had an invite, so a fresh link to choose a password was sent to ' + body.email.trim() + '.' : 'Invite sent to ' + body.email.trim() + '. They choose a password from the email.');
 }
 async function ppAdmin(id, on){
   if (!LIVE) return;
@@ -2395,7 +2434,7 @@ function render(){
     return;
   }
   $('#who').innerHTML = LOGIN_ON
-    ? `<span class="row" style="gap:8px">${LIVE && PROFILE && !VA ? avatar(PROFILE.photo, PROFILE.label, 28) : ''}<span>Signed in as <b>${esc(VA && PROFILE ? PROFILE.label : S.user.label)}</b></span></span><span class="row" style="gap:10px">${LIVE && !VA ? '<button type="button" class="btn ghost sm" data-act="me-open">My profile</button>' : ''}<a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
+    ? `<span class="row" style="gap:8px">${LIVE && PROFILE && !VA ? avatar(PROFILE.photo, PROFILE.label, 28) : ''}<span>Signed in as <b>${esc(VA && PROFILE ? PROFILE.label : S.user.label)}</b></span></span><span class="row" style="gap:10px">${LIVE && !VA ? '<button type="button" class="btn ghost sm" data-act="me-open">My profile</button>' : ''}${vaPicker()}<a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
     : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener' && !(S.user && S.user.comms)}">Social Listening</button><button type="button" data-act="role" data-v="comms" aria-pressed="${S.role === 'listener' && !!(S.user && S.user.comms)}">Communications</button><button type="button" data-act="role" data-v="ops" aria-pressed="${S.role === 'team' && S.tm === 'ops'}">Operations</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm !== 'ops'}">Coordination</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
@@ -2430,14 +2469,17 @@ function render(){
   if (kol && cur === 'plan') html = vCampaignPage();
   if ((kol || fr || cs) && cur === 'kdates') html += vEvents('prog') + (kol ? '' : vEvents('comm'));
   html = tabify(cur, html);
+  { const land = pt ? 'pimpact' : ls ? 'lbench' : cs ? 'chome' : fr ? 'fhome' : kol ? 'home' : ops ? 'paper' : 'over';
+    if (cur === land) { const me0 = F.find(x => x.id === CUR); html = welcomeCard(pt ? 'partner' : ls ? 'listener' : cs ? 'cso' : fr ? 'friend' : kol ? 'kol' : ops ? 'ops' : 'team', kol && me0 && !isPlaceholder(me0.n) ? me0.n : '') + html; } }
   if ((kol || fr || cs) && ['home','fhome','chome'].includes(cur) && ftMine().length) html = vFeatures() + html;
-  $('#view').innerHTML = (S.meEdit && LIVE && PROFILE && !VA ? meCard() : '') + (VA ? `<div class="va-banner" role="status"><span>Viewing as <b>${esc(VA.name)}</b> (${VA.k === 'friend' ? 'KOL friend' : 'fellow'}). Preview only, nothing you do here is saved.</span><button type="button" class="btn sun sm" data-act="va-exit">Exit preview</button></div>` : '') + html;
+  $('#view').innerHTML = (S.meEdit && LIVE && PROFILE && !VA ? meCard() : '') + (VA ? `<div class="va-banner" role="status"><span>Viewing as <b>${esc(VA.name)}</b>${VA.lab ? ' (' + VA.lab + ')' : ''}. Preview only, nothing you do here is saved.</span><button type="button" class="btn sun sm" data-act="va-exit">Exit preview</button></div>` : '') + html;
   if (LIVE) scheduleFlush();
 }
 
+function welcomeLogin(){ return `<div class="welcome login"><h2 class="h sec">${esc(WELCOME_LOGIN[0])}</h2><p>${esc(WELCOME_LOGIN[1])}</p></div>`; }
 function vLogin(){
   if (LIVE) return vLiveLogin();
-  return `<div class="card stack" style="max-width:440px;width:100%;margin:12px auto 0">
+  return welcomeLogin() + `<div class="card stack" style="max-width:440px;width:100%;margin:12px auto 0">
     <h2 class="h sec">Sign in</h2>
     <form data-form="login" class="stack" autocomplete="on">
       <label class="f">${S.ops ? 'Team email' : 'Username'}<input type="text" id="l-email" autocomplete="username" value="${esc(S.loginEmail)}" required></label>
@@ -2520,16 +2562,46 @@ function fpEditModal(fid, frid, id){
   set('fe-plat', q.platform); set('fe-date', q.date); set('fe-type', q.fmt); set('fe-url', q.url); set('fe-cap', q.caption); set('fe-note', q.note);
   METRICS.forEach(m => set('fe-' + m[0], (q.m || {})[m[0]]));
 }
+async function vaStart(label, kind, apply){
+  clearTimeout(FLUSH_T); await flush();
+  const prev = VA ? VA.prev : {role:S.role, tm:S.tm, scope:S.scope, teamTab:S.teamTab, tab:S.tab, user:S.user, coord:S.coord, lf:S.lf, camp:S.camp, cur:CUR, pedit:S.pedit};
+  VA = {k:kind.k, name:label, lab:kind.lab, fid:null, frid:null, cso:null, prev};
+  apply(); S.pedit = null; S.sub = {}; S.welcomeOff = false;
+  document.body.classList.add('va'); render(); window.scrollTo(0, 0);
+}
 async function vaEnter(k, fid, frid){
-  const f = F.find(x => x.id === fid); if (!f || !vaAllowed(fid)) return;
+  const f = F.find(x => x.id === fid); if (!f || !(VA ? vaAdmin() : vaAllowed(fid))) return;
   const fr = k === 'friend' ? fd(fid).friends.find(x => String(x.id) === String(frid)) : null;
   if (k === 'friend' && !fr) return;
-  clearTimeout(FLUSH_T); await flush();
-  VA = {k, fid, frid:frid || null, name:fr ? fr.name : f.n, prev:{role:S.role, tm:S.tm, scope:S.scope, teamTab:S.teamTab, tab:S.tab, user:S.user, coord:S.coord, lf:S.lf, camp:S.camp, cur:CUR, pedit:S.pedit}};
-  CUR = fid; S.role = k === 'friend' ? 'friend' : 'kol'; S.tab = k === 'friend' ? 'fhome' : 'home'; S.scope = f.c; S.pedit = null;
-  if (fr) S.camp = Number(fr.camp) || 1;
-  S.user = {role:S.role, label:VA.name, scope:f.c, country:f.c};
-  document.body.classList.add('va'); render(); window.scrollTo(0, 0);
+  await vaStart(fr ? fr.name : f.n, {k, lab:k === 'friend' ? 'KOL friend' : 'fellow'}, () => {
+    VA.fid = fid; VA.frid = frid || null;
+    CUR = fid; S.role = k === 'friend' ? 'friend' : 'kol'; S.tab = k === 'friend' ? 'fhome' : 'home'; S.scope = f.c;
+    if (fr) S.camp = Number(fr.camp) || 1;
+    S.user = {role:S.role, label:VA.name, scope:f.c, country:f.c};
+  });
+}
+const VA_ROLES = {program:['Coordination', 'team', 'program', 'over'], ops:['Operations', 'team', 'ops', 'paper'], listener:['Social listening', 'listener', 'program', 'lbench'], partner:['Partner', 'partner', 'program', 'pimpact']};
+async function vaEnterRole(r){
+  const d = VA_ROLES[r]; if (!d || !vaAdmin()) return;
+  await vaStart(d[0] + ' team', {k:'role', lab:''}, () => {
+    S.role = d[1]; S.tm = d[2]; S.teamTab = d[3]; S.scope = 'ALL'; S.prog = 'gc'; S.user = {role:S.role, label:d[0], scope:'ALL', country:null};
+  });
+}
+async function vaEnterCso(id){
+  const o = S.csos.find(x => x.id === id); if (!o || !vaAdmin()) return;
+  await vaStart(o.name, {k:'cso', lab:'civil society organisation'}, () => {
+    VA.cso = id; S.role = 'cso'; S.tab = 'chome'; S.scope = o.country || 'ALL'; S.user = {role:'cso', label:o.name, scope:S.scope, country:o.country, cso:id};
+  });
+}
+function vaPicker(){
+  if (!vaAdmin()) return '';
+  const fs = F.map(f => `<option value="fellow:${esc(f.id)}">${esc(f.n)}</option>`).join('');
+  const fr = F.flatMap(f => fd(f.id).friends.map(x => `<option value="friend:${esc(f.id)}|${esc(String(x.id))}">${esc(x.name)}, for ${esc(f.n)}</option>`)).join('');
+  const cs = S.csos.map(o => `<option value="cso:${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  return `<label class="va-pick"><span>View as</span><select id="va-pick" data-act="va-pick" aria-label="View the portal as someone else">
+    <option value="">${VA ? 'Back to my own view' : 'Choose a role or person'}</option>
+    <optgroup label="Team">${Object.keys(VA_ROLES).map(r => `<option value="role:${r}">${VA_ROLES[r][0]}</option>`).join('')}</optgroup>
+    ${fs ? `<optgroup label="Fellows">${fs}</optgroup>` : ''}${fr ? `<optgroup label="KOL friends">${fr}</optgroup>` : ''}${cs ? `<optgroup label="Civil society organisations">${cs}</optgroup>` : ''}</select></label>`;
 }
 async function vaExit(){
   const v = VA; if (!v) return;
@@ -2567,12 +2639,12 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'logout' && LIVE) { liveLogout(); return; }
-  if (a === 'logout') { S.user = null; S.ops = false; S.loginErr = ''; S.loginEmail = ''; S.open = null; render(); window.scrollTo(0,0); return; }
+  if (a === 'logout') { S.welcomeOff = false; S.user = null; S.ops = false; S.loginErr = ''; S.loginEmail = ''; S.open = null; render(); window.scrollTo(0,0); return; }
   if (a === 'forgot' && LIVE) { liveForgot((document.getElementById('l-email') || {}).value); return; }
   if (a === 'forgot') { toast('In the real portal this emails a password reset link.'); return; }
   if (a === 'close-bg') { if (e.target === el) $('#modal').innerHTML = ''; return; }
   if (a === 'close') { $('#modal').innerHTML = ''; return; }
-  if (a === 'role') { S.role = v === 'country' || v === 'ops' ? 'team' : v === 'comms' ? 'listener' : v; S.tm = v === 'country' ? 'country' : v === 'ops' ? 'ops' : 'program'; S.user = v === 'kol' ? FELLOW : v === 'friend' ? FRIEND : v === 'cso' ? CSOUSER : v === 'listener' ? LISTENER : v === 'comms' ? COMMS : v === 'partner' ? PARTNER : v === 'country' ? ACCOUNTS[1] : v === 'ops' ? ACCOUNTS[0] : ACCOUNTS[0]; S.tab = v === 'friend' ? 'fhome' : v === 'cso' ? 'chome' : 'home'; S.teamTab = v === 'country' ? 'people' : v === 'listener' ? 'lbench' : v === 'comms' ? 'kdates' : v === 'ops' ? 'paper' : v === 'partner' ? 'pimpact' : 'over'; S.shots = []; S.scope = v === 'country' ? 'TH' : 'ALL'; S.prog = 'gc'; S.coord = v === 'country' ? 'nok' : S.coord; render(); return; }
+  if (a === 'role') { S.role = v === 'country' || v === 'ops' ? 'team' : v === 'comms' ? 'listener' : v; S.tm = v === 'country' ? 'country' : v === 'ops' ? 'ops' : 'program'; S.user = v === 'kol' ? FELLOW : v === 'friend' ? FRIEND : v === 'cso' ? CSOUSER : v === 'listener' ? LISTENER : v === 'comms' ? COMMS : v === 'partner' ? PARTNER : v === 'country' ? ACCOUNTS[1] : v === 'ops' ? ACCOUNTS[0] : ACCOUNTS[0]; S.tab = v === 'friend' ? 'fhome' : v === 'cso' ? 'chome' : 'home'; S.teamTab = v === 'country' ? 'people' : v === 'listener' ? 'lbench' : v === 'comms' ? 'lbench' : v === 'ops' ? 'paper' : v === 'partner' ? 'pimpact' : 'over'; S.shots = []; S.scope = v === 'country' ? 'TH' : 'ALL'; S.prog = 'gc'; S.coord = v === 'country' ? 'nok' : S.coord; render(); return; }
   if (a === 'flag-note') { const f = F.find(x => x.id === el.dataset.f), fl = campFlags(f).find(x => x.key === v); if (fl) { remindSend(f, fl.msg); render(); toast('Note sent to ' + f.n + '.'); } return; }
   if (a === 'flag-follow') { S.followed[v] = dstr(TODAY); render(); toast('Marked as followed up.'); return; }
   if (a === 'deck-set') { return; }
@@ -2634,7 +2706,7 @@ document.addEventListener('click', e => {
   if (a === 'cscope') { S.scope = v; S.user = ACCOUNTS[v === 'TH' ? 1 : 2]; S.coord = F.find(f => f.c === v).id; render(); return; }
   if (a === 'remind') { const f = F.find(x => x.id === v), t = ($('#rm-' + v) || {}).value || remindText(f); remindSend(f, t); render(); toast('Reminder sent to ' + f.n + '.' + (f.id === 'nok' ? ' Thai Fellow 1 sees it on the paperwork page.' : '')); return; }
   if (a === 'remind-all') { const l = F.filter(f => (S.scope === 'ALL' || f.c === S.scope) && chaseItems(f).length); l.forEach(f => remindSend(f, remindText(f))); render(); toast(l.length + ' reminder' + (l.length === 1 ? '' : 's') + ' sent.'); return; }
-  if (a === 'cso-accept') { const q = S.csos.find(x => x.id === 'c1').partners.find(x => x.fellow === el.dataset.f && String(x.camp) === el.dataset.c); if (q) { q.status = 'Accepted'; render(); toast('Invitation accepted. The fellow can see it now.'); } return; }
+  if (a === 'cso-accept') { const q = myCso().partners.find(x => x.fellow === el.dataset.f && String(x.camp) === el.dataset.c); if (q) { q.status = 'Accepted'; render(); toast('Invitation accepted. The fellow can see it now.'); } return; }
   if (a === 'kd-filter') { S.kdFilter = v; render(); return; }
   if (a === 'clsub') { S.clubSub = v; S.cl = null; render(); window.scrollTo(0, 0); return; }
   if (a === 'club-edit') { S.cl = {k:el.dataset.k, id:isNaN(Number(v)) ? v : Number(v)}; render(); return; }
@@ -2659,6 +2731,7 @@ document.addEventListener('click', e => {
   if (a === 'fr-edit') { S.frEdit = v; render(); return; }
   if (a === 'fr-cancel') { S.frEdit = null; render(); return; }
   if (a === 'ppsub') { S.ppSub = v; render(); return; }
+  if (a === 'welcome-off') { S.welcomeOff = true; render(); return; }
   if (a === 'tab') { S.tab = v; if (v !== 'board') S.prog = 'gc'; render(); window.scrollTo(0,0); return; }
   if (a === 'teamtab') { S.teamTab = v; if (v !== 'board') S.prog = 'gc'; render(); return; }
   if (a === 'prog') { S.prog = v; S.open = null; render(); return; }
@@ -2685,7 +2758,7 @@ document.addEventListener('click', e => {
     catch (err) { toast('Could not copy. Select the link and copy it instead.'); }
     return;
   }
-  if (a === 'prop-open') { S.camp = Number(el.dataset.c); if (LIVE && el.dataset.f) S.coord = el.dataset.f; render(); return; }
+  if (a === 'prop-open') { S.camp = Number(el.dataset.c); if (LIVE && el.dataset.f) S.coord = el.dataset.f; render(); const t = document.getElementById('prop-detail'); if (t) t.scrollIntoView({block:'start'}); return; }
   if (a === 'prop-dl') { propDownload(S.camp, el.dataset.v); return; }
   if (a === 'plan-submit') {
     const pl = S.plan[S.camp], c = S.camp;
@@ -2740,6 +2813,12 @@ document.addEventListener('change', e => {
   if (a === 'scope') { S.scope = el.value; render(); }
   if (a === 'lfsel') { S.lf = el.value; render(); }
   if (a === 'coord-sel') { S.coord = el.value; render(); }
+  if (a === 'va-pick') {
+    const v = el.value; if (!v) { if (VA) vaExit(); return; }
+    const [k, rest] = [v.slice(0, v.indexOf(':')), v.slice(v.indexOf(':') + 1)];
+    if (k === 'role') vaEnterRole(rest); else if (k === 'cso') vaEnterCso(rest);
+    else if (k === 'fellow') vaEnter('fellow', rest); else if (k === 'friend') { const [fid, frid] = rest.split('|'); vaEnter('friend', fid, frid); }
+  }
   if (a === 'deck-st') { (S.listen.decks[el.dataset.v] = S.listen.decks[el.dataset.v] || {link:'', due:''}).st = el.value; render(); }
   if (a === 'deck-link') { (S.listen.decks[el.dataset.v] = S.listen.decks[el.dataset.v] || {st:'Not started', due:''}).link = el.value; }
   if (a === 'pfilter') { S.pf = el.value; render(); return; }
@@ -2927,12 +3006,12 @@ document.addEventListener('submit', e => {
   if (f === 'cso-note') {
     const fl = e.target.dataset.fellow, cp = Number(e.target.dataset.camp), t = (document.getElementById('cn-' + fl + '-' + cp) || {}).value;
     if (!t || !t.trim()) { toast('Write a suggestion first.'); return; }
-    S.csoNotes.push({cso:'c1', fellow:fl, camp:cp, date:dstr(TODAY), text:t.trim()}); render(); toast('Sent. ' + fname(fl) + ' sees it on their Campaign page.');
+    S.csoNotes.push({cso:myCsoId(), fellow:fl, camp:cp, date:dstr(TODAY), text:t.trim()}); render(); toast('Sent. ' + fname(fl) + ' sees it on their Campaign page.');
   }
   if (f === 'cso-log') {
     const [fl, cp] = g('cl-who').split('|');
     if (!g('cl-note')) { toast('Say what you did or shared.'); return; }
-    S.support.push({id:Date.now(), cso:'c1', fellow:fl, camp:Number(cp), date:g('cl-date') || iso(TODAY), type:g('cl-type'), hours:Number(g('cl-hours')) || 0, note:g('cl-note')});
+    S.support.push({id:Date.now(), cso:myCsoId(), fellow:fl, camp:Number(cp), date:g('cl-date') || iso(TODAY), type:g('cl-type'), hours:Number(g('cl-hours')) || 0, note:g('cl-note')});
     render(); toast('Saved. ' + fname(fl) + ' can see it.');
   }
   if (f === 'fp-save') {
@@ -3141,12 +3220,16 @@ function applyRole(p){
   S.user = {role:S.role, label:p.label, scope:S.scope, country:p.country};
   S.lf = CUR;
 }
+const BOOT_HASH = location.hash, BOOT_QS = location.search;
 async function liveBoot(){
   render();
   if (!window.supabase) { S.live = {phase:'error', msg:'The sign-in library did not load. Check your connection and refresh.'}; render(); return; }
   SB = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
-  if (/type=(recovery|invite)/.test(location.hash)) { S.live = {phase:'recover', msg:''}; render(); return; }
+  SB.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY' && !(S.live && S.live.phase === 'recover')) { S.live = {phase:'recover', msg:''}; render(); } });
+  if (/type=(recovery|invite)/.test(BOOT_HASH)) { S.live = {phase:'recover', msg:''}; render(); return; }
+  if (/error_code=|error=access_denied/.test(BOOT_HASH + BOOT_QS)) { history.replaceState(null, '', location.pathname); S.live = {phase:'login', msg:'That email link has expired or was already used. Some email programs open links before you do. Type your email below and choose Forgot password to get a fresh link.'}; render(); return; }
   const {data} = await SB.auth.getSession();
+  if (data && data.session && data.session.user && data.session.user.user_metadata && data.session.user.user_metadata.needs_password) { S.live = {phase:'recover', msg:''}; render(); return; }
   if (data && data.session) await liveEnter(); else { S.live = {phase:'login', msg:''}; render(); }
 }
 async function loadFriendCtx(){
@@ -3181,7 +3264,7 @@ async function liveLogin(email, pw){
   if (error) { S.live = {phase:'login', msg:'Email or password is incorrect. Check both and try again.', email}; render(); return; }
   await liveEnter();
 }
-async function liveLogout(){ if (CH) SB.removeChannel(CH); CH = null; await SB.auth.signOut(); PROFILE = null; S.user = null; S.live = {phase:'login', msg:''}; render(); }
+async function liveLogout(){ if (CH) SB.removeChannel(CH); CH = null; await SB.auth.signOut(); PROFILE = null; S.welcomeOff = false; S.user = null; S.live = {phase:'login', msg:''}; render(); }
 async function liveForgot(email){
   if (!email || !email.trim()) { toast('Type your email first, then choose Forgot password.'); return; }
   await SB.auth.resetPasswordForEmail(email.trim(), {redirectTo:location.origin + location.pathname});
@@ -3189,7 +3272,7 @@ async function liveForgot(email){
 }
 async function liveNewPw(pw){
   if (!pw || pw.length < 10) { S.live = {phase:'recover', msg:'Use at least 10 characters.'}; render(); return; }
-  const {error} = await SB.auth.updateUser({password:pw});
+  const {error} = await SB.auth.updateUser({password:pw, data:{needs_password:false}});
   if (error) { S.live = {phase:'recover', msg:'That did not work. The link may have expired. Ask for a new one.'}; render(); return; }
   history.replaceState(null, '', location.pathname); await liveEnter();
 }
@@ -3199,7 +3282,7 @@ function vLiveLogin(){
   if (L.phase === 'loading') return box('<p class="meta" role="status">Opening the portal…</p>');
   if (L.phase === 'blocked' || L.phase === 'error') return box(`<h2 class="h sec">${L.phase === 'blocked' ? 'Almost there' : 'Something went wrong'}</h2><p>${esc(L.msg)}</p><div><button type="button" class="btn ghost" data-act="logout">Log out</button></div>`);
   if (L.phase === 'recover') return box(`<h2 class="h sec">Choose a new password</h2><form data-form="newpw" class="stack"><label class="f">New password<span class="hint">At least 10 characters.</span><input type="password" id="l-pw" autocomplete="new-password" required></label>${L.msg ? `<div class="alert need" role="alert" style="padding:12px 16px">${esc(L.msg)}</div>` : ''}<div><button class="btn" type="submit">Save password</button></div></form>`);
-  return box(`<h2 class="h sec">Sign in</h2><form data-form="login" class="stack" autocomplete="on">
+  return welcomeLogin() + box(`<h2 class="h sec">Sign in</h2><form data-form="login" class="stack" autocomplete="on">
       <label class="f">Email<input type="email" id="l-email" autocomplete="username" value="${esc(L.email || '')}" required></label>
       <label class="f">Password<input type="password" id="l-pw" autocomplete="current-password" required></label>
       <label class="row" style="gap:8px;font-size:13.5px"><input type="checkbox" data-act="showpw"> Show password</label>

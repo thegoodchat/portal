@@ -286,3 +286,7 @@ Long pages now show a row of sub-tabs and only one group at a time, so people ar
 - **Everyone:** Key dates, Events and Impact are split the same way; Social Listening Posts and the CSO home too
 
 The groups are defined in one table, `SUBTABS`, near the top of the render code. Each group is matched by the heading of a block, so changing a card's title means updating its rule there. Short pages are left as they are.
+
+## Invites: choosing a password
+
+Invite emails now always lead to a "Choose a new password" screen, even if the link format or the browser changes (the invite marks the account as needing a password until one is set). An expired or already-used link shows a clear message with the Forgot password route. Inviting someone who was already invited sends them a fresh set-password email instead of an error, and invite errors now say the real reason. Redeploy `invite-user` and set the `SITE_URL` secret to the real site address (https://thegoodchat.github.io/tgc4/). In Supabase, Authentication > URL Configuration: set Site URL to the same address and add it under Redirect URLs.
