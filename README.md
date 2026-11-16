@@ -212,7 +212,7 @@ Ready to collaborate entries have a photo, a profile link, an example link and a
 Teams are a fellow plus their KOL friends. Podium, your place and the gap to the next team, the best way to climb, and who leads each of the five parts. KOL friends see the leaderboard too, with their fellow team highlighted. Everyone is scored from impact_stats, now with KPI items and confirmed benchmarks: re-run supabase/schema.sql.
 
 ## Planned versus done
-Each part of the Campaign page has a Planned section (the proposal) and a Done section (posts published, events held, people who took action, money spent). Spending lines no longer ask for support from makesense. Fellows record Spent so far per line; the team sees Done so far on Campaign proposals. No Supabase change.
+Each part of the Campaign page has a Planned section (the proposal) and a Done section (posts published, events held, people who took action). Spending lines no longer ask for support from makesense. Fellows record Spent so far per line; the team sees Done so far on Campaign proposals. No Supabase change.
 
 ## Fellow platforms and community
 People cards hold up to 3 platforms with followers, niche, audience (who, personality, locations), community and events, link to energy, and hopes and dreams. Visible to makesense Asia team members only (programme team, coordinators, ops, social listening, communications). The programme team and country coordinators edit. Stored as map:fprofile: re-run supabase/schema.sql.
@@ -222,7 +222,7 @@ People cards hold up to 3 platforms with followers, niche, audience (who, person
 - Fellows only owe an ID copy and a signed agreement. They do not send quotations or invoices.
 - KOL friends and suppliers working under a fellow owe an ID copy, a quotation, an invoice and a receipt. Status is tracked on the friend or supplier card and in the team's Paperwork tab.
 - Organisation details (name, address, UEN) have a Copy details button. Fellows pass them to their friends and suppliers.
-- Fellows log expenses with a receipt link or file name under Money spent on the Campaign tab. The team sets Submitted, Needs fix, Approved or Reimbursed and can leave a note. Receipts stay in Drive.
+- Fellows log expenses with a receipt link or file name under My expenses in the Paperwork tab (the Campaign page links to it, and it links back to the proposal). The team sets Submitted, Needs fix, Approved or Reimbursed and can leave a note. Receipts stay in Drive.
 - Re-run `supabase/schema.sql` for the new `fd:reimb` access rules.
 - Each KOL friend and supplier has a Drive folder link. Coordination and operations open every folder (fellow, friends, suppliers) from the Paperwork tab.
 - Coordination (programme and country) can add and edit key links. Until a TGC Playbook link exists, they see a prompt to add it. Re-run schema.sql for country write access.
@@ -243,3 +243,27 @@ The Masterclasses tab starts empty and shows only what the team adds. There is n
 - **Video:** paste a link (YouTube, Vimeo, Drive or any web link). Fellows see a "Watch the video" button.
 - **Documents:** each masterclass has "+ Add a document" for slides, worksheets or any other file. Paste a link or, in the live portal, upload a file (up to 45 MB). Choose whether fellows and KOL friends can see it.
 - No schema change. Video links are stored with the masterclass record.
+
+## Post logs and expenses move to Google Forms and Sheets
+
+Fellows no longer log posts or expenses in the portal. Each fellow has, for Campaign 1 and Campaign 2 separately:
+
+- a **post log form** (one form for all their posts and their KOL friends' posts) and the **posts sheet** linked to it, which they can edit directly
+- a **payment request form** and an **expenses sheet** that adds up everything they have spent
+
+The team pastes these eight links on the People tab (Edit contact, under "Google Forms and Sheets"). If one form or sheet covers both campaigns, paste the same link twice.
+
+- **Log tab and Campaign page:** "Log a post" is now buttons to open the form and the sheet. KOL friends see their fellow's post log form and posts sheet only, never the payment links.
+- **Paperwork tab, My expenses:** a Campaign 1 / Campaign 2 switch, the payment request form, the expenses sheet, and the proposed spending plan. "Show next to my plan" embeds the expenses sheet beside the plan (needs the viewer to be signed in to a Google account with access; "Open in new tab" is the fallback).
+- The Campaign page has an Expenses card that links to Paperwork, and Paperwork links back to the proposal.
+- Posts and reimbursements already recorded in the portal stay visible (read-only for expenses) so nothing is lost.
+- Needs the latest `supabase/schema.sql` (new `fellow_links` table and an updated `friend_context`).
+- Note: the leaderboard, Impact page and KPI progress still read posts logged in the portal, so they will not move for posts that are only in Google Sheets.
+
+## Update: post logging stays in the portal; payments use Google Forms
+
+Post logging went back into the portal so the leaderboard, Impact page and KPIs keep working. Only payment requests use Google Forms and Sheets (per fellow, per campaign, set on People > Edit contact). The post form and posts sheet fields were removed from that screen.
+
+## Analytics export to Drive
+
+A nightly export writes posts (fellows and KOL friends), events, civic actions, KPIs and campaigns to one Google Sheet for the social expert, plus dated CSV backups on the first night of each month. The programme team and operations also have "Export to Drive now" and "Download CSV files" on the Impact tab. Setup: `drive-upload/ANALYTICS.md`. Function: `supabase/functions/export-analytics`.

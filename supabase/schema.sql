@@ -593,3 +593,60 @@ on conflict (kind, role) do update set read_scope = excluded.read_scope, write_s
 -- Coordination (programme and country) can add and edit key links
 insert into public.kind_access (kind, role, read_scope, write_scope) values ('list:keylinks','country','all','all')
 on conflict (kind, role) do update set read_scope = excluded.read_scope, write_scope = excluded.write_scope;
+
+
+-- =====================================================================
+-- Google Forms and Sheets per fellow and per campaign (post log form, posts sheet, payment request form, expenses sheet).
+-- The team pastes the links; the portal only links to them. Re-runnable.
+-- links looks like {"1": {"pf": "...", "ps": "...", "xf": "...", "xs": "..."}, "2": {...}}
+-- =====================================================================
+create table if not exists public.fellow_links (
+  fellow_id text primary key references public.fellows(id) on delete cascade,
+  links jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.fellow_links enable row level security;
+
+create or replace function public.fl_can(fid text, want_write boolean) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles; fc text;
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null then return false; end if;
+  if p.role in ('program','ops') then return true; end if;
+  select country into fc from public.fellows where id = fid;
+  if p.role = 'country' then return p.country = fc; end if;
+  if p.role = 'fellow' then return not want_write and p.fellow_id = fid; end if;
+  return false;
+end $$;
+
+drop policy if exists fl_read on public.fellow_links;
+create policy fl_read on public.fellow_links for select using (public.fl_can(fellow_id, false));
+drop policy if exists fl_ins on public.fellow_links;
+create policy fl_ins on public.fellow_links for insert with check (public.fl_can(fellow_id, true));
+drop policy if exists fl_upd on public.fellow_links;
+create policy fl_upd on public.fellow_links for update using (public.fl_can(fellow_id, true)) with check (public.fl_can(fellow_id, true));
+drop policy if exists fl_del on public.fellow_links;
+create policy fl_del on public.fellow_links for delete using (public.fl_can(fellow_id, true));
+
+-- A KOL friend sees only the post log form and posts sheet of their own fellow, never the payment links.
+create or replace function public.friend_context() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles; r public.records; fid text; c text; pl jsonb; su jsonb; fl jsonb; pls jsonb := '{}'::jsonb; k text;
+begin
+  select * into p from public.profiles where id = auth.uid() and active and role = 'friend';
+  if p.id is null or p.friend_id is null then return null; end if;
+  select * into r from public.records where kind = 'fd:friends' and key like '%/' || p.friend_id limit 1;
+  if r.key is null then return null; end if;
+  fid := split_part(r.key, '/', 1); c := r.data->>'camp';
+  select data into pl from public.records where kind = 'fd:plan' and key = fid || '/' || c;
+  select data into su from public.records where kind = 'fd:setup' and key = fid || '/' || c;
+  select links into fl from public.fellow_links where fellow_id = fid;
+  for k in select jsonb_object_keys(coalesce(fl, '{}'::jsonb)) loop
+    pls := pls || jsonb_build_object(k, jsonb_build_object('pf', coalesce(fl->k->>'pf', ''), 'ps', coalesce(fl->k->>'ps', '')));
+  end loop;
+  return jsonb_build_object('fellow', fid, 'fellowName', (select name from public.fellows where id = fid),
+    'friend', (r.data - 'posts' - 'token'), 'message', coalesce(pl->>'message', ''), 'action', coalesce(pl->'action', '{}'::jsonb),
+    'campaign', coalesce(su->>'name', ''), 'type', coalesce(su->>'type', ''), 'plinks', pls);
+end $$;
+grant execute on function public.friend_context() to authenticated;

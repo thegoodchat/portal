@@ -219,6 +219,8 @@ tfoot td{border-bottom:0;padding-top:12px}
 .pp-head{display:flex;gap:14px;align-items:center}
 .va-banner{position:sticky;top:0;z-index:20;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#FFF30D;color:#1C1E2A;border:2px solid #3B1E3A;border-radius:12px;padding:10px 14px;margin-bottom:14px}
 .pp-head .grow{flex:1;min-width:0}
+  .sbs{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;align-items:start}
+  @media(max-width:900px){.sbs{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-prog="gc">
@@ -690,22 +692,38 @@ function spentCard(pl){
   const rows = [...list].reverse().map(x => `<div class="item" style="padding:10px 0"><div class="row spread"><span><b>${esc(x.what)}</b> <span class="tag">${esc(x.cat)}</span>${x.line !== '' && x.line != null && pl.lines[Number(x.line)] ? `<div class="meta">Proposal line: ${esc(pl.lines[Number(x.line)].what)}</div>` : ''}<div class="meta">${esc(x.date)}, receipt: ${x.receipt ? lnk(x.receipt) : 'missing'}</div></span><span style="text-align:right"><b>${fmt(x.amount)} ${cur}</b><div>${rbPill(x.status)}</div></span></div>
     ${x.tnote ? `<div class="alert need" style="margin:8px 0 0"><b>From the team:</b> ${esc(x.tnote)}</div>` : ''}${x.status === 'sub' || x.status === 'fix' ? `<div class="row" style="margin-top:6px"><button type="button" class="btn ghost sm" data-act="rb-edit" data-v="${x.id}">Edit</button><button type="button" class="btn ghost sm" data-act="rb-del" data-v="${x.id}">Remove</button></div>` : ''}</div>`).join('');
   const waiting = rbSum(list, x => x.status === 'sub' || x.status === 'ok'), paid = rbSum(list, x => x.status === 'paid');
-  return `<div class="card"><h2>Money spent and reimbursement</h2><p class="sub2">Add each thing you pay for, how much, and its receipt. The team checks it and reimburses you. Receipts stay in your private Drive folder, not here.</p>
+  return `<div class="card" id="pp-exp"><h2>My expenses and reimbursement</h2><p class="sub2">Add each thing you pay for, how much, and its receipt. The team checks it and reimburses you. Receipts stay in your private Drive folder, not here.</p>${campSeg()}
+    <div style="margin:10px 0"><button type="button" class="btn ghost sm" data-act="to-prop" data-v="${S.camp}">Open my Campaign ${S.camp} proposal</button></div>
     <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div><div class="meta">Spent so far</div><div class="big">${fmt(sp)}<span class="meta"> ${cur}</span></div></div><div><div class="meta">Waiting to be reimbursed</div><div class="big">${fmt(waiting)}<span class="meta"> ${cur}</span></div></div><div><div class="meta">Reimbursed</div><div class="big">${fmt(paid)}<span class="meta"> ${cur}</span></div></div></div>
     <div class="row spread" style="margin-top:12px"><span class="meta">Against your proposal</span><span><b>${fmt(sp)} ${cur}</b> of ${fmt(tot)} ${cur} planned${cur !== 'USD' && usdOf(pl, sp) != null ? ', about ' + usdTxt(usdOf(pl, sp)) : ''}</span></div>${bar(Math.min(sp, tot), Math.max(1, tot))}
     ${form}<div style="margin-top:14px">${rows || '<p class="meta">No expenses added yet.</p>'}</div></div>`;
 }
+const embedUrl = u => /^https:\/\/docs\.google\.com\/spreadsheets\//.test(u || '') ? u + (u.includes('?') ? '&' : '?') + 'rm=minimal' : u;
+function expCard(){
+  const c = S.camp, pl = S.plan[c], cur = pl.cur || 'USD', L = flk(CUR, c), tot = planTotal(pl), cn = CAMPS[c - 1].n;
+  const old = S.reimb.filter(x => x.camp === c);
+  const planTbl = pl.lines.length ? `<div class="tw"><table><thead><tr><th>Planned spending</th><th>Category</th><th style="text-align:right">${cur}</th></tr></thead><tbody>${pl.lines.map(l => `<tr><td>${esc(l.what)}</td><td>${esc(l.cat || '')}</td><td style="text-align:right">${fmt(lineTotal(l))}</td></tr>`).join('')}<tr><td><b>Total planned</b></td><td></td><td style="text-align:right"><b>${fmt(tot)}</b>${cur !== 'USD' && usdOf(pl, tot) != null ? `<div class="meta">${usdTxt(usdOf(pl, tot))}</div>` : ''}</td></tr></tbody></table></div>` : `<p class="meta">No planned spending in your Campaign ${c} proposal yet.</p>`;
+  const sheet = !okUrl(L.xs) ? `<p class="meta">Your expenses sheet link will be added here by your coordinator.</p>` : S.sbs ? `<iframe src="${esc(embedUrl(L.xs))}" title="Expenses sheet" style="width:100%;height:520px;border:1px solid var(--line);border-radius:10px;background:#fff" loading="lazy"></iframe><p class="meta" style="margin:6px 0 0">If the sheet does not show, open it in a new tab. You need to be signed in to the Google account it was shared with.</p>` : `<p class="meta">Show your expenses sheet next to your plan to compare line by line.</p>`;
+  return `<div class="card" id="pp-exp"><h2>My expenses</h2><p class="sub2">Ask for a payment with the form. Your expenses sheet adds up everything you have spent. One set for each campaign.</p>${campSeg()}
+    <div class="row" style="gap:10px;flex-wrap:wrap;margin:12px 0">${okUrl(L.xf) ? flBtn(L.xf, 'Request a payment') : '<span class="meta">Your payment request form link will be added here by your coordinator.</span>'}${flBtn(L.xs, 'Open my expenses sheet', 'ghost')}${okUrl(L.xs) ? `<button type="button" class="btn ghost" data-act="sbs">${S.sbs ? 'Hide the sheet' : 'Show next to my plan'}</button>` : ''}<button type="button" class="btn ghost" data-act="to-prop" data-v="${c}">Open my ${cn} proposal</button></div>
+    <div class="${S.sbs && okUrl(L.xs) ? 'sbs' : ''}"><div>${planTbl}</div><div>${sheet}</div></div>
+    ${old.length ? `<details style="margin-top:12px"><summary class="meta" style="cursor:pointer">Expenses recorded earlier in the portal (${old.length})</summary>${old.map(x => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${esc(x.what)}</b><div class="meta">${esc(x.date)}</div></span><span style="text-align:right"><b>${fmt(x.amount)} ${cur}</b><div>${rbPill(x.status)}</div></span></div></div>`).join('')}</details>` : ''}</div>`;
+}
+function expLink(pl){
+  const L = flk(CUR, S.camp);
+  return `<div class="card"><h2>Expenses</h2><p class="sub2">Payment requests and your expenses sheet are in Paperwork, next to your planned spending for this campaign.</p><div class="row" style="gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-act="to-exp" data-v="${S.camp}">Open my expenses</button>${flBtn(L.xf, 'Request a payment', 'ghost')}</div></div>`;
+}
 function vCampaignPage(){
   const P = vPlan('parts');
-  const intro = `<div class="card"><h2>Your campaign has three parts</h2><div class="pillars">${PILLARS.map(x => `<div class="pchip"><span class="pn">${x[0]}</span><div><b>${x[1]}</b><div class="meta">${x[2]}</div></div></div>`).join('')}</div><div class="pillars" style="margin-top:12px"><div class="phase plan" style="margin:0"><span>Planned</span><div><b>What you propose</b><div class="meta">Your plan for the part, shared with the team for feedback.</div></div></div><div class="phase done" style="margin:0"><span>Done</span><div><b>What actually happened</b><div class="meta">Posts published, events held, people who took action, money spent.</div></div></div></div></div>`;
-  const jumps = [['cp-insights','Listening tips'], ['cp-proposal','Proposal'], ['cp-1','1 Online campaign'], ['cp-2','2 In-person event'], ['cp-3','3 Civic action'], ['cp-more','KPIs and spending']];
+  const intro = `<div class="card"><h2>Your campaign has three parts</h2><div class="pillars">${PILLARS.map(x => `<div class="pchip"><span class="pn">${x[0]}</span><div><b>${x[1]}</b><div class="meta">${x[2]}</div></div></div>`).join('')}</div><div class="pillars" style="margin-top:12px"><div class="phase plan" style="margin:0"><span>Planned</span><div><b>What you propose</b><div class="meta">Your plan for the part, shared with the team for feedback.</div></div></div><div class="phase done" style="margin:0"><span>Done</span><div><b>What actually happened</b><div class="meta">Posts published, events held and people who took action.</div></div></div></div></div>`;
+  const jumps = [['cp-insights','Listening tips'], ['cp-proposal','Proposal'], ['cp-1','1 Online campaign'], ['cp-2','2 In-person event'], ['cp-3','3 Civic action'], ['cp-more','KPIs and helpers']];
   const nav = `<nav class="jump" aria-label="Jump to a section">${jumps.map(j => `<button type="button" data-act="jump" data-v="${j[0]}">${j[1]}</button>`).join('')}</nav>`;
   return nav + `<div id="cp-insights">${vInsights()}</div><div id="cp-proposal">${P.head}</div>` + P.cso + intro + P.msg
     + pillarHead(0) + phase('plan', 'Planned online campaign', 'The posts you expect to make.') + P.posts + phase('done', 'Posts published', 'Add each post once it is live. A reminder at Day 7 asks for the numbers.') + logCard('post', 'Log a post', 'Paste the link and what you expect to happen.') + vMyPosts() + vEvents('help')
     + pillarHead(1) + phase('plan', 'Planned in-person event', 'Workshops, expos, classes and meetups you propose.') + P.events + phase('done', 'Events held', 'After the event, add who came and how it showed up online.') + logCard('event', 'Log an in-person event', 'Who came, where and what happened.') + vEvents('events')
     + pillarHead(2) + phase('plan', 'Planned civic action', 'The one thing you ask people to do.') + P.act + phase('done', 'People who took action', 'Add the number of people who took the action, as you hear about them.') + logCard('action', 'Count civic actions', 'Add a count and a note each time.') + vEvents('civic')
-    + `<div class="pillar" id="cp-more"><span class="pn">+</span><div><h2 class="h sec" style="margin:0">Measures and money</h2><p class="sub2" style="margin:2px 0 0">KPIs, spending and the people who help across all three parts.</p></div></div>`
-    + vCampaign() + phase('plan', 'Planned spending', 'Your spending proposal and the evidence behind it.') + P.spend + P.refs + phase('done', 'Money spent and who helped', 'Your running record against the proposal.') + spentCard(S.plan[S.camp]) + logCard('collab', 'Suppliers and helpers', 'Who helped, what they did and how they were paid.');
+    + `<div class="pillar" id="cp-more"><span class="pn">+</span><div><h2 class="h sec" style="margin:0">KPIs and helpers</h2><p class="sub2" style="margin:2px 0 0">The KPIs you set, and the people who help across all three parts.</p></div></div>`
+    + vCampaign() + phase('plan', 'Planned spending', 'Your spending proposal and the evidence behind it.') + P.spend + P.refs + expLink(S.plan[S.camp]) + phase('done', 'Who helped', 'The suppliers and helpers who worked with you.') + logCard('collab', 'Suppliers and helpers', 'Who helped, what they did and how they were paid.');
 }
 function vCampaign(){
   let out = '';
@@ -817,14 +835,14 @@ function vPaper(){
   const nc = nn.length ? `<div class="card"><h2>Notes from the team</h2><p class="sub2">Messages from ops and your coordinator.</p>${[...nn].reverse().map(x => `<div class="item"><div class="row spread"><b>${esc(x.by)}</b><span class="meta">${x.date}</span></div><div>${esc(x.text)}</div></div>`).join('')}</div>` : '';
   const legal = `<div class="alert time"><h2>Use your legal address</h2><div>On your agreement, write the legal address that is on your ID copy. Do not use the address where you live now.</div></div>`;
   const props = `<div class="card"><h2>My campaign proposals</h2><p class="sub2">We need a proposal for Campaign 1 and for Campaign 2, with the budget, so we agree on the money together before each campaign starts.</p>${[1, 2].map(c => `<div class="item"><div class="row spread"><span><b>Campaign ${c}</b></span><span>${propCell(CUR, c)}</span></div></div>`).join('')}<div style="margin-top:8px"><button class="btn sm" type="button" data-act="tab" data-v="plan">Open my campaign proposal</button></div></div>`;
-  return legal + nc + props + `<div class="card"><h2>My paperwork</h2>
+  return legal + nc + props + expCard() + `<div class="card"><h2>My paperwork</h2>
     <p class="sub2">${n ? n + ' item' + (n>1?'s':'') + ' still needed.' : 'Nothing needed from you right now.'} Your coordinator updates this list. Exchange rates for any USD estimate: ${fxLink}. Documents are never stored here: upload them to your private Drive folder${fpr(CUR).folder ? ' (' + lnk(fpr(CUR).folder, 'open it') + '), which opens only when you are signed in to the Google account we shared it with' : ''}.</p>
     ${rows.map(x => `<div class="item"><div class="row spread"><b>${x.doc}</b>${pill(x.s)}</div>
       ${DOC_HINT[x.doc] ? `<div class="meta">${DOC_HINT[x.doc]}</div>` : ''}
       ${x.note ? `<div>${esc(x.note)}</div>` : ''}
       ${x.due && (x.s==='req'||x.s==='fix') ? `<div class="meta">Due ${dstr(new Date(x.due))}</div>` : ''}
       ${(x.s==='req'||x.s==='fix') ? (fpr(CUR).folder ? `<div><a class="btn sm" href="${esc(fpr(CUR).folder)}" target="_blank" rel="noopener noreferrer">Open my private folder</a></div>` : `<div class="meta">Your private folder link is coming. Your coordinator will add it.</div>`) : ''}</div>`).join('')}
-    <p class="note" style="margin-top:12px">You do not need to send quotations or invoices. If you spent money on your campaign, add it with its receipt under Money spent on the Campaign tab and we will reimburse you.</p>
+    <p class="note" style="margin-top:12px">You do not need to send quotations or invoices. If you spent money on your campaign, add it with its receipt under My expenses above and we will reimburse you.</p>
     <div><button class="btn sm" type="button" data-act="tab" data-v="plan">Go to my campaign</button></div></div>` + vOrgFellow();
 }
 
@@ -1860,12 +1878,17 @@ function vInvolved(){
     <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${pTile(tot, 'Fellows', 'in Thailand and Indonesia')}${pTile(allK, 'KOL friends', 'invited by fellows, joined: ' + (A[0].kols + A[1].kols))}${pTile(cso, 'CSOs', 'in the programme')}</div></div>${camp(A[0])}${camp(A[1])}`;
 }
 
+function vExport(){
+  if (!(S.role === 'team' && (S.tm === 'program' || S.tm === 'ops'))) return '';
+  return `<div class="card"><h2>Analytics export for the social expert</h2><p class="sub2">Posts (fellows and KOL friends), events, civic actions, KPIs and campaigns go into one Google Sheet in Drive every night. On the first night of each month, dated CSV backups are saved too. Contact details, paperwork and money are never included.</p>
+    <div class="row" style="gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-act="exp-drive"${S.expBusy ? ' disabled' : ''}>${S.expBusy ? 'Exporting...' : 'Export to Drive now'}</button><button type="button" class="btn ghost" data-act="exp-dl"${S.expBusy ? ' disabled' : ''}>Download CSV files</button>${S.expUrl ? `<a class="btn ghost" href="${esc(S.expUrl)}" target="_blank" rel="noopener noreferrer">Open the analytics sheet &#8599;</a>` : ''}</div></div>`;
+}
 function vPImpact(){
   refreshImpact();
   const f = pFacts(), m = pMetrics();
   const civ = (LIVE ? impD().plans.filter(x => x.action && x.action.text).map(x => [x.f, x.action.type, x.action.text, x.action.measure]) : [['nok', S.plan[1].action.type, S.plan[1].action.text, S.plan[1].action.measure]]).concat(LIVE ? [] : Object.keys(CIVIC).map(id => [id, CIVIC[id][0], CIVIC[id][1], CIVIC[id][2]]));
   const byType = {}; civ.forEach(x => { if (x[1]) byType[x[1]] = (byType[x[1]] || 0) + 1; });
-  return vInvolved() + `<div class="card"><h2>What the programme is changing</h2><p class="sub2">Eight fellows in Thailand and Indonesia, each running their own campaign to bring energy conversations into the mainstream. These are programme results, never payments, IDs or paperwork. ${LIVE ? '' : 'Figures marked sample are examples until the real data connects.'}</p></div>
+  return vExport() + vInvolved() + `<div class="card"><h2>What the programme is changing</h2><p class="sub2">Eight fellows in Thailand and Indonesia, each running their own campaign to bring energy conversations into the mainstream. These are programme results, never payments, IDs or paperwork. ${LIVE ? '' : 'Figures marked sample are examples until the real data connects.'}</p></div>
     <div class="card"><h2 class="h sec">1. Capacity building</h2><p class="sub2">Fellows learn to plan, measure and reflect on their own campaigns.</p>
       <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">${pTile(f.camps, 'Campaigns designed by fellows', 'of 16 possible')}${pTile(f.kset + ' of ' + F.length, 'Fellows with their own KPIs')}${pTile(f.refl + ' of ' + f.posts, 'Posts with a written reflection')}${pTile(f.hrs + ' hours', 'Advice from civil society orgs', 'logged so far')}</div></div>
     <div class="card"><h2 class="h sec">2. Public conversation and narrative shift</h2><p class="sub2">How far the campaigns reached and how people responded. Totals for posts by fellows and their KOL friends${LIVE ? '' : ' (sample numbers)'}.</p>
@@ -2153,6 +2176,12 @@ function ppFields(o, handles){
 /* Private contact details and the Drive folder link, one row per fellow. Team and the fellow themselves only. */
 let FPRIV = DEMO ? {nok:{email:'nok@example.org', phone:'+66 80 000 0000', line:'nok.sample', whatsapp:'', folder:'https://drive.google.com/drive/folders/sample-nok'}, mind:{email:'mind@example.org', phone:'', line:'', whatsapp:'+66 81 000 0000', folder:''}} : {};
 const fpr = id => FPRIV[id] || {};
+/* Google Forms and Sheets per fellow and per campaign. The team pastes the links; the portal only links to them. */
+const FL_FIELDS = [['xf','Payment request form',''],['xs','Expenses sheet','The sheet linked to the payment form']];
+let FLINKS = DEMO ? {nok:{1:{xf:'https://docs.google.com/forms/d/e/sample-pay/viewform', xs:'https://docs.google.com/spreadsheets/d/sample-exp/edit'}}} : {};
+const flk = (id, c) => (FLINKS[id] || {})[c] || {};
+const okUrl = u => /^https?:\/\//i.test(u || '');
+const flBtn = (u, label, cls) => okUrl(u) ? `<a class="btn ${cls || ''}" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${label} &#8599;</a>` : '';
 const canK = f => S.role === 'team' && (S.tm === 'program' || S.tm === 'ops' || f.c === S.scope);
 const telHref = v => 'tel:' + String(v).replace(/[^+\d]/g, '');
 function contactBlock(f){
@@ -2162,6 +2191,7 @@ function contactBlock(f){
   if (k.line) rows.push(['LINE', esc(k.line)]);
   if (k.whatsapp) rows.push(['WhatsApp', `<a href="${esc(telHref(k.whatsapp))}">${esc(k.whatsapp)}</a>`]);
   rows.push(['Private folder', k.folder ? lnk(k.folder, 'Open Drive folder') : '<span class="meta">not added yet</span>']);
+  [1, 2].forEach(c => { const L = flk(f.id, c), ls = FL_FIELDS.filter(x => okUrl(L[x[0]])).map(x => lnk(L[x[0]], x[1])); rows.push(['Campaign ' + c + ' forms and sheets', ls.length ? ls.join(', ') : '<span class="meta">not added yet</span>']); });
   return `<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="row spread"><span class="meta">Contact (team only)</span>${canK(f) ? `<button type="button" class="btn ghost sm" data-act="pp-edit" data-v="k:${f.id}">Edit contact</button>` : ''}</div>${rows.map(r => `<div class="meta" style="margin-top:4px"><b>${r[0]}</b>: ${r[1]}</div>`).join('')}</div>`;
 }
 function contactForm(f){
@@ -2173,17 +2203,24 @@ function contactForm(f){
       <label class="f">LINE<input type="text" id="k-line" value="${esc(k.line || '')}"></label>
       <label class="f">WhatsApp<input type="text" id="k-wa" value="${esc(k.whatsapp || '')}"></label></div>
       <label class="f">Private Drive folder link<span class="hint">Share the folder only with their email (General access: Restricted). They need to be signed in to that Google account to open it.</span><input type="url" id="k-folder" value="${esc(k.folder || '')}" placeholder="https://drive.google.com/drive/folders/..."></label>
+      ${[1, 2].map(c => `<fieldset class="stack" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px"><legend class="meta">Campaign ${c}: payment form and expenses sheet</legend><div class="formgrid">${FL_FIELDS.map(x => `<label class="f">${x[1]}${x[2] ? `<span class="hint">${x[2]}</span>` : ''}<input type="url" id="k-l${c}-${x[0]}" value="${esc(flk(f.id, c)[x[0]] || '')}" placeholder="https://"></label>`).join('')}</div></fieldset>`).join('')}
+      <p class="meta">If one form or sheet covers both campaigns, paste the same link in both.</p>
       <div class="row"><button class="btn" type="submit">Save</button><button type="button" class="btn ghost" data-act="pp-cancel">Cancel</button></div></form></div>`;
 }
 async function saveContact(id){
   const g = i => ((document.getElementById(i) || {}).value || '').trim();
   const k = {email:g('k-email'), phone:g('k-phone'), line:g('k-line'), whatsapp:g('k-wa'), folder:g('k-folder')};
   if (k.folder && !/^https?:\/\//i.test(k.folder)) { toast('The folder link should start with https://'); return; }
+  const links = {}; let bad = false;
+  [1, 2].forEach(c => { links[c] = {}; FL_FIELDS.forEach(x => { const v = g('k-l' + c + '-' + x[0]); if (v && !okUrl(v)) bad = true; links[c][x[0]] = v; }); });
+  if (bad) { toast('Each form or sheet link should start with https://'); return; }
   if (LIVE) {
+    const lr = await SB.from('fellow_links').upsert({fellow_id:id, links, updated_at:new Date().toISOString()});
+    if (lr.error) { toast('Could not save the form and sheet links. Run the latest schema.sql in Supabase first.'); return; }
     const {error} = await SB.from('fellow_private').upsert({fellow_id:id, email:k.email, phone:k.phone, line:k.line, whatsapp:k.whatsapp, folder_url:k.folder, updated_at:new Date().toISOString()});
     if (error) { toast('Could not save. You may not have permission.'); return; }
   }
-  FPRIV[id] = k; S.pedit = null; render(); toast('Saved.');
+  FPRIV[id] = k; FLINKS[id] = links; S.pedit = null; render(); toast('Saved.');
 }
 function vPeople(){
   if (S.role !== 'kol') return vPeople0();
@@ -2545,6 +2582,19 @@ document.addEventListener('click', e => {
   if (a === 'club-edit') { S.cl = {k:el.dataset.k, id:isNaN(Number(v)) ? v : Number(v)}; render(); return; }
   if (a === 'club-cancel') { S.cl = null; render(); return; }
   if (a === 'club-del') { const k = el.dataset.k; S[k] = S[k].filter(x => String(x.id) !== String(v)); S.cl = null; render(); toast('Removed.'); return; }
+  if (a === 'to-exp' || a === 'to-prop') { if (Number(v)) S.camp = Number(v); S.tab = a === 'to-exp' ? 'paper' : 'plan'; S.prog = 'gc'; render(); const t = document.getElementById(a === 'to-exp' ? 'pp-exp' : 'cp-proposal'); if (t) t.scrollIntoView({block:'start'}); else window.scrollTo(0,0); return; }
+  if (a === 'exp-drive' || a === 'exp-dl') {
+    if (!LIVE) { toast('The export runs on the live portal.'); return; }
+    S.expBusy = true; render();
+    SB.functions.invoke('export-analytics', {body:a === 'exp-dl' ? {download:true} : {}}).then(({data, error}) => {
+      S.expBusy = false;
+      if (error || !data || !data.ok) { render(); toast((data && data.error) || 'The export did not work. Check that the export-analytics function is deployed and set up.'); return; }
+      if (a === 'exp-dl') { data.files.forEach((f, i) => setTimeout(() => { const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob(['\ufeff' + f.csv], {type:'text/csv;charset=utf-8'})); l.download = iso(new Date()).replace(/-/g, '_') + '_TGC_' + f.name.replace(/ /g, '_') + '.csv'; document.body.appendChild(l); l.click(); l.remove(); }, i * 400)); render(); toast('Downloading ' + data.files.length + ' CSV files.'); return; }
+      S.expUrl = data.url || ''; render(); toast('Exported ' + data.rows + ' rows to Drive.' + (data.backup ? ' Monthly backup saved.' : ''));
+    }).catch(() => { S.expBusy = false; render(); toast('The export did not work. Please try again.'); });
+    return;
+  }
+  if (a === 'sbs') { S.sbs = !S.sbs; render(); return; }
   if (a === 'jump') { const t = document.getElementById(v); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); return; }
   if (a === 'fr-edit') { S.frEdit = v; render(); return; }
   if (a === 'fr-cancel') { S.frEdit = null; render(); return; }
@@ -2985,6 +3035,7 @@ async function loadAll(){
   (data || []).forEach(r => applyRec(r, false));
   const fr = await SB.from('fellows').select('*'); (fr.data || []).forEach(applyFellow);
   try { const pv = await SB.from('fellow_private').select('*'); FPRIV = {}; (pv.data || []).forEach(x => { FPRIV[x.fellow_id] = {email:x.email || '', phone:x.phone || '', line:x.line || '', whatsapp:x.whatsapp || '', folder:x.folder_url || ''}; }); } catch (e) {}
+  try { const lk = await SB.from('fellow_links').select('*'); FLINKS = {}; (lk.data || []).forEach(x => { FLINKS[x.fellow_id] = x.links || {}; }); } catch (e) {}
   LAST = {}; const c = collect(); Object.keys(c).forEach(id => { LAST[id] = stable(c[id].data); });
 }
 function scheduleFlush(){ if (S.live.phase !== 'ready' || VA) return; clearTimeout(FLUSH_T); FLUSH_T = setTimeout(flush, 500); }
