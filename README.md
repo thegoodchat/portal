@@ -275,3 +275,14 @@ Coordination is now a single type. Everyone in it sees everything (both countrie
 ## Portal admins
 
 Two portal admins (Jib and Léa) manage the things other Coordination users cannot: team logins (invite, switch on and off, see all team accounts), the organisation details, and who else is an admin ("Make admin" or "Remove admin" next to each Coordination user in Team logins). Everything else is the same for all Coordination users. In `supabase/schema.sql`, edit the two emails in the last block before running it; if no email matches, every existing Coordination user becomes an admin so nobody is locked out. Redeploy the `invite-user` function with the updated file.
+
+## Sub-tabs on long pages
+
+Long pages now show a row of sub-tabs and only one group at a time, so people are not overwhelmed. Anything that needs action on the page above the tabs (for example the paperwork alert and team notes for fellows) stays pinned at the top.
+
+- **Fellow Campaign page:** Proposal, Online campaign, In-person event, Civic action, KPIs, Spending, Helpers
+- **Fellow Paperwork:** Proposals and expenses, Paperwork, KOL friends and suppliers
+- **Coordination and Operations:** Paperwork (All fellows, This fellow, KOL friends and suppliers, Organisation details), People (Fellows, Civil society organisations, KOL friends, Team logins), Overview, Campaigns (Thailand, Indonesia), Fellow-led events
+- **Everyone:** Key dates, Events and Impact are split the same way; Social Listening Posts and the CSO home too
+
+The groups are defined in one table, `SUBTABS`, near the top of the render code. Each group is matched by the heading of a block, so changing a card's title means updating its rule there. Short pages are left as they are.

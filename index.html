@@ -718,7 +718,7 @@ function vCampaignPage(){
   const intro = `<div class="card"><h2>Your campaign has three parts</h2><div class="pillars">${PILLARS.map(x => `<div class="pchip"><span class="pn">${x[0]}</span><div><b>${x[1]}</b><div class="meta">${x[2]}</div></div></div>`).join('')}</div><div class="pillars" style="margin-top:12px"><div class="phase plan" style="margin:0"><span>Planned</span><div><b>What you propose</b><div class="meta">Your plan for the part, shared with the team for feedback.</div></div></div><div class="phase done" style="margin:0"><span>Done</span><div><b>What actually happened</b><div class="meta">Posts published, events held and people who took action.</div></div></div></div></div>`;
   const jumps = [['cp-insights','Listening tips'], ['cp-proposal','Proposal'], ['cp-1','1 Online campaign'], ['cp-2','2 In-person event'], ['cp-3','3 Civic action'], ['cp-more','KPIs and helpers']];
   const nav = `<nav class="jump" aria-label="Jump to a section">${jumps.map(j => `<button type="button" data-act="jump" data-v="${j[0]}">${j[1]}</button>`).join('')}</nav>`;
-  return nav + `<div id="cp-insights">${vInsights()}</div><div id="cp-proposal">${P.head}</div>` + P.cso + intro + P.msg
+  return `<div id="cp-insights">${vInsights()}</div><div id="cp-proposal">${P.head}</div>` + P.cso + intro + P.msg
     + pillarHead(0) + phase('plan', 'Planned online campaign', 'The posts you expect to make.') + P.posts + phase('done', 'Posts published', 'Add each post once it is live. A reminder at Day 7 asks for the numbers.') + logCard('post', 'Log a post', 'Paste the link and what you expect to happen.') + vMyPosts() + vEvents('help')
     + pillarHead(1) + phase('plan', 'Planned in-person event', 'Workshops, expos, classes and meetups you propose.') + P.events + phase('done', 'Events held', 'After the event, add who came and how it showed up online.') + logCard('event', 'Log an in-person event', 'Who came, where and what happened.') + vEvents('events')
     + pillarHead(2) + phase('plan', 'Planned civic action', 'The one thing you ask people to do.') + P.act + phase('done', 'People who took action', 'Add the number of people who took the action, as you hear about them.') + logCard('action', 'Count civic actions', 'Add a count and a note each time.') + vEvents('civic')
@@ -1236,7 +1236,7 @@ function vTeamPaper(){
   const cur = S.paper[S.coord], k = F.find(f => f.id === S.coord);
   const matrix = `<div class="tw"><table><thead><tr><th>Fellow</th><th>Country</th><th>Folder</th>${DOCS.map(d => `<th>${d}</th>`).join('')}<th>Campaign 1 proposal</th><th>Campaign 2 proposal</th><th>Reimbursements</th></tr></thead><tbody>${
     list.map(f => `<tr data-act="coord-kol" data-v="${f.id}" class="${f.id===S.coord?'pick':''}"><td><b>${f.n}</b></td><td>${f.c}</td><td>${fpr(f.id).folder ? `<a href="${esc(fpr(f.id).folder)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Open</a>` : '<span class="meta">Not added</span>'}</td>${S.paper[f.id].map(x => `<td>${pill(x.s)}</td>`).join('')}<td>${propCell(f.id, 1)}</td><td>${propCell(f.id, 2)}</td><td>${hasData(f.id) ? (n => n ? `<span class="pill p-req">${n} to check</span>` : '<span class="meta">None waiting</span>')(fd(f.id).reimb.filter(x => x.status === 'sub').length) : '<span class="meta">&#8212;</span>'}</td></tr>`).join('')}</tbody></table></div>`;
-  const edit = `<div class="card"><h2>Update paperwork for ${esc(k.n)}</h2><p class="sub2">What you write in the note is shown to ${esc(k.n)} in plain language. Select a row above to switch fellow.</p>
+  const edit = `<div class="card"><h2>Update paperwork for ${esc(k.n)}</h2><p class="sub2">What you write in the note is shown to ${esc(k.n)} in plain language.</p>
     <div class="meta" style="margin-bottom:8px">${fpr(k.id).email ? 'Email: <a href="mailto:' + esc(fpr(k.id).email) + '">' + esc(fpr(k.id).email) + '</a>. ' : 'No email added yet. '}Private folder: ${fpr(k.id).folder ? lnk(fpr(k.id).folder, 'Open Drive folder') : 'not added yet (add it on the People tab)'}</div>
     ${remindScope(k) ? remindBlock(k, false) : ''}
     ${cur.map((x,i) => `<div class="item"><div class="formgrid">
@@ -1258,7 +1258,7 @@ function vTeamPaper(){
   const folders = `<div class="card"><h2>Paperwork folders for ${esc(k.n)}</h2><p class="sub2">One link per person. They open only when you are signed in to a Google account that has access.</p>${fl.map(x => `<div class="item"><div class="row spread"><span>${esc(x.t)}</span>${x.u ? `<a class="btn sm" href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">Open folder</a>` : '<span class="meta">No folder link yet</span>'}</div></div>`).join('')}</div>`;
   return linksBar() + `<div class="card"><div class="row spread"><div><h2>Paperwork status</h2><p class="sub2" style="margin:0">Mirrors the finance sheet tab. Statuses and notes only; documents stay in the restricted Drive folder. Exchange rates: ${fxLink}.</p></div>
     <div class="meta" style="min-width:200px">Access<br><b>${esc(S.user.label)}</b>${S.user.scope === 'ALL' ? ', all countries' : ', ' + S.user.scope + ' fellows only'}</div></div>
-    <div style="margin-top:14px">${matrix}</div></div>${folders}${edit}${reimb}${pp}${vOrg()}`;
+    <div style="margin-top:14px">${matrix}</div></div><div class="card"><h2>Choose a fellow</h2><label class="f" style="max-width:320px"><span class="hint">Or click a row in All fellows</span><select data-act="coord-sel">${list.map(f => `<option value="${f.id}" ${f.id === k.id ? 'selected' : ''}>${esc(f.n)}</option>`).join('')}</select></label></div>${folders}${edit}${reimb}${pp}${vOrg()}`;
 }
 
 function chaseItems(f){
@@ -2335,6 +2335,52 @@ function tabsFit(reveal){
     document.getElementById('tabL').addEventListener('click', () => { t.scrollBy({left:-(t.clientWidth * .7), behavior:'smooth'}); });
     document.getElementById('tabR').addEventListener('click', () => { t.scrollBy({left:t.clientWidth * .7, behavior:'smooth'}); }); }
 }
+/* Long pages show a row of sub-tabs and only one group at a time, so people are not overwhelmed.
+   Each rule matches the heading of a top-level block; blocks without a match stay with the group before them. */
+const SUBTABS = {
+  'kol/plan': {groups:[['Proposal',/^(your starting point|campaign proposal|suggestions|your campaign has|notes on your|the message)/i],['Online campaign',/^online campaign/i],['In-person event',/^in-person event/i],['Civic action',/^civic action$/i],['KPIs',/^kpis and helpers/i],['Spending',/^planned spending/i],['Helpers',/^who helped/i]]},
+  'kol/paper': {pin:/^(use your legal address|notes from the team)/i, groups:[['Proposals and expenses',/^(my campaign proposals|my expenses)/i],['Paperwork',/^my paperwork/i],['KOL friends and suppliers',/^details for your kol/i]]},
+  'team/paper': {groups:[['All fellows',/^paperwork status/i],['This fellow',/^(choose a fellow|paperwork folders|update paperwork|reimbursements)/i],['KOL friends and suppliers',/^kol friends and suppliers/i],['Organisation details',/^organisation details/i]]},
+  'team/people': {groups:[['Fellows',/^(people|reminders|fellows)$/i],['Civil society organisations',/^civil society/i],['KOL friends',/^kol friends$/i],['Team logins',/^team logins/i]]},
+  'team/over': {groups:[['Key dates',/^programme events/i],['Fellows',/^fellows at a glance/i],['Civil society organisations',/^civil society/i]]},
+  'team/camps': {groups:[['Thailand',/^campaign oversight|th$/i],['Indonesia',/id$/i]]},
+  'listener/tposts': {groups:[['Posts and insights',/^posts and insights/i],['KOL friend posts',/^kol friend posts/i],['Content by Communications',/^content by the communications/i]]},
+  'cso/chome': {groups:[['For you',/^content by/i],['Requests from fellows',/^requests from fellows/i]]},
+  kdates: {pin:/^key dates$/i, groups:[['Coming up',/^coming up/i],['Programme events',/^programme events/i],['Fellow events',/^(events fellows are running|what fellows are running)/i],['Ways to help',/^ways to help/i]]},
+  events: {pin:/^events$/i, groups:[['Programme events',/^programme events/i],['Fellow events',/^(fellow-led events|events fellows are running|what fellows are running)/i],['Civic actions',/^civic actions/i],['Ways to help',/^ways to help/i]]},
+  pimpact: {groups:[['What the programme is changing',/^(what the programme is changing|\d\. )/i],['Who is involved',/^who is involved/i],['Campaigns',/^campaign [12]$/i],['Export',/^analytics export/i]]}
+};
+function subtabRules(cur){
+  const g = S.role === 'kol' ? 'kol' : S.role === 'team' ? 'team' : S.role;
+  return SUBTABS[g + '/' + cur] || SUBTABS[cur] || null;
+}
+function tabify(cur, html){
+  const rules = subtabRules(cur); if (!rules) return html;
+  const box = document.createElement('div'); box.innerHTML = html;
+  if ([...box.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) return html;
+  const kids = [...box.children], headOf = k => { const h = /^H[1-6]$/.test(k.tagName) ? k : k.querySelector('h2,h3,b'); return h ? h.textContent.trim() : ''; };
+  const pinned = [], gr = rules.groups.map(() => []);
+  let first = -1, cur0 = -1;
+  kids.forEach(k => {
+    const t = headOf(k);
+    if (rules.pin && rules.pin.test(t)) { pinned.push(k.outerHTML); return; }
+    const i = rules.groups.findIndex(x => x[1].test(t));
+    if (i >= 0) cur0 = i;
+    gr[cur0 < 0 ? (cur0 = firstNonEmptyGuess(rules, kids, headOf)) : cur0].push(k.outerHTML);
+  });
+  const shown = rules.groups.map((x, i) => i).filter(i => gr[i].length);
+  if (shown.length < 2) return html;
+  S.sub = S.sub || {};
+  const key = (S.role === 'team' ? 'team' : S.role) + '/' + (S.role === 'team' ? S.teamTab : S.tab);
+  let act = S.sub[key]; if (!shown.includes(act)) act = shown[0];
+  const bar = `<div class="sub-tabs" role="group" aria-label="Sections" style="margin-bottom:14px">${shown.map(i => `<button type="button" data-act="subtab" data-k="${esc(key)}" data-v="${i}" aria-pressed="${act === i}">${esc(rules.groups[i][0])}</button>`).join('')}</div>`;
+  return pinned.join('') + bar + gr[act].join('');
+}
+/* blocks that come before any heading match go with the first group that has a match */
+function firstNonEmptyGuess(rules, kids, headOf){
+  for (const k of kids) { const i = rules.groups.findIndex(x => x[1].test(headOf(k))); if (i >= 0) return i; }
+  return 0;
+}
 function render(){
   if (LIVE) syncCamps();
   document.body.dataset.prog = S.prog;
@@ -2383,6 +2429,7 @@ function render(){
   else html = {links:vLinks, features:vFeatures, kdates:vKeyDates, events:vEvents, people:vPeople, feed:vFeed, lbench:vLBench, pimpact:vPImpact, pcollab:vPCollab, pstories:vPStories, preports:vPReports, slides:vSlides, lbrief:vLBrief, lpost:vLPost, ldata:vLData, ldeck:vLDeck, tposts:vTPosts, camps:vTeamCamps, mine:vTeamMine, paper:vTeamPaper, props:vProposals, over:vOverviewAll}[cur]();
   if (kol && cur === 'plan') html = vCampaignPage();
   if ((kol || fr || cs) && cur === 'kdates') html += vEvents('prog') + (kol ? '' : vEvents('comm'));
+  html = tabify(cur, html);
   if ((kol || fr || cs) && ['home','fhome','chome'].includes(cur) && ftMine().length) html = vFeatures() + html;
   $('#view').innerHTML = (S.meEdit && LIVE && PROFILE && !VA ? meCard() : '') + (VA ? `<div class="va-banner" role="status"><span>Viewing as <b>${esc(VA.name)}</b> (${VA.k === 'friend' ? 'KOL friend' : 'fellow'}). Preview only, nothing you do here is saved.</span><button type="button" class="btn sun sm" data-act="va-exit">Exit preview</button></div>` : '') + html;
   if (LIVE) scheduleFlush();
@@ -2593,7 +2640,7 @@ document.addEventListener('click', e => {
   if (a === 'club-edit') { S.cl = {k:el.dataset.k, id:isNaN(Number(v)) ? v : Number(v)}; render(); return; }
   if (a === 'club-cancel') { S.cl = null; render(); return; }
   if (a === 'club-del') { const k = el.dataset.k; S[k] = S[k].filter(x => String(x.id) !== String(v)); S.cl = null; render(); toast('Removed.'); return; }
-  if (a === 'to-exp' || a === 'to-prop') { if (Number(v)) S.camp = Number(v); S.tab = a === 'to-exp' ? 'paper' : 'plan'; S.prog = 'gc'; render(); const t = document.getElementById(a === 'to-exp' ? 'pp-exp' : 'cp-proposal'); if (t) t.scrollIntoView({block:'start'}); else window.scrollTo(0,0); return; }
+  if (a === 'to-exp' || a === 'to-prop') { if (Number(v)) S.camp = Number(v); S.tab = a === 'to-exp' ? 'paper' : 'plan'; S.prog = 'gc'; S.sub = S.sub || {}; S.sub[a === 'to-exp' ? 'kol/paper' : 'kol/plan'] = a === 'to-exp' ? 0 : 0; render(); const t = document.getElementById(a === 'to-exp' ? 'pp-exp' : 'cp-proposal'); if (t) t.scrollIntoView({block:'start'}); else window.scrollTo(0,0); return; }
   if (a === 'exp-drive' || a === 'exp-dl') {
     if (!LIVE) { toast('The export runs on the live portal.'); return; }
     S.expBusy = true; render();
@@ -2606,6 +2653,7 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'pp-admin') { ppAdmin(e.target.dataset.id, e.target.dataset.v === 'on'); return; }
+  if (a === 'subtab') { S.sub = S.sub || {}; S.sub[e.target.dataset.k] = Number(v); render(); window.scrollTo(0, 0); return; }
   if (a === 'sbs') { S.sbs = !S.sbs; render(); return; }
   if (a === 'jump') { const t = document.getElementById(v); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); return; }
   if (a === 'fr-edit') { S.frEdit = v; render(); return; }
@@ -2624,7 +2672,7 @@ document.addEventListener('click', e => {
   if (a === 'va-enter') { vaEnter(el.dataset.k, el.dataset.f, el.dataset.fr); return; }
   if (a === 'va-exit') { vaExit(); return; }
   if (a === 'fp-edit') { fpEditModal(el.dataset.f, el.dataset.fr, el.dataset.id); return; }
-  if (a === 'coord-kol') { S.coord = v; render(); return; }
+  if (a === 'coord-kol') { S.coord = v; S.sub = S.sub || {}; S.sub['team/paper'] = 1; render(); window.scrollTo(0, 0); return; }
   if (a === 'copy-org') {
     const o = S.org.TH, txt = ORG_FIELDS.filter(f => o[f[0]]).map(f => f[1] + ': ' + o[f[0]]).join('\n');
     try { navigator.clipboard.writeText(txt).then(() => toast('Details copied.'), () => toast('Could not copy. Select the text and copy it instead.')); }
@@ -2691,6 +2739,7 @@ document.addEventListener('change', e => {
   if (a === 'showpw') { document.getElementById('l-pw').type = el.checked ? 'text' : 'password'; }
   if (a === 'scope') { S.scope = el.value; render(); }
   if (a === 'lfsel') { S.lf = el.value; render(); }
+  if (a === 'coord-sel') { S.coord = el.value; render(); }
   if (a === 'deck-st') { (S.listen.decks[el.dataset.v] = S.listen.decks[el.dataset.v] || {link:'', due:''}).st = el.value; render(); }
   if (a === 'deck-link') { (S.listen.decks[el.dataset.v] = S.listen.decks[el.dataset.v] || {st:'Not started', due:''}).link = el.value; }
   if (a === 'pfilter') { S.pf = el.value; render(); return; }
