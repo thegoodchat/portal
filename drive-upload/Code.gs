@@ -10,6 +10,7 @@ function doPost(e) {
     var b = JSON.parse(e.postData.contents);
     if (b.secret !== secret) return out_({ ok: false, error: 'Not allowed.' });
     if (b.action === 'analytics') return analytics_(b.tables || {});
+    if (b.action === 'kolmap') return kolmap_(b.sheetId);
     if (!b.folderId || !b.html) return out_({ ok: false, error: 'Missing folder or proposal.' });
     var folder = DriveApp.getFolderById(b.folderId);
     var name = String(b.fileName || 'Proposal').replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 120);
@@ -80,4 +81,56 @@ function monthlyBackup_(folder, tables) {
     dir.createFile(stamp + '_TGC_' + n.replace(/ /g, '_') + '.csv', csv, MimeType.CSV);
   });
   return stamp;
+}
+
+
+/**
+ * KOL mapping reader. Returns one row per KOL from the Thailand and Indonesia tabs of the KOL mapping Google Sheet.
+ * Read only. Emails, WhatsApp numbers and manager contacts are NOT returned; they stay in the sheet.
+ * The sheet must be a native Google Sheet (not an uploaded Excel file) and this script's account needs access to it.
+ * See drive-upload/KOLMAP.md
+ */
+function kolmap_(sheetId) {
+  if (!sheetId) return out_({ ok: false, error: 'The KOL mapping sheet is not set up yet.' });
+  var ss;
+  try { ss = SpreadsheetApp.openById(sheetId); }
+  catch (err) { return out_({ ok: false, error: 'Could not open the KOL mapping sheet. It must be a Google Sheet (File > Save as Google Sheets), shared with the account that runs this script.' }); }
+  var WANT = {
+    'name': 'name', 'primary platform': 'platform', "handle / channel's name #1": 'handle', 'status': 'stage', 'known for': 'known',
+    'secondary platform': 'platform2', "handle / channel's name #2": 'handle2', 'notes': 'notes', 'first contact': 'first', 'referred by': 'referred',
+    'country of audience': 'audience', 'total score': 'score', 'notes on attendance': 'attend',
+    'has management or representation?': 'mgmt', 'type of management': 'mtype', 'manager or agency name': 'mname', 'what the manager handles': 'mdoes',
+    'manager approval needed?': 'mok', 'applied to the programme?': 'applied', 'date applied': 'adate', 'interest as a fellow': 'fellow',
+    'why, or concerns': 'fwhy', 'ready to collaborate?': 'ready', 'conditions or timing': 'rnotes'
+  };
+  var rows = [], tabs = ['Thailand', 'Indonesia'], tz = Session.getScriptTimeZone();
+  tabs.forEach(function (tab) {
+    var sh = ss.getSheetByName(tab); if (!sh) return;
+    var last = sh.getLastRow(), cols = sh.getLastColumn(); if (last < 3) return;
+    var head = sh.getRange(1, 1, 2, cols).getValues(), vals = sh.getRange(3, 1, last - 2, cols).getValues();
+    var idx = {}, followersSeen = 0, fcols = [];
+    head[0].forEach(function (h, i) {
+      var k = String(h || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      if (k === 'followers') { fcols.push(i); return; }
+      if (WANT[k] && idx[WANT[k]] === undefined) idx[WANT[k]] = i;
+    });
+    if (fcols.length) idx.followers = fcols[0];
+    if (fcols.length > 1) idx.followers2 = fcols[1];
+    // Thailand keeps the awareness-event answer in column C (dropdown); Indonesia has a tick box in column D.
+    var eventCol = tab === 'Thailand' ? 2 : 3;
+    vals.forEach(function (r, n) {
+      var name = String(r[idx.name] === undefined ? '' : r[idx.name]).trim(), handle = String(r[idx.handle] === undefined ? '' : r[idx.handle]).trim();
+      if (!name && !handle) return;
+      var o = { country: tab === 'Thailand' ? 'TH' : 'ID', ref: tab + '!' + (n + 3), tick: r[0] === true };
+      Object.keys(idx).forEach(function (k) {
+        var v = r[idx[k]];
+        if (v instanceof Date) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+        o[k] = v === null || v === undefined ? '' : (typeof v === 'number' ? v : String(v).trim());
+      });
+      var ev = r[eventCol];
+      o.event = tab === 'Thailand' ? String(ev || '') : (ev === true ? 'Coming' : '');
+      rows.push(o);
+    });
+  });
+  return out_({ ok: true, rows: rows, at: new Date().toISOString(), url: ss.getUrl() });
 }

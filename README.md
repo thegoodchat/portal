@@ -290,3 +290,6 @@ The groups are defined in one table, `SUBTABS`, near the top of the render code.
 ## Invites: choosing a password
 
 Invite emails now always lead to a "Choose a new password" screen, even if the link format or the browser changes (the invite marks the account as needing a password until one is set). An expired or already-used link shows a clear message with the Forgot password route. Inviting someone who was already invited sends them a fresh set-password email instead of an error, and invite errors now say the real reason. Redeploy `invite-user` and set the `SITE_URL` secret to the real site address (https://thegoodchat.github.io/tgc4/). In Supabase, Authentication > URL Configuration: set Site URL to the same address and add it under Redirect URLs.
+
+## KOL mapping page (Coordination)
+A read-only view of the KOL mapping Google Sheet under People and paperwork > KOL mapping: summary tiles, filters, search and details for each KOL. It reads the sheet through the `kol-map` Edge Function and the Apps Script in `drive-upload/Code.gs` (action `kolmap`). Contacts are never sent. Setup: `drive-upload/KOLMAP.md`.
