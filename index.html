@@ -810,7 +810,7 @@ function vLog(){
 const ORG_FIELDS = [['name','Legal name of the organisation'],['address','Registered address'],['taxid','UEN (company registration number)']];
 const DOC_HINT = {'ID copy':'The legal address on this ID is the one to use on your agreement.','Agreement signed':'Use your legal address, the same as on your ID.'};
 function vOrg(){
-  const ed = S.role === 'team' && S.tm === 'program', o = S.org.TH;
+  const ed = isAdmin(), o = S.org.TH;
   return `<div class="card"><div class="row spread"><div><h2>Organisation details for invoices</h2><p class="sub2" style="margin:0">The same organisation for both countries. Fellows pass these to their KOL friends and suppliers, who send us invoices.${ed ? ' Changes show straight away.' : ''}</p></div><button class="btn sm" type="button" data-act="copy-org">Copy details</button></div>
     <div style="height:12px"></div>
     ${ed ? `<div class="formgrid">${ORG_FIELDS.map(f => `<label class="f">${f[1]}${f[0] === 'address' ? `<textarea data-act="org" data-c="TH" data-k="${f[0]}">${esc(o[f[0]])}</textarea>` : `<input type="text" data-act="org" data-c="TH" data-k="${f[0]}" value="${esc(o[f[0]])}">`}</label>`).join('')}</div>`
@@ -858,6 +858,8 @@ function myRoleKey(){
   if (S.role === 'listener') return ((PROFILE && PROFILE.role === 'comms') || (S.user && S.user.comms)) ? 'comms' : 'listener';
   return S.role;
 }
+/* two portal admins manage team logins, organisation details and who else is an admin */
+const isAdmin = () => !VA && S.role === 'team' && S.tm !== 'ops' && (LIVE ? !!(PROFILE && PROFILE.is_admin) : true);
 const isProgramTeam = () => S.role === 'team' && S.tm === 'program';
 const canEditLK = () => !VA && S.role === 'team' && (S.tm === 'program' || S.tm === 'country');
 const lkVisible = () => { const r = myRoleKey(); return (S.keylinks || []).filter(l => r === 'program' || (l.aud || []).includes(r)); };
@@ -876,8 +878,10 @@ function vLinks(){
   const ed = canEditLK(), v = lkVisible(), editing = ed && S.lkedit && S.lkedit !== 'new' ? (S.keylinks || []).find(x => String(x.id) === String(S.lkedit)) : null;
   const audTxt = l => (l.aud || []).map(a => (LK_AUD.find(x => x[0] === a) || [a, a])[1]).join(', ') || 'Programme team only';
   const noPb = ed && !(S.keylinks || []).some(l => /playbook/i.test(l.label || '')) && S.lkedit !== 'new';
+  const noKm = ed && !(S.keylinks || []).some(l => /kol mapping/i.test(l.label || '')) && S.lkedit !== 'new';
+  const kmNote = noKm ? `<div class="alert need"><h2>The KOL mapping sheet link is missing</h2><p class="sub2">Add it here so Coordination can open it from one place.</p><button type="button" class="btn sm" data-act="lk-km">Add the KOL mapping sheet link</button></div>` : '';
   const pbNote = noPb ? `<div class="alert need"><h2>The TGC Playbook link is missing</h2><p class="sub2">Add it here so everyone can find it.</p><button type="button" class="btn sm" data-act="lk-pb">Add the TGC Playbook link</button></div>` : '';
-  const add = pbNote + (ed ? (S.lkedit === 'new' ? `<div class="card"><h2>Add a link</h2>${lkForm(S.lkpre ? {id:'new', ...S.lkpre} : {id:'new', aud:['country']})}</div>` : `<div class="card"><button type="button" class="btn lk-add" data-act="lk-edit" data-v="new">+ Add a link</button></div>`) : '');
+  const add = kmNote + pbNote + (ed ? (S.lkedit === 'new' ? `<div class="card"><h2>Add a link</h2>${lkForm(S.lkpre ? {id:'new', ...S.lkpre} : {id:'new', aud:['country']})}</div>` : `<div class="card"><button type="button" class="btn lk-add" data-act="lk-edit" data-v="new">+ Add a link</button></div>`) : '');
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
   const aud = l => (l.aud || []).length ? (l.aud || []).map(a => `<span>${esc((LK_AUD.find(x => x[0] === a) || [a, a])[1])}</span>`).join('') : '<span class="off">Programme team only</span>';
   const rows = v.map(l => `<div class="lk"><div class="lk-main"><a class="lk-t" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)} &#8599;</a>${host(l.url) ? `<div class="lk-host">${esc(host(l.url))}</div>` : ''}${l.note ? `<div class="lk-note">${esc(l.note)}</div>` : ''}${ed ? `<div class="lk-aud"><small>Seen by</small>${aud(l)}</div>` : ''}</div>${ed ? `<button type="button" class="btn ghost sm" data-act="lk-edit" data-v="${l.id}">Edit</button>` : ''}</div>`).join('');
@@ -1302,7 +1306,7 @@ function vTeamMine(){
       ${it.length ? `<ul style="margin:8px 0 10px;padding-left:18px">${it.map(x => `<li>${esc(x.t)}</li>`).join('')}</ul>
       <label class="f">Message<span class="hint">Edit it before sending. The fellow sees it as a note on their paperwork page.</span><textarea id="rm-${f.id}">${esc(remindText(f))}</textarea></label>
       <div><button type="button" class="btn sm" data-act="remind" data-v="${f.id}">Send reminder</button></div>` : ''}</div>`; }).join('');
-  return `${sw}${tiles}<div class="card"><div class="row spread"><div><h2>${all ? 'Fellows to chase' : 'My fellows'}</h2><p class="sub2" style="margin:0">${all ? 'Both countries. Country coordinators send these reminders; you can too.' : 'Who has open paperwork, reflections or campaign set-up. Send a reminder in one tap.'}</p></div>
+  return `${sw}${tiles}<div class="card"><div class="row spread"><div><h2>${all ? 'Fellows to chase' : 'My fellows'}</h2><p class="sub2" style="margin:0">${all ? 'Both countries. Any Coordination user can send these reminders.' : 'Who has open paperwork, reflections or campaign set-up. Send a reminder in one tap.'}</p></div>
     <button type="button" class="btn" data-act="remind-all" ${n ? '' : 'disabled'}>Remind all with open items (${n})</button></div><div class="stack" style="margin-top:12px">${cards}</div></div>`;
 }
 
@@ -1543,8 +1547,8 @@ const KD_CC = ['TH', 'ID'];
 const kdNeeds = d => d.country ? [d.country] : KD_CC;
 const kdKey = d => d.ref + '|' + (d.rid != null ? d.rid : d.id);
 const kdFind = k => { const [l, id] = k.split('|'); return (S[l] || []).find(x => String(x.id) === id); };
-/* the programme coordinator is also the Thailand country coordinator */
-const myCC = () => VA || S.role !== 'team' ? '' : S.tm === 'program' ? 'TH' : (S.tm === 'country' && KD_C[S.scope]) ? S.scope : '';
+/* every Coordination user sees everything and can confirm the check for either country */
+const myCCs = () => VA || S.role !== 'team' ? [] : (S.tm === 'program' || S.tm === 'country') ? ['TH', 'ID'] : [];
 function kdConfState(d){
   const need = kdNeeds(d), conf = d.conf || {};
   const rows = need.map(c => { const x = conf[c]; return {c, st:x ? x.st : 'wait', by:x && x.by, note:x && x.note}; });
@@ -1552,14 +1556,14 @@ function kdConfState(d){
 }
 function kdConfRow(d){
   if (d.nocheck) return '';
-  const st = kdConfState(d), mine = myCC(), key = kdKey(d);
+  const st = kdConfState(d), key = kdKey(d);
   const chips = st.rows.map(r => `<span class="pill ${r.st === 'ok' ? 'p-ok' : r.st === 'conflict' ? 'p-fix' : 'p-none'}">${KD_C[r.c]}: ${r.st === 'ok' ? 'confirmed' : r.st === 'conflict' ? 'conflict' : 'waiting'}</span>${r.st === 'conflict' && r.note ? ` <span class="meta">${esc(r.note)}</span>` : ''}${r.st === 'ok' && r.by ? ` <span class="meta">by ${esc(r.by)}</span>` : ''}`).join(' ');
   let act = '';
-  if (mine && kdNeeds(d).includes(mine)) {
-    const me = (d.conf || {})[mine];
-    if (S.kdflag === key) act = `<form data-form="kd-flag" data-v="${esc(key)}" class="row" style="gap:8px;margin-top:6px"><input type="text" id="kd-flag-note" placeholder="What clashes? e.g. public holiday" required style="flex:1"><button class="btn sm" type="submit">Flag a conflict</button><button type="button" class="btn ghost sm" data-act="kd-flag-x">Cancel</button></form>`;
-    else act = `<div class="row" style="gap:8px;margin-top:6px">${me && me.st === 'ok' ? `<button type="button" class="btn ghost sm" data-act="kd-unconf" data-v="${esc(key)}">Remove my confirmation</button>` : `<button type="button" class="btn sm" data-act="kd-conf" data-v="${esc(key)}">Confirm for ${KD_C[mine]}</button>`}<button type="button" class="btn ghost sm" data-act="kd-flag" data-v="${esc(key)}">Flag a conflict</button></div>`;
-  }
+  myCCs().filter(c => kdNeeds(d).includes(c)).forEach(c => {
+    const me = (d.conf || {})[c], fk = key + '#' + c;
+    if (S.kdflag === fk) act += `<form data-form="kd-flag" data-v="${esc(key)}" data-c="${c}" class="row" style="gap:8px;margin-top:6px"><input type="text" id="kd-flag-note" placeholder="What clashes in ${KD_C[c]}? e.g. public holiday" required style="flex:1"><button class="btn sm" type="submit">Flag a conflict</button><button type="button" class="btn ghost sm" data-act="kd-flag-x">Cancel</button></form>`;
+    else act += `<div class="row" style="gap:8px;margin-top:6px">${me && me.st === 'ok' ? `<button type="button" class="btn ghost sm" data-act="kd-unconf" data-v="${esc(key)}" data-c="${c}">Remove ${KD_C[c]} confirmation</button>` : `<button type="button" class="btn sm" data-act="kd-conf" data-v="${esc(key)}" data-c="${c}">Confirm for ${KD_C[c]}</button>`}<button type="button" class="btn ghost sm" data-act="kd-flag" data-v="${esc(key)}" data-c="${c}">Flag a conflict in ${KD_C[c]}</button></div>`;
+  });
   return `<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><span class="meta">Country check</span> ${chips}</div>${act}`;
 }
 
@@ -1573,7 +1577,7 @@ function kdForm(c){
 function kdSummary(up){
   up = up.filter(d => !d.nocheck);
   const st = up.map(kdConfState), ok = st.filter(x => x.ok).length, bad = st.filter(x => x.bad).length;
-  return `<p class="note" style="margin-top:8px"><b>Country check.</b> Country coordinators confirm each coming date does not clash with a public holiday or anything else that would affect the programme in their country. ${ok} of ${up.length} dates confirmed by every country that needs to${bad ? ', ' + bad + ' with a conflict flagged' : ''}.${myCC() ? ' Use the buttons under each date.' : ''}</p>`;
+  return `<p class="note" style="margin-top:8px"><b>Country check.</b> Coordination confirms each coming date does not clash with a public holiday or anything else that would affect the programme in their country. ${ok} of ${up.length} dates confirmed by every country that needs to${bad ? ', ' + bad + ' with a conflict flagged' : ''}.${myCCs().length ? ' Use the buttons under each date.' : ''}</p>`;
 }
 function vKeyDates(){
   const ed = canEditKD(), all = keyDates(), today = iso(new Date());
@@ -1975,7 +1979,7 @@ function vFeed0(){
         ${mod ? `<button type="button" class="btn ghost sm" data-act="feed-pin" data-v="${p.id}">${p.pinned ? 'Unpin' : 'Pin'}</button>` : ''}${mod || (mine && !ro) ? `<button type="button" class="btn ghost sm" data-act="feed-del" data-v="${p.id}">Remove</button>` : ''}</div>
       ${p.comments.map(c => `<div class="item" style="padding:8px 0"><div class="row spread"><span><b>${esc(c.by)}</b> ${tag(c.role)}</span><span class="meta">${c.date}</span></div><div>${esc(c.text)}</div></div>`).join('')}
       ${ro ? '' : `<form data-form="feed-comment" data-id="${p.id}" class="row" style="gap:8px;margin-top:8px"><input type="text" id="fc-${p.id}" placeholder="${p.type === 'Ask for help' ? 'Can you help? Reply here' : 'Reply'}" style="flex:1"><button class="btn ghost sm" type="submit">Reply</button></form>`}</div>`; }).join('') || '<div class="card"><p class="meta">Nothing here yet.</p></div>';
-  const who = `<div class="card"><h2>Who is here</h2><div class="stack"><div><div class="meta">Fellows</div><div>${F.map(x => esc(x.n)).join(', ')}</div></div><div><div class="meta">Civil society organisations</div><div>${S.csos.map(o => esc(o.name) + ' (' + esc(o.focus) + ')').join('; ')}</div></div><div><div class="meta">KOL friends</div><div>${S.friends.map(x => esc(x.name)).join(', ')}, and others</div></div><div><div class="meta">The team</div><div>Country coordinators, programme coordinator, Social Listening</div></div></div></div>`;
+  const who = `<div class="card"><h2>Who is here</h2><div class="stack"><div><div class="meta">Fellows</div><div>${F.map(x => esc(x.n)).join(', ')}</div></div><div><div class="meta">Civil society organisations</div><div>${S.csos.map(o => esc(o.name) + ' (' + esc(o.focus) + ')').join('; ')}</div></div><div><div class="meta">KOL friends</div><div>${S.friends.map(x => esc(x.name)).join(', ')}, and others</div></div><div><div class="meta">The team</div><div>Coordination, Social Listening</div></div></div></div>`;
   return `<div class="card"><h2>The Good Chat Club</h2><p class="sub2">A place to share what you are learning, ask for help and cheer each other on, whether you are a fellow, KOL friend, organisation or team member. Everyone in the programme can see what is posted here.</p></div>${composer}<div class="card">${filt}</div>${posts}${who}`;
 }
 
@@ -2050,7 +2054,7 @@ function meCard(){
   return `<div class="card"><h2>My profile</h2><p class="sub2">Change the name and photo other people see. Your login email stays the same.</p>
     <form data-form="me-save" class="stack"><div class="row" style="gap:14px">${avatar(PROFILE.photo, PROFILE.label)}<div class="grow"><label class="f">Name<input type="text" id="me-name" value="${esc(PROFILE.label)}" maxlength="80" required></label></div></div>
     <label class="f">Photo<span class="hint">A clear face photo works best. It is resized automatically.</span><input type="file" id="me-photo" accept="image/*"></label>
-    ${PROFILE.role === 'fellow' ? `<h3 style="margin:14px 0 4px">How the team can reach you</h3><p class="sub2" style="margin:0 0 8px">Only the programme team, ops and your country coordinator see this. The email is the Google account they will share your private folder with.</p><div class="formgrid">
+    ${PROFILE.role === 'fellow' ? `<h3 style="margin:14px 0 4px">How the team can reach you</h3><p class="sub2" style="margin:0 0 8px">Only Coordination and operations see this. The email is the Google account they will share your private folder with.</p><div class="formgrid">
       <label class="f">Email<input type="email" id="me-email" value="${esc(fpr(PROFILE.fellow_id).email || '')}"></label>
       <label class="f">Phone<input type="text" id="me-phone" value="${esc(fpr(PROFILE.fellow_id).phone || '')}"></label>
       <label class="f">LINE<input type="text" id="me-line" value="${esc(fpr(PROFILE.fellow_id).line || '')}"></label>
@@ -2111,7 +2115,7 @@ function applyFellow(r){
   if (!f) { f = {id:r.id, n:r.name, c:r.country, c5:[0,0,0,0,0], posts:0, pend:0}; F.push(f); if (S.paper && !S.paper[f.id]) S.paper[f.id] = DOCS.map(d => ({doc:d, s:'none', note:'', due:''})); }
   f.n = r.name || f.n; f.c = r.country || f.c; f.photo = r.photo || ''; f.bio = r.bio || ''; f.handles = r.handles || {};
 }
-async function loadAccounts(){ const r = await SB.from('profiles').select('id,email,label,role,country,fellow_id,cso_id,friend_id,active'); S.accounts = r.data || []; }
+async function loadAccounts(){ const r = await SB.from('profiles').select('id,email,label,role,country,fellow_id,cso_id,friend_id,active,is_admin'); S.accounts = r.data || []; }
 async function fnError(error, data){
   if (data && data.error) return data.error;
   try { const j = await error.context.json(); if (j && j.error) return j.error; } catch (e) {}
@@ -2127,6 +2131,12 @@ async function ppSendInvite(body){
   const {data, error} = await SB.functions.invoke('invite-user', {body:Object.assign({action:'invite', redirectTo:location.origin + location.pathname}, body)});
   if (error || (data && data.error)) { toast(await fnError(error, data)); return; }
   await loadAccounts(); S.pinv = null; render(); toast('Invite sent to ' + body.email.trim() + '. They choose a password from the email.');
+}
+async function ppAdmin(id, on){
+  if (!LIVE) return;
+  const {data, error} = await SB.functions.invoke('invite-user', {body:{action:'set_admin', profile_id:id, is_admin:on}});
+  if (error || (data && data.error)) { toast(await fnError(error, data)); return; }
+  await loadAccounts(); render(); toast(on ? 'They are now a portal admin.' : 'Admin removed.');
 }
 async function ppToggle(id, action){
   if (!LIVE) return;
@@ -2196,7 +2206,7 @@ function contactBlock(f){
 }
 function contactForm(f){
   const k = fpr(f.id);
-  return `<div class="card"><h2>Contact for ${esc(f.n)}</h2><p class="sub2">Only the programme team, ops, the country coordinator and ${esc(f.n)} can see this. Use it to invite them to their private Drive folder.</p>
+  return `<div class="card"><h2>Contact for ${esc(f.n)}</h2><p class="sub2">Only Coordination, operations and ${esc(f.n)} can see this. Use it to invite them to their private Drive folder.</p>
     <form data-form="pp-contact" data-id="${f.id}" class="stack"><div class="formgrid">
       <label class="f">Email<input type="email" id="k-email" value="${esc(k.email || '')}" placeholder="The Google account to share the folder with"></label>
       <label class="f">Phone<input type="text" id="k-phone" value="${esc(k.phone || '')}"></label>
@@ -2274,8 +2284,8 @@ function vPeople0(){
   const friendsCard = (prog || S.tm === 'country' || (PROFILE && PROFILE.role === 'comms')) && team && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">KOL friends</h2><div class="card"><p class="sub2">Give a KOL friend a login so they can log their own posts and insights, see masterclass slides, events and The Good Chat Club. Fellows add friends first on their KOL friends tab, then you pick the friend here.</p>${S.accounts.filter(a => a.role === 'friend').map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${a.country || ''}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button></div></div>`).join('')}
       ${F.flatMap(f => fd(f.id).friends.map(x => ({f, x}))).filter(({f}) => vaAllowed(f.id)).map(({f, x}) => `<div class="item"><div class="row spread"><span><b>${esc(x.name)}</b> <span class="meta">for ${esc(f.n)}, ${esc(CAMPS[(x.camp || 1) - 1].n)}</span></span><button type="button" class="btn ghost sm" data-act="va-enter" data-k="friend" data-f="${f.id}" data-fr="${esc(String(x.id))}">View as ${esc(x.name)}</button></div></div>`).join('')}
       <form data-form="pp-friend" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Which KOL friend?<select id="pf-friend" required><option value="">Choose</option>${friendChoices()}</select></label><label class="f">Email<input type="email" id="pf-email" required></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
-  const teamAcc = prog && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Coordinators, Social Listening and Communications, and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','comms','ops','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${({program:'Coordination', country:'Coordination', listener:'Social Listening', comms:'Communications', ops:'Operations', partner:'Programme partner'})[a.role] || a.role}</span><div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span>${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</div></div>`).join('')}
-      <form data-form="pp-team" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name shown<input type="text" id="pp-label" required></label><label class="f">Email<input type="email" id="pp-email" required></label><label class="f">Role<select id="pp-role"><option value="coord">Coordination</option><option value="listener">Social Listening</option><option value="comms">Communications</option><option value="ops">Operations</option><option value="partner">Programme partner</option></select></label><label class="f">Country<span class="hint">For Coordination: choose one country, or all countries for programme-wide</span><select id="pp-country"><option value="TH">Thailand</option><option value="ID">Indonesia</option><option value="ALL">All countries</option></select></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
+  const teamAcc = isAdmin() && LIVE ? `<h2 class="h sec" style="margin:18px 0 6px">Team logins</h2><div class="card"><p class="sub2">Only portal admins see this. Coordination, Social Listening, Communications, Operations and programme partners.</p>${S.accounts.filter(a => ['program','country','listener','comms','ops','partner'].includes(a.role)).map(a => `<div class="item"><div class="row spread"><span><b>${esc(a.label)}</b> <span class="tag">${({program:'Coordination', country:'Coordination', listener:'Social Listening', comms:'Communications', ops:'Operations', partner:'Programme partner'})[a.role] || a.role}</span>${a.is_admin ? ' <span class="pill p-ok">Admin</span>' : ''}<div class="meta">${esc(a.email)}${a.active ? '' : ', switched off'}</div></span><span class="row" style="gap:8px">${['program','country'].includes(a.role) && a.id !== (PROFILE && PROFILE.id) && a.active ? `<button type="button" class="btn ghost sm" data-act="pp-admin" data-id="${a.id}" data-v="${a.is_admin ? 'off' : 'on'}">${a.is_admin ? 'Remove admin' : 'Make admin'}</button>` : ''}${a.id === (PROFILE && PROFILE.id) ? '' : `<button type="button" class="btn ghost sm" data-act="pp-toggle" data-id="${a.id}" data-v="${a.active ? 'deactivate' : 'reactivate'}">${a.active ? 'Switch off' : 'Switch on'}</button>`}</span></div></div>`).join('')}
+      <form data-form="pp-team" class="stack" style="margin-top:12px"><div class="formgrid"><label class="f">Name shown<input type="text" id="pp-label" required></label><label class="f">Email<input type="email" id="pp-email" required></label><label class="f">Role<select id="pp-role"><option value="coord">Coordination</option><option value="listener">Social Listening</option><option value="comms">Communications</option><option value="ops">Operations</option><option value="partner">Programme partner</option></select></label></div><div><button class="btn" type="submit">Send invite</button></div></form></div>` : '';
   return `<div class="card"><h2>People</h2><p class="sub2">The fellows and organisations turning clean energy into an everyday conversation. ${team ? 'You can update profiles and photos' + (prog ? '.' : ' for your country.') : ''}</p></div>
     ${remindScope({c:S.scope === 'ALL' ? 'TH' : S.scope}) ? remindAllCard() : ''}<h2 class="h sec" style="margin:18px 0 6px">Fellows</h2>${fellows}<h2 class="h sec" style="margin:18px 0 6px">Civil society organisations</h2>${csos}${addC}${friendsCard}${teamAcc}`;
 }
@@ -2340,7 +2350,7 @@ function render(){
   }
   $('#who').innerHTML = LOGIN_ON
     ? `<span class="row" style="gap:8px">${LIVE && PROFILE && !VA ? avatar(PROFILE.photo, PROFILE.label, 28) : ''}<span>Signed in as <b>${esc(VA && PROFILE ? PROFILE.label : S.user.label)}</b></span></span><span class="row" style="gap:10px">${LIVE && !VA ? '<button type="button" class="btn ghost sm" data-act="me-open">My profile</button>' : ''}<a href="demo.html" target="_blank" rel="noopener" style="color:inherit">Demo page</a><button type="button" class="btn sun sm" data-act="logout">Log out</button></span>`
-    : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener' && !(S.user && S.user.comms)}">Social Listening</button><button type="button" data-act="role" data-v="comms" aria-pressed="${S.role === 'listener' && !!(S.user && S.user.comms)}">Communications</button><button type="button" data-act="role" data-v="ops" aria-pressed="${S.role === 'team' && S.tm === 'ops'}">Operations</button><button type="button" data-act="role" data-v="country" aria-pressed="${S.role === 'team' && S.tm === 'country'}">Coordination, one country</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm === 'program'}">Coordination, all countries</button></div>`;
+    : `<div class="seg" role="group" aria-label="Switch view"><button type="button" data-act="role" data-v="kol" aria-pressed="${S.role === 'kol'}">Fellow view (Thai Fellow 1)</button><button type="button" data-act="role" data-v="friend" aria-pressed="${S.role === 'friend'}">KOL friend view</button><button type="button" data-act="role" data-v="cso" aria-pressed="${S.role === 'cso'}">CSO view</button><button type="button" data-act="role" data-v="partner" aria-pressed="${S.role === 'partner'}">Programme partner</button><button type="button" data-act="role" data-v="listener" aria-pressed="${S.role === 'listener' && !(S.user && S.user.comms)}">Social Listening</button><button type="button" data-act="role" data-v="comms" aria-pressed="${S.role === 'listener' && !!(S.user && S.user.comms)}">Communications</button><button type="button" data-act="role" data-v="ops" aria-pressed="${S.role === 'team' && S.tm === 'ops'}">Operations</button><button type="button" data-act="role" data-v="team" aria-pressed="${S.role === 'team' && S.tm !== 'ops'}">Coordination</button></div>`;
   const kol = S.role === 'kol', fr = S.role === 'friend', cs = S.role === 'cso', mine = kol || fr || cs;
   const ls = S.role === 'listener', pt = S.role === 'partner';
   const ops = S.role === 'team' && S.tm === 'ops';
@@ -2529,9 +2539,10 @@ document.addEventListener('click', e => {
   if (a === 'ft-cancel') { S.fedit = null; render(); return; }
   if (a === 'ft-del') { S.features = S.features.filter(c => String(c.id) !== String(v)); S.fedit = null; render(); toast('Deleted.'); return; }
   if (a === 'ft-done') { ftDone(v); return; }
-  if (a === 'kd-conf' || a === 'kd-unconf') { const c = myCC(), x = c && kdFind(v); if (!x) return; x.confirms = x.confirms || {}; if (a === 'kd-conf') x.confirms[c] = {st:'ok', by:S.user.label, at:iso(new Date())}; else delete x.confirms[c]; S.kdflag = null; render(); toast(a === 'kd-conf' ? 'Confirmed for ' + KD_C[c] + '.' : 'Confirmation removed.'); return; }
-  if (a === 'kd-flag') { S.kdflag = v; render(); return; }
+  if (a === 'kd-conf' || a === 'kd-unconf') { const c = e.target.closest('[data-c]').dataset.c, x = myCCs().includes(c) && kdFind(v); if (!x) return; x.confirms = x.confirms || {}; if (a === 'kd-conf') x.confirms[c] = {st:'ok', by:S.user.label, at:iso(new Date())}; else delete x.confirms[c]; S.kdflag = null; render(); toast(a === 'kd-conf' ? 'Confirmed for ' + KD_C[c] + '.' : 'Confirmation removed.'); return; }
+  if (a === 'kd-flag') { S.kdflag = v + '#' + e.target.closest('[data-c]').dataset.c; render(); return; }
   if (a === 'kd-flag-x') { S.kdflag = null; render(); return; }
+  if (a === 'lk-km') { S.lkpre = {label:'KOL mapping sheet', note:'Who the KOLs are and where they are mapped', aud:['country']}; S.lkedit = 'new'; render(); return; }
   if (a === 'lk-pb') { S.lkpre = {label:'TGC Playbook', note:'The Good Chat Playbook', aud:['country','comms','listener','ops','fellow','friend','cso','partner']}; S.lkedit = 'new'; render(); return; }
   if (a === 'lk-edit') { S.lkpre = null; S.lkedit = isNaN(Number(v)) ? v : Number(v); render(); return; }
   if (a === 'lk-cancel') { S.lkedit = null; render(); return; }
@@ -2594,6 +2605,7 @@ document.addEventListener('click', e => {
     }).catch(() => { S.expBusy = false; render(); toast('The export did not work. Please try again.'); });
     return;
   }
+  if (a === 'pp-admin') { ppAdmin(e.target.dataset.id, e.target.dataset.v === 'on'); return; }
   if (a === 'sbs') { S.sbs = !S.sbs; render(); return; }
   if (a === 'jump') { const t = document.getElementById(v); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); return; }
   if (a === 'fr-edit') { S.frEdit = v; render(); return; }
@@ -2790,7 +2802,7 @@ document.addEventListener('submit', e => {
     if (id === 'new') S.features.push(x);
     S.fedit = null; render(); toast('Saved.'); return;
   }
-  if (f === 'kd-flag') { const c = myCC(), x = c && kdFind(e.target.dataset.v), note = g('kd-flag-note'); if (!x || !note) return; x.confirms = x.confirms || {}; x.confirms[c] = {st:'conflict', by:S.user.label, at:iso(new Date()), note}; S.kdflag = null; render(); toast('Conflict flagged. The programme team can see it.'); return; }
+  if (f === 'kd-flag') { const c = e.target.dataset.c, x = myCCs().includes(c) && kdFind(e.target.dataset.v), note = g('kd-flag-note'); if (!x || !note) return; x.confirms = x.confirms || {}; x.confirms[c] = {st:'conflict', by:S.user.label, at:iso(new Date()), note}; S.kdflag = null; render(); toast('Conflict flagged. Coordination can see it.'); return; }
   if (f === 'lk-save') {
     if (!canEditLK()) return;
     const id = e.target.dataset.id, label = g('lk-label').trim(), url = g('lk-url').trim(); if (!label || !url) { toast('Add a name and a link.'); return; }
@@ -2839,7 +2851,7 @@ document.addEventListener('submit', e => {
   if (f === 'pp-contact') { saveContact(e.target.dataset.id); return; }
   if (f === 'pp-cso') { ppSaveCso(e.target.dataset.id); return; }
   if (f === 'pp-invite') { const d = e.target.dataset; ppSendInvite({email:g('pp-email'), label:d.name, role:d.role, country:d.country, fellow_id:d.role === 'fellow' ? d.ref : null, cso_id:d.role === 'cso' ? d.ref : null}); return; }
-  if (f === 'pp-team') { let role = g('pp-role'), country = g('pp-country'); if (role === 'coord') { if (country === 'ALL') { role = 'program'; country = ''; } else role = 'country'; } ppSendInvite({email:g('pp-email'), label:g('pp-label'), role, country}); return; }
+  if (f === 'pp-team') { let role = g('pp-role'), country = ''; if (role === 'coord') { role = 'program'; country = ''; } ppSendInvite({email:g('pp-email'), label:g('pp-label'), role, country}); return; }
   if (f === 'feed-post') {
     const t = ((document.getElementById('fp-text') || {}).value || '').trim(); if (!t) { toast('Write something first.'); return; }
     S.feed.unshift({id:Date.now(), by:S.user.label, role:feedRole(), type:document.getElementById('fp-type').value, date:dstr(TODAY), text:t, r:{cheer:[], useful:[], join:[]}, comments:[]}); render(); toast('Posted.');
@@ -3071,8 +3083,7 @@ function subscribe(){
 }
 function applyRole(p){
   S.live = {phase:'ready', msg:''}; S.scope = 'ALL'; S.tm = 'program'; S.prog = 'gc';
-  if (p.role === 'program') { S.role = 'team'; S.teamTab = 'over'; }
-  else if (p.role === 'country') { S.role = 'team'; S.tm = 'country'; S.scope = p.country; S.teamTab = 'people'; S.coord = (F.find(f => f.c === p.country) || F[0]).id; }
+  if (p.role === 'program' || p.role === 'country') { S.role = 'team'; S.teamTab = 'over'; }
   else if (p.role === 'listener' || p.role === 'comms') { S.role = 'listener'; S.teamTab = 'lbench'; }
   else if (p.role === 'ops') { S.role = 'team'; S.tm = 'ops'; S.teamTab = 'paper'; }
   else if (p.role === 'partner') { S.role = 'partner'; S.teamTab = 'pimpact'; }

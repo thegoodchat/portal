@@ -650,3 +650,60 @@ begin
     'campaign', coalesce(su->>'name', ''), 'type', coalesce(su->>'type', ''), 'plinks', pls);
 end $$;
 grant execute on function public.friend_context() to authenticated;
+
+
+-- =====================================================================
+-- One Coordination type: everyone in Coordination sees everything.
+-- Existing country coordinators become full Coordination users. Safe to run more than once.
+-- (The invite function still accepts the old 'country' role, but the portal no longer offers it.)
+-- =====================================================================
+update public.profiles set role = 'program', country = null where role = 'country';
+
+
+-- =====================================================================
+-- Portal admins (Jib and Lea). Only admins manage team logins, edit the organisation details and choose other admins.
+-- Run this block after editing the two emails below. Safe to run more than once.
+-- =====================================================================
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+
+-- EDIT: the two admins' login emails (lower case)
+update public.profiles set is_admin = true
+ where role in ('program','country') and lower(email) in ('jib-login-email@example.org', 'lea-login-email@example.org');
+
+-- Safety net: if nobody is an admin yet, every Coordination user is one, so nobody is locked out.
+-- Admins can then remove the others from the Team logins list.
+update public.profiles set is_admin = true
+ where role in ('program','country') and not exists (select 1 from public.profiles where is_admin);
+
+-- Only admins can change the organisation details
+create or replace function public.can_access(k text, rc text, ro text, rec jsonb, want_write boolean)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+declare p public.profiles; a public.kind_access; sc text;
+begin
+  select * into p from public.profiles where id = auth.uid() and active;
+  if p.id is null then return false; end if;
+  select * into a from public.kind_access where kind = k and role = p.role;
+  if a.kind is null then return false; end if;
+  sc := case when want_write then a.write_scope else a.read_scope end;
+  if k = 'map:org' and want_write and not coalesce(p.is_admin, false) then return false; end if;
+  if p.role = 'partner' and k = 'listen:decks' and coalesce(rec->>'st','') not in ('Shared','Final') then return false; end if;
+  if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'), coalesce(p.fellow_id,'-')) then return false; end if;
+  if k = 'list:slides' and p.role = 'fellow' and coalesce(rec->>'fellows','true') = 'false' then return false; end if;
+  if k = 'list:slides' and p.role = 'friend' and (coalesce(rec->>'friends','false') <> 'true' or coalesce(rec->>'to','') not in ('all', coalesce(p.country,'-'))) then return false; end if;
+  if p.role = 'fellow' and k in ('listen:pre','listen:post','listen:cmp') and coalesce(rec->>'status','') <> 'Shared' then return false; end if;
+  if p.role = 'fellow' and k = 'listen:bench' and coalesce(rec->>'st','') <> 'Confirmed' then return false; end if;
+  if k = 'fp:posts' and p.role = 'friend' and coalesce(rec->>'friend','-') <> coalesce(p.friend_id,'-') then return false; end if;
+  if k = 'list:pevents' and p.role = 'friend' and coalesce(rec->>'friends','false') not in ('true') then return false; end if;
+  if k = 'list:slides' and p.role = 'partner' and coalesce(rec->>'to','') not in ('all','TH','ID') then return false; end if;
+  if k = 'list:keylinks' and not public.keylink_visible(p.role, rec) then return false; end if;
+  if k = 'list:features' and p.role in ('fellow','friend','cso') and not exists (
+    select 1 from jsonb_array_elements(coalesce(rec->'who','[]'::jsonb)) w
+    where (p.role = 'fellow' and w->>'t' = 'fellow' and w->>'id' = p.fellow_id)
+       or (p.role = 'friend' and w->>'t' = 'friend' and w->>'id' = p.friend_id)
+       or (p.role = 'cso' and w->>'t' = 'cso' and w->>'id' = p.cso_id)) then return false; end if;
+  return case sc
+    when 'all' then true
+    when 'country' then rc is not null and rc = p.country
+    when 'own' then ro is not null and (ro = 'f:' || p.fellow_id or ro = 'c:' || p.cso_id or ro = 'k:' || p.friend_id)
+    else false end;
+end $$;

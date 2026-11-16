@@ -14,12 +14,13 @@ const json = (status: number, body: unknown) =>
 
 const ROLES = ['program', 'country', 'fellow', 'friend', 'cso', 'listener', 'comms', 'ops', 'partner'];
 const COUNTRY_MANAGED = ['fellow', 'cso', 'friend'];
+const TEAM_ROLES = ['program', 'country', 'listener', 'comms', 'ops', 'partner'];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Pure rule check, easy to test: may this caller do this?
 export function allowed(me: any, target: any): string | null {
   if (!me || !me.active) return 'Not allowed.';
-  if (me.role === 'program') return null;
+  if (me.role === 'program') return TEAM_ROLES.includes(target.role) && !me.is_admin ? 'Only portal admins can manage team logins.' : null;
   if (me.role === 'comms') return target.role === 'friend' ? null : 'Communications can manage KOL friends only.';
   if (me.role !== 'country') return 'Only coordinators can manage logins.';
   if (!COUNTRY_MANAGED.includes(target.role)) return 'Country coordinators can manage fellows, CSOs and KOL friends only.';
@@ -75,6 +76,15 @@ Deno.serve(async (req) => {
       const label = String(b.label || email).slice(0, 80);
       const { error: pe } = await admin.from('profiles').upsert({ id: inv.user.id, email, label, role: t.role, country: t.country, fellow_id: t.fellow_id, cso_id: t.cso_id, friend_id: t.friend_id, active: true });
       if (pe) { await admin.auth.admin.deleteUser(inv.user.id); return json(400, { error: 'Could not save the profile.' }); }
+      return json(200, { ok: true });
+    }
+
+    if (b.action === 'set_admin') {
+      if (!me || !me.active || me.role !== 'program' || !me.is_admin) return json(403, { error: 'Only portal admins can do this.' });
+      const { data: target } = await admin.from('profiles').select('*').eq('id', b.profile_id).maybeSingle();
+      if (!target || !['program', 'country'].includes(target.role)) return json(404, { error: 'Admins are chosen from Coordination users.' });
+      if (target.id === user.id) return json(400, { error: 'You cannot change your own admin access.' });
+      await admin.from('profiles').update({ is_admin: !!b.is_admin }).eq('id', target.id);
       return json(200, { ok: true });
     }
 

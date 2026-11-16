@@ -267,3 +267,11 @@ Post logging went back into the portal so the leaderboard, Impact page and KPIs 
 ## Analytics export to Drive
 
 A nightly export writes posts (fellows and KOL friends), events, civic actions, KPIs and campaigns to one Google Sheet for the social expert, plus dated CSV backups on the first night of each month. The programme team and operations also have "Export to Drive now" and "Download CSV files" on the Impact tab. Setup: `drive-upload/ANALYTICS.md`. Function: `supabase/functions/export-analytics`.
+
+## One Coordination type
+
+Coordination is now a single type. Everyone in it sees everything (both countries) and has the same powers; different people are just different users. The invite form has one "Coordination" role with no country choice. The Key dates country check lets any Coordination user confirm or flag for either country. Run the latest `supabase/schema.sql` once: it turns existing country coordinators into full Coordination users. The KOL mapping sheet link can be added on the Links tab by Coordination.
+
+## Portal admins
+
+Two portal admins (Jib and Léa) manage the things other Coordination users cannot: team logins (invite, switch on and off, see all team accounts), the organisation details, and who else is an admin ("Make admin" or "Remove admin" next to each Coordination user in Team logins). Everything else is the same for all Coordination users. In `supabase/schema.sql`, edit the two emails in the last block before running it; if no email matches, every existing Coordination user becomes an admin so nobody is locked out. Redeploy the `invite-user` function with the updated file.
